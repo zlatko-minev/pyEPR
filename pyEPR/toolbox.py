@@ -40,6 +40,17 @@ def isfloat(value):
   except ValueError:
     return False
 
+
+
+def get_instance_vars(obj, Forbidden=[]):
+    VARS = {}
+    for v in dir(obj):
+        if (not callable(getattr(obj,v))) and not(v.startswith('__')):
+            if not (v in Forbidden):
+                VARS[v] = getattr(obj,v)
+    return VARS
+
+
 def deprecated(func):
     """This is a decorator which can be used to mark functions
     as deprecated. It will result in a warning being emmitted
@@ -54,6 +65,9 @@ def deprecated(func):
     newFunc.__dict__.update(func.__dict__)
     return newFunc
 
+#==============================================================================
+# Matrix
+#==============================================================================
 
 def print_matrix(M, frmt = "{:7.2f}", append_row = ""):
     M = np.mat(M)
