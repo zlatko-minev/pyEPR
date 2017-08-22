@@ -31,10 +31,12 @@
 #    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-# Compatibility with python 2.7 and 3 
+# Compatibility with python 2.7 and 3
 from __future__ import division, print_function, absolute_import
 import warnings
 
+import pandas
+warnings.filterwarnings('ignore', category=pandas.io.pytables.PerformanceWarning)
 
 # Module imports
 import pyEPR.config
@@ -54,3 +56,8 @@ except:
     warnings.warn("We did not find matplotlib. Plotting will not work.")
 else:
     del matplotlib
+
+
+### Function imports
+from .toolbox import *
+del pandas
