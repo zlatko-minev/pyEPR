@@ -42,4 +42,4 @@ if 0:
     epr_hfss.do_EPR_analysis()
 
 if 1:
-    epr_hfss.data_filename
+    pyEPR_Analysis(epr_hfss.data_filename)

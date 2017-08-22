@@ -6,7 +6,7 @@ from __future__ import print_function    # Python 2.7 and 3 compatibility
 import os
 import time
 import shutil
-import warnings
+#import warnings
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -222,8 +222,8 @@ class pyEPR_HFSS(object):
         # Solutions
         self.hfss_variables   = OrderedDict()                             # container for eBBQ list of varibles
         self.sols             = OrderedDict()                             # container for eBBQ solutions; could make a Panel
-        self.meta_data        = OrderedDict()                             # container for eBBQ metadata
-        self.mesh_stats       = []
+        self.mesh_stats       = OrderedDict()                             # mesh statistics for each variation
+        self.conv_stats       = OrderedDict()                             # convergence statistics for each variation
 
         if self.verbose:
             print('Design \"%s\" info:'%self.design.name)
@@ -272,8 +272,8 @@ class pyEPR_HFSS(object):
         '''
         data_dir = config.root_dir + '/' + self.project.name + '/' + self.design.name
 
-        if self.verbose:
-            print("\nResults will be saved to:\n" +'-  '*20+'\n\t'+ str(data_dir)+'\n'+'-  '*20+'\n')
+        #if self.verbose:
+        #    print("\nResults will be saved to:\n" +'-  '*20+'\n\t'+ str(data_dir)+'\n'+'-  '*20+'\n')
         if len(self.design.name) > 50:
             print_color('WARNING!   DESING FILENAME MAY BE TOO LONG! ')
 
@@ -624,57 +624,72 @@ class pyEPR_HFSS(object):
         self.pinfo.save(hdf)  # This will save only 1 globalinstance
 
         ###  Main loop - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        #TODO: Organize the results data in a better way
+        #      & give better naming convntions
         for ii, variation in enumerate(variations):
-
             # Get variation, see if analyzed previously
             print_color('variation : ' + variation + ' / ' + str(self.nvariations-1), bg = 44)
-            self.lv = self.get_lv(variation)
-            time.sleep(0.3)
-
             if (variation+'/hfss_variables') in hdf.keys() and self.append_analysis:
                 print_NoNewLine('  previously analyzed ...\n')
                 continue
 
-            freqs_bare_dict, freqs_bare_vals     = self.get_freqs_bare(variation)   # get bare freqs from HFSS
+            self.lv = self.get_lv(variation)
+            time.sleep(0.4)
 
+            freqs_bare_dict, freqs_bare_vals     = self.get_freqs_bare(variation)   # get bare freqs from HFSS
             self.hfss_variables[variation]       = pd.Series(self.get_variables(variation=variation))
             hdf['v'+variation+'/hfss_variables'] = self.hfss_variables[variation]
 
             self.LJs                  = [ureg.Quantity(self.hfss_variables[variation]['_'+LJvar_nm]).to_base_units().magnitude  for LJvar_nm in junc_LJ_names]
             hdf['v'+variation+'/Ljs'] = pd.Series(dict(zip(junc_LJ_names, self.LJs)))
 
-            self.pjs      = OrderedDict()
-            var_sol_accum = []
+            SOL = []
             for mode in modes:
-                sol = Series({'freq' : freqs_bare_vals[mode]*10**-9, 'modeQ' : freqs_bare_dict['Q_'+str(mode)] })
-                self.omega  = 2*np.pi*freqs_bare_vals[mode] # this should really be passed as argument  to the functions rather than a property of the calss I would say
+                # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                # Mode setup & load fields
+
                 print(' Mode  \x1b[0;30;46m ' +  str(mode) + ' \x1b[0m / ' + str(self.nmodes-1)+'  calculating:')
+
+                sol = Series({'freq'    : freqs_bare_vals[mode]*10**-9,
+                              'modeQ'   : freqs_bare_dict['Q_'+str(mode)]
+                             })
+
                 self.solutions.set_mode(mode+1, 0)
                 self.fields = self.setup.get_fields()
 
-                print_NoNewLine('   U_H ...');     sol['U_H'] = self.U_H = self.calc_U_H(variation)
-                print_NoNewLine('   U_E');         sol['U_E'] = self.U_E = self.calc_U_E(variation)
+                # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                # EPR calculations
+
+                print_NoNewLine('   U_H ...')
+                self.U_H = self.calc_U_H(variation)
+                print_NoNewLine('   U_E')
+                self.U_E = self.calc_U_E(variation)
                 print(  "   =>   U_L = %.3f%%" %( (self.U_E - self.U_H )/(2*self.U_E)) )
+                sol['U_H'] = self.U_H
+                sol['U_E'] = self.U_E
 
                 if self.pinfo.options.Pj_from_current:
-                    print('   I -> p_{mJ} ...')
-                    sol_PJ = self.calc_Pjs_from_I_for_mode(variation, self.U_H, self.U_E,
-                                                                 self.LJs,
-                                                                 junc_rect,
-                                                                 self.pinfo.junc_lens,
-                                                                 method    = self.pinfo.options.pJ_method,
-                                                                 freq      = freqs_bare_vals[mode]*10**-9,
-                                                                 calc_sign = self.pinfo.junc_lines)
+                    #print('   Calculating p_mj from fields')
+                    sol_PJ = self.calc_Pjs_from_I_for_mode(variation,
+                                                           self.U_H,
+                                                           self.U_E,
+                                                           self.LJs,
+                                                           junc_rect,
+                                                           self.pinfo.junc_lens,
+                                                           method    = self.pinfo.options.pJ_method,
+                                                           freq      = freqs_bare_vals[mode]*10**-9,
+                                                           calc_sign = self.pinfo.junc_lines
+                                                           )
                     sol = sol.append(sol_PJ)
 
-                if len(junc_rect) == 1:             # Single-junction method using global U_H and U_E;
-                    assert(len(junc_LJ_names) == 1), "Please pass junc_LJ_names as array of 1 element for a single junction; e.g., junc_LJ_names = ['junc1']"
-                    #lj  = 1E-3*ureg.Quantity(varz['_'+junc_LJ_names]).to_base_units().magnitude
+                if len(junc_rect) == 1:             # Single-junction method using global U_H and U_E
                     sol['pj1'] = self.get_p_j(mode)
-                    self.pjs.update(sol['pj1'])        # convinience function for single junction case
+                    self.pjs.update(sol['pj1'])     # convinience function for single junction case,TODO: maybe this should be removed
 
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-                # Dissipative
+                # Dissipative EPR calculations
+
+                self.omega  = 2*np.pi*freqs_bare_vals[mode]    #TODO: this should really be passed as argument  to the functions rather than a property of the calss I would say
                 if self.pinfo.dissipative.seams is not None:           # get seam Q
                     for seam in self.pinfo.dissipative.seams:
                         sol = sol.append(self.get_Qseam(seam,mode,variation))
@@ -692,36 +707,49 @@ class pyEPR_HFSS(object):
                 if self.pinfo.dissipative.resistive_surfaces is not None:
                     raise NotImplementedError("Join the team, by helping contribute this piece of code.")
 
-                var_sol_accum +=[sol]
+                SOL += [sol]
 
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
             # Save
-            #TODO: add metadata to the Dataframe & save it
-            #      such as what are the junc_rect names and Lj values etc.  (e.g., http://stackoverflow.com/questions/29129095/save-additional-attributes-in-pandas-dataframe/29130146#29130146)
-            hdf['v'+variation+'/eBBQ_solution']  = self.sols[variation]  \
-                                             = pd.DataFrame(var_sol_accum, index = modes)
-
             if self.pinfo.options.save_mesh_stats:
-                msh = self.setup.get_mesh_stats(self.listvariations[ureg(variation)])
-                self.mesh_stats += [msh]
-                if msh is not None:
-                    hdf['v'+variation+'/mesh_stats']  = msh   # returns dataframe
-                conv = self.setup.get_convergence(self.listvariations[ureg(variation)])  # returns dataframe
-                if conv is not None:
-                    hdf['v'+variation+'/convergence'] = conv
+                self._save_mesh_conv_stats(hdf, variation)
+
+            self.sols[variation] = pd.DataFrame(SOL, index = modes)
+            hdf['v'+variation+'/pyEPR_solution']  = self.sols[variation]
+
 
         hdf.close()
-        print_color('. '*40 +'\n\nCOMPLETE: do_eBBQ. Data saved to\n ' + self.data_filename, bg = 42, style = 4)
+        print('ANALYSIS DONE.' + '. '*40 + '\nData saved to:\n\n' + self.data_filename+'\n\n')
 
-        self.bbq_analysis = BbqAnalysis(self.data_filename, variations=variations)
+        self.bbq_analysis = pyEPR_Analysis(self.data_filename, variations=variations)
         return self.bbq_analysis
 
+    def _save_mesh_conv_stats(self, hdf, variation):
+        msh = self.setup.get_mesh_stats(self.listvariations[ureg(variation)])
+        if msh is not None:
+            hdf['v'+variation+'/mesh_stats']  = msh   # returns dataframe
 
-def eBBQ_ND(freqs, PJ, Om, EJ, LJs, SIGN, cos_trunc = 6, fock_trunc  = 7, use_1st_order = False):
+        conv = self.setup.get_convergence(self.listvariations[ureg(variation)])  # returns dataframe
+        if conv is not None:
+            hdf['v'+variation+'/convergence'] = conv
+
+        self.mesh_stats[variation] = msh
+        self.conv_stats[variation] = conv
+
+
+
+#==============================================================================
+### ANALYSIS FUNCTIONS
+#==============================================================================
+
+
+def pyEPR_ND(freqs, PJ, Om, EJ, LJs, SIGN, cos_trunc = 6, fock_trunc  = 7, use_1st_order = False):
     '''
+        #TODO: MAKE THE input arguments nicer?
         numerical diagonalizaiton for energy BBQ
         fzpfs: reduced zpf  ( in units of \phi_0 )
     '''
+
     assert(all(freqs<1E6)), "Please input the frequencies in GHz"
     assert(all(LJs  <1E-3)),"Please input the inductances in Henries"
     assert((PJ   >0).any()),"ND -- PJs are not all > 0; \n %s" % (PJ)
@@ -735,9 +763,11 @@ def eBBQ_ND(freqs, PJ, Om, EJ, LJs, SIGN, cos_trunc = 6, fock_trunc  = 7, use_1s
     Hs = bbq_hmt(freqs*10**9, LJs.astype(np.float), fluxQ*fzpfs, cos_trunc, fock_trunc, individual = use_1st_order)
     f1s, CHI_ND, fzpfs, f0s  = make_dispersive(Hs, fock_trunc, fzpfs, freqs,use_1st_order = use_1st_order)  # f0s = freqs
     CHI_ND = -1*CHI_ND *1E-6;
-    return f1s, CHI_ND, fzpfs, f0s;
 
-def eBBQ_Pmj_to_H_params(s,
+    return f1s, CHI_ND, fzpfs, f0s
+
+
+def pyEPR_Pmj_to_H_params(s,
                          meta_data,
                          cos_trunc     = None,
                          fock_trunc    = None,
@@ -772,7 +802,7 @@ def eBBQ_Pmj_to_H_params(s,
 
     f0s        = np.array( s['freq'] )
     Qs         = s['modeQ']
-    LJ_nms     = meta_data['junc_LJ_names']                        # ordered
+    LJ_nms     = meta_data['junc_LJ_names']                           # ordered
     LJs        = np.array([meta_data['LJs'][nm] for nm in LJ_nms])    # LJ in Henries, must make sure these are given in the right order
     EJs        = (fluxQ**2/LJs/Planck*10**-9).astype(np.float)        # EJs in GHz
     PJ_Jsu     = s.loc[:,s.keys().str.contains('pJ')]                 # EPR from Jsurf avg
@@ -788,7 +818,7 @@ def eBBQ_Pmj_to_H_params(s,
 
     if (PJs < 0).any().any() == True:
         print("\n\n**************\n\n")
-        print_color("Warning / error!!!  Some PJ was found <= 0. This is probably a numerical error, or a super low-Q mode.  We will take the abs value.  Otherwise, rerun with more precision, inspect, and do due dilligence.)")
+        print_color("Warning,  caution!  Some p_mj was found <= 0. This is probably a numerical error, or a super low-Q mode.  We will take the abs value.  Otherwise, rerun with more precision, inspect, and do due dilligence.)")
         print(PJs)
         print("\n\n**************\n\n")
         PJs = np.abs(PJs)
@@ -802,7 +832,7 @@ def eBBQ_Pmj_to_H_params(s,
     f1s   = f0s - np.diag(CHI_O1/1000.)             # 1st order PT expect freq to be dressed down by alpha
 
     if cos_trunc is not None:
-        f1s, CHI_ND, fzpfs, f0s = eBBQ_ND(f0s, PJ, Om, EJ, LJs, SIGN, cos_trunc = cos_trunc, fock_trunc = fock_trunc, use_1st_order = use_1st_order)
+        f1s, CHI_ND, fzpfs, f0s = pyEPR_ND(f0s, PJ, Om, EJ, LJs, SIGN, cos_trunc = cos_trunc, fock_trunc = fock_trunc, use_1st_order = use_1st_order)
     else:
         CHI_ND, fzpfs = None, None
 
@@ -814,6 +844,13 @@ def eBBQ_Pmj_to_H_params(s,
 # ANALYSIS BBQ
 #==============================================================================
 
+def sort_df_col(df):
+    '''         sort by numerical int order    '''
+    col_names = df.columns
+    if np.all(col_names.map(isint)):
+        return df[col_names.astype(int).sort_values().astype(str)]
+    else:
+        return df
 
 class pyEPR_Analysis(object):
     ''' defines an analysis object which loads and plots data from a h5 file
@@ -822,49 +859,47 @@ class pyEPR_Analysis(object):
     '''
     def __init__(self, data_filename, variations=None, do_print_info = True):
 
-        self.warnindata_filename = data_filename
+        self.data_filename = data_filename
         with HDFStore(data_filename, mode = 'r') as hdf:  # = h5py.File(data_filename, 'r')
-            # i think we should open & close the file here, i dont see why we need to keep it open & keep accessing it. It is small in memeory, just load it into the RAM.
-            # all the data will be stored in 3 objects.
+
+            self.project_info         = Series(hdf['project_info'])
+            self.project_info_dissip  = Series(hdf['/project_info_dissip'])
+            self.project_info_options = Series(hdf['/project_info_options'])
+
             if variations is None:
                 import re
                 variations = []
                 for key in hdf.keys():
                     if 'hfss_variables' in key:
-                        variations += re.findall(r'\b\d+\b', key)
+                        variations += [re.findall(r'\bv\d+\b', key)[0][1:]]     # result should be ['v0']  etc
+                                                                                # I need to strip the v
 
             self.variations     = variations
             self.hfss_variables = OrderedDict()
             self.sols           = OrderedDict()
-            self.meta_data      = OrderedDict()
+            self.Ljs            = OrderedDict()
             self.mesh_stats     = OrderedDict()
             self.convergence    = OrderedDict()
-            for variation in variations:
+
+            for variation in self.variations:
                 try:
-                    self.hfss_variables[variation] = hdf[variation+'/hfss_variables']
-                    self.sols[variation]           = hdf[variation+'/eBBQ_solution']
-                    self.meta_data[variation]      = hdf[variation+'/meta_data']
-                    self.mesh_stats[variation]     = hdf[variation+'/mesh_stats']
-                    self.convergence[variation]    = hdf[variation+'/convergence']  # TODO: better way to handle errors
+                    self.hfss_variables[variation] = hdf['v'+variation+'/hfss_variables']
+                    self.Ljs[variation]            = hdf['v'+variation+'/Ljs']
+                    self.sols[variation]           = hdf['v'+variation+'/pyEPR_solution']
+                    self.mesh_stats[variation]     = hdf['v'+variation+'/mesh_stats']
+                    self.convergence[variation]    = hdf['v'+variation+'/convergence']
                 except Exception  as e:
-                    print_color('Error in variation ' + str(variation))
-                    print_color(e)
+                    print('\t!! ERROR in variation ' + str(variation)+ ':  ' + e)
 
-            self.nmodes         = self.sols[variations[0]].shape[0]
-            self.meta_data      = DataFrame(self.meta_data)
-            self._renorm_pj     = True
-
-        ### Format to nice pandas
-        self.hfss_variables = pd.DataFrame(self.hfss_variables)
-        col_names           = self.hfss_variables.columns
-        if np.all(col_names.map(isint)):
-            self.hfss_variables = self.hfss_variables[col_names.astype(int).sort_values().astype(str)] # sort by numerical order
+        self.hfss_variables       = sort_df_col(DataFrame(self.hfss_variables))
+        self.nmodes               = self.sols[variations[0]].shape[0]
+        self._renorm_pj           = True
 
         if do_print_info:
             self.print_info()
 
     def print_info(self):
-            print_color('. '*40, bg = 42, style = 2)
+            print('. '*40)
             print("\t Differences in variations:" )
             print(self.hfss_variables[DataFrame_col_diff(self.hfss_variables)])
             print('\n')
@@ -959,7 +994,7 @@ class pyEPR_Analysis(object):
         varz      = self.hfss_variables[variation]
 
         CHI_O1, CHI_ND, PJ, Om, EJ, diff, LJs, SIGN, f0s, f1s, fzpfs, Qs = \
-            eBBQ_Pmj_to_H_params(s,
+            pyEPR_Pmj_to_H_params(s,
                                  meta_data,
                                  cos_trunc = cos_trunc,
                                  fock_trunc = fock_trunc,
