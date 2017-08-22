@@ -1,5 +1,5 @@
 '''
-    Written by Phil Rheinhold
+    Written by Phil Reinhold
     Updated by Zlatko Minev & Lysander Christakis
 
     This file is tricky, use caution to modify.

@@ -1,5 +1,5 @@
 '''
-    Contributed by Phil Rheinhold
+    Contributed by Phil Reinhold
     Originally part of pyHFSS, which is located at https://github.com/PhilReinhold/pyHFSS
 
     Updated and modified by Zlatko Minev & Zaki Leghtas.
