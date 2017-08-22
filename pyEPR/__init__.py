@@ -34,12 +34,15 @@
 # Compatibility with python 2.7 and 3
 from __future__ import division, print_function, absolute_import
 import warnings
+from collections import OrderedDict
 
 import pandas
 warnings.filterwarnings('ignore', category=pandas.io.pytables.PerformanceWarning)
 
 # Module imports
 import pyEPR.config
+
+
 
 
 # Check if we're in IPython.
@@ -57,7 +60,18 @@ except:
 else:
     del matplotlib
 
+# Check for qutip
+try:
+    import qutip
+except:
+    warnings.warn("qutip not found: numerical diagonalization will not work.")
+else:
+    del qutip
+
 
 ### Function imports
 from .toolbox import *
+from .hfss import load_HFSS_project, get_active_design, get_active_project, HfssProject
+from .hfss import release as hfss_release
+from .core import Project_Info, pyEPR_HFSS
 del pandas
