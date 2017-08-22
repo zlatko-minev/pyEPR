@@ -620,7 +620,7 @@ class HfssSetup(HfssPropertyObject):
         self.parent._design.ExportConvergence(self.name, variation, temp.name+ '.conv', False)
         import pandas as pd
         try:  # crashed if not data
-            df = pd.read_csv(temp.name + '.conv', delimiter = '|',skipinitialspace = True , skiprows = 16, skip_footer=0, skip_blank_lines=True, engine='python')
+            df = pd.read_csv(temp.name + '.conv', delimiter = '|',skipinitialspace = True , skiprows = 16, skipfooter=0, skip_blank_lines=True, engine='python')
             df = df.drop('Unnamed: 3',1)
             df.index = df['Pass Number']
             df = df.drop('Pass Number',1)
@@ -641,7 +641,7 @@ class HfssSetup(HfssPropertyObject):
         self.parent._design.ExportMeshStats(self.name, variation, temp.name+ '.mesh', True)  # seems broken in 2016 because of extra text added to the top of the file
         import pandas as pd
         try:
-            df = pd.read_csv(temp.name+'.mesh', delimiter = '|',skipinitialspace = True , skiprows = 7, skip_footer=1, skip_blank_lines=True, engine='python')
+            df = pd.read_csv(temp.name+'.mesh', delimiter = '|',skipinitialspace = True , skiprows = 7, skipfooter=1, skip_blank_lines=True, engine='python')
             df = df.drop('Unnamed: 9',1)
         except Exception as e:
             print("ERROR in MESH reading operation.")

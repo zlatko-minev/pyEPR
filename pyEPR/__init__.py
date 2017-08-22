@@ -73,5 +73,5 @@ else:
 from .toolbox import *
 from .hfss import load_HFSS_project, get_active_design, get_active_project, HfssProject
 from .hfss import release as hfss_release
-from .core import Project_Info, pyEPR_HFSS
+from .core import Project_Info, pyEPR_HFSS, pyEPR_Analysis
 del pandas
