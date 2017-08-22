@@ -9,7 +9,7 @@ Welcome to pyEPR!
 * Timeframe: 2015 - present
 * Terms of use: Use freely and kindly cite the paper (arXiv link to be posted here) or this package. 
 * Contributors:  [Zlatko Minev](https://github.com/zlatkom), [Zaki Leghtas](https://github.com/leghtas/), [Phil Rheinhold](https://github.com/PhilReinhold), Lysander Christakis, [Devin Cody](https://github.com/devincody), ... 
-* pyHFSS and pyNumericalDiagonalization were contributed by [Phil Rheinhold](https://github.com/PhilReinhold). For his excellent, original pyHFSS interface between python and HFSS, see [pyHFSS](https://github.com/PhilReinhold/pyHFSS)
+* pyHFSS and pyNumericalDiagonalization were contributed by [Phil Rheinhold](https://github.com/PhilReinhold). For his excellent, original pyHFSS interface between python and HFSS see [pyHFSS](https://github.com/PhilReinhold/pyHFSS)
 
 # Features
 ---------------------

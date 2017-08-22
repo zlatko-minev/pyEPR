@@ -8,5 +8,4 @@ This is where where we will add example files.
 ```sh
 	participation_ratio.clc
 ```
-
- This file has the key basic expression that can be used in the fields calculator.
+This file has the key basic expression that can be used in the fields calculator.
