@@ -21,7 +21,7 @@ logger.error("An error occurred")
 
 from pyEPR import *
 
-if 0:
+if 1:
     # Specify the HFSS project to be analyzed
     project_info = Project_Info(r"C:\\Users\\rslqulab\Desktop\\Lysander\participation_ratio_project\\Shyam's autonomous stabilization simulations\\")
     project_info.project_name  = '2017_08_Zlatko_Shyam_AutStab'  # Name of the project file (string). "None" will get the current active one.
@@ -29,10 +29,8 @@ if 0:
     project_info.setup_name    = None    # Name of the setup(string). "None" will get the current active one.
 
     ## Describe the junctions in the HFSS desgin
-    project_info.junc_rects    = ['qubitAlice','qubitBob']    # Name of junction rectangles in HFSS
-    project_info.junc_lines    = ['alice_line','bob_line']    # Name of lines in HFSS used to define the current orientation for each junction
-    project_info.junc_LJ_names = ['LJAlice','LJBob']          # Name of junction inductance variables in HFSS. DO NOT USE Global names that start with $.
-    project_info.junc_lens     = [0.0001]*2                   # Junciton rect. length, measured in meters.
+    project_info.junctions['jAlice'] = {'rect':'qubitAlice',  'line': 'alice_line', 'Lj_variable':'LJAlice', 'length':0.0001}
+    project_info.junctions['jBob']   = {'rect':'qubitBob',    'line': 'bob_line',   'Lj_variable':'LJBob',   'length':0.0001}
 
     # Dissipative elments EPR
     project_info.dissipative.dielectric_surfaces = None         # supply names here, there are more options in  project_info.dissipative.
@@ -42,4 +40,5 @@ if 0:
     epr_hfss.do_EPR_analysis()
 
 if 1:
-    pyEPR_Analysis(epr_hfss.data_filename)
+    epr = pyEPR_Analysis(epr_hfss.data_filename)   # Analysis results
+    epr.analyze_variation('0', cos_trunc = 8, fock_trunc = 4)

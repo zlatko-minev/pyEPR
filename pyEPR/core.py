@@ -75,7 +75,7 @@ class Project_Info(object):
         '''
         def __init__(self):
             self.Pj_from_current  = True
-            self.pJ_method        = 'J_surf_mag'
+            self.p_mj_method      = 'J_surf_mag'
             self.save_mesh_stats  = True
 
     def __init__(self, project_path):
@@ -84,6 +84,14 @@ class Project_Info(object):
         -----------------------
         project_path  : str
             Directory path to the hfss project file. Should be the directory, not the file.
+
+        junctions     : OrderedDict
+            The key of this dict give the junction nickname in pyEPR.
+            Each junction is given the following 4 parameters:
+            * rect - Name of junction rectangles in HFSS
+            * line - Name of lines in HFSS used to define the current orientation for each junction. Used to define sign of ZPF.
+            * Lj_variable -Name of junction inductance variables in HFSS. DO NOT USE Global names that start with $.
+            * length - of Junciton rect. length, measured in meters.
         '''
         self.project_path  = project_path
         self.project_name  = None
@@ -91,10 +99,7 @@ class Project_Info(object):
         self.setup_name    = None
 
         ## HFSS desgin: describe junction parameters
-        self.junc_rects    = None   # Name of junction rectangles in HFSS
-        self.junc_lines    = None   # Name of lines in HFSS used to define the current orientation for each junction
-        self.junc_LJ_names = None   # Name of junction inductance variables in HFSS. DO NOT USE Global names that start with $.
-        self.junc_lens     = None   # Junciton rect. length, measured in meters.
+        self.junctions     = OrderedDict()
 
         ## Dissipative HFSS volumes and surfaces
         self.dissipative   = self._Dissipative()
@@ -108,14 +113,15 @@ class Project_Info(object):
         self.setup         = None
 
     _Forbidden = ['app', 'design', 'desktop', 'project',
-                  'dissipative', 'setup', '_Forbidden']
+                  'dissipative', 'setup', '_Forbidden', 'junctions']
     def save(self, hdf):
         '''
             hdf : pd.HDFStore
         '''
-        hdf['project_info']         = pd.Series(get_instance_vars(self, self._Forbidden))
-        hdf['project_info_dissip']  = pd.Series(get_instance_vars(self.dissipative))
-        hdf['project_info_options'] = pd.Series(get_instance_vars(self.options))
+        hdf['project_info']           = pd.Series(get_instance_vars(self, self._Forbidden))
+        hdf['project_info_dissip']    = pd.Series(get_instance_vars(self.dissipative))
+        hdf['project_info_options']   = pd.Series(get_instance_vars(self.options))
+        hdf['project_info_junctions'] = pd.DataFrame(self.junctions)
 
 
     def connect_to_project(self):
@@ -189,6 +195,10 @@ class pyEPR_HFSS(object):
     def app(self):
         return self.pinfo.app
 
+    @property
+    def junctions(self):
+        return self.pinfo.junctions
+
     def __init__(self, project_info, verbose=True, append_analysis=False):
         '''
         Parameters:
@@ -221,9 +231,6 @@ class pyEPR_HFSS(object):
 
         # Solutions
         self.hfss_variables   = OrderedDict()                             # container for eBBQ list of varibles
-        self.sols             = OrderedDict()                             # container for eBBQ solutions; could make a Panel
-        self.mesh_stats       = OrderedDict()                             # mesh statistics for each variation
-        self.conv_stats       = OrderedDict()                             # convergence statistics for each variation
 
         if self.verbose:
             print('Design \"%s\" info:'%self.design.name)
@@ -311,11 +318,12 @@ class pyEPR_HFSS(object):
             This is only for a single junction!
         '''
         pj = OrderedDict()
-        pj_val = (self.U_E-self.U_H)/(2*self.U_E)
+        pj_val = (self.U_E-self.U_H)/self.U_E
         pj['pj_'+str(mode)] = np.abs(pj_val)
         print('    p_j_' + str(mode) + ' = ' + str(pj_val))
         return pj
 
+    #TODO: replace this method with the one below, here because osme funcs use it still
     def get_freqs_bare(self, variation):
         #str(self.get_lv(variation))
         freqs_bare_vals = []
@@ -331,6 +339,17 @@ class pyEPR_HFSS(object):
         self.freqs_bare = freqs_bare_dict
         self.freqs_bare_vals = freqs_bare_vals
         return freqs_bare_dict, freqs_bare_vals
+
+    def get_freqs_bare_pd(self, variation):
+        '''
+            Retun pd.Sereis of modal freq and qs for given variation
+        '''
+        freqs, kappa_over_2pis = self.solutions.eigenmodes(self.get_lv_EM(variation))
+        if kappa_over_2pis is None:
+            kappa_over_2pis = np.zeros(len(freqs))
+        freqs = pd.Series(freqs, index = range(len(freqs))) # GHz
+        Qs    = freqs / pd.Series(kappa_over_2pis, index = range(len(freqs)))
+        return freqs, Qs
 
 
     def get_lv(self, variation):
@@ -552,34 +571,38 @@ class pyEPR_HFSS(object):
         #self.design.Clear_Field_Clac_Stack()
         return calc.evaluate(lv=lv)
 
-    def calc_Pjs_from_I_for_mode(self,variation, U_H,U_E, LJs, junc_rects,junc_lens, method = 'J_surf_mag' ,
-                                 freq = None, calc_sign = None):
+    def calculate_p_mj(self, variation, U_H, U_E, Ljs):
         ''' Expected that you have specified the mode before calling this
+
             Expected to precalc U_H and U_E for mode, will retunr pandas series object
                 junc_rect = ['junc_rect1', 'junc_rect2'] name of junc rectangles to integrate H over
                 junc_len  = [0.0001]   specify in SI units; i.e., meters
                 LJs       = [8e-09, 8e-09] SI units
-                calc_sign = ['junc_line1', 'junc_line2']    used to define sign of ZPF
+                calc_sign = ['junc_line1', 'junc_line2']
+
             Potential errors:  If you dont have a line or rect by the right name you will prob get an erorr o the type:
                 com_error: (-2147352567, 'Exception occurred.', (0, None, None, None, 0, -2147024365), None)
         '''
-        dat = OrderedDict()
-        for i, junc_rect in enumerate(junc_rects):
-            print_NoNewLine('     ' + junc_rect)
-            if method is 'J_surf_mag':
-                I_peak = self.calc_avg_current_J_surf_mag(variation, junc_rect, junc_lens[i])
+
+        Pj = pd.Series({})
+        Sj = pd.Series({})
+
+        for junc_nm, junc in self.pinfo.junctions.items():
+
+            if self.pinfo.options.p_mj_method is 'J_surf_mag':
+                #print(' Integrating rectangle: ' + junc['rect'])
+                I_peak = self.calc_avg_current_J_surf_mag(variation, junc['rect'], junc['length'])
             else:
-                print('Not yet implemented.')
-            if LJs is None:
-                print_color(' -----> ERROR: Why is LJs passed as None!?')
-            #dat['I_'  +junc_rect] = I_peak # stores the phase information as well
-            dat['pJ_' +junc_rect] = LJs[i] * I_peak**2 / (2*U_E)
-            if calc_sign is not None:
-                Idum = self.calc_line_current(variation, calc_sign[i])
-                dat['sign_'+junc_rect] = +1 if Idum > 0 else -1
-                print(  '  %+.5f' %(dat['pJ_' +junc_rect] * dat['sign_'+junc_rect] ))
-            else: print( '  %0.5f' %(dat['pJ_' +junc_rect]))
-        return pd.Series(dat)
+                raise NotImplementedError('Other calculation methods are possible but not implemented here. ')
+
+            Pj['p_' + junc_nm] = Ljs[junc_nm] * I_peak**2 / U_E  # participation normed to 1
+            Sj['s_' + junc_nm] = +1 if (self.calc_line_current(variation, junc['line'])) > 0 else -1 # sign bit
+
+            if self.verbose:
+                _str =  '(+)' if Sj['s_' + junc_nm] > 0 else '(-)'
+                print('\t{:<15} {:>9.2E} '.format(junc_nm, Pj['p_' + junc_nm]) + _str)
+
+        return Pj, Sj
 
     def do_EPR_analysis(self,
                         variations       = None,
@@ -607,14 +630,6 @@ class pyEPR_HFSS(object):
         if modes           is None:
             modes = range(self.nmodes)
 
-
-        self._variations    = variations # for debug
-        junc_rect           = self.pinfo.junc_rects
-        junc_LJ_names       = self.pinfo.junc_LJ_names
-        assert type(junc_LJ_names) == list, "Please pass junc_LJ_names as a list; e.g., pinfo.junc_LJ_names = ['junc1'] "
-        assert type(junc_rect)     == list, "Please pass junc_rect as a list; e.g., pinfo.junc_rects = ['junc1']"
-
-
         # Setup save and save pinfo
         #TODO:  The pd.HDFStore  is used to store the pandas sereis and dataframe, but is otherwise cumbersome.
         #       We should move to a better saving paradigm
@@ -624,72 +639,50 @@ class pyEPR_HFSS(object):
         self.pinfo.save(hdf)  # This will save only 1 globalinstance
 
         ###  Main loop - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        #TODO: Organize the results data in a better way
-        #      & give better naming convntions
         for ii, variation in enumerate(variations):
             # Get variation, see if analyzed previously
-            print_color('variation : ' + variation + ' / ' + str(self.nvariations-1), bg = 44)
+            print_color('\nVariation:  ' + variation + ' / ' + str(self.nvariations-1), bg = 44)
             if (variation+'/hfss_variables') in hdf.keys() and self.append_analysis:
                 print_NoNewLine('  previously analyzed ...\n')
                 continue
 
             self.lv = self.get_lv(variation)
             time.sleep(0.4)
-
-            freqs_bare_dict, freqs_bare_vals     = self.get_freqs_bare(variation)   # get bare freqs from HFSS
-            self.hfss_variables[variation]       = pd.Series(self.get_variables(variation=variation))
+            freqs_bare_GHz, Qs_bare        = self.get_freqs_bare_pd(variation)
+            self.hfss_variables[variation] = pd.Series(self.get_variables(variation=variation))
+            Ljs = pd.Series({})
+            for junc_name, val in self.junctions.items(): # junction nickname
+                Ljs[junc_name] = ureg.Quantity(self.hfss_variables[variation]['_'+val['Lj_variable']]).to_base_units().magnitude
+            hdf['v'+variation+'/freqs_bare_GHz'] = freqs_bare_GHz
+            hdf['v'+variation+'/Qs_bare']        = Qs_bare
             hdf['v'+variation+'/hfss_variables'] = self.hfss_variables[variation]
+            hdf['v'+variation+'/Ljs']            = Ljs
 
-            self.LJs                  = [ureg.Quantity(self.hfss_variables[variation]['_'+LJvar_nm]).to_base_units().magnitude  for LJvar_nm in junc_LJ_names]
-            hdf['v'+variation+'/Ljs'] = pd.Series(dict(zip(junc_LJ_names, self.LJs)))
-
-            SOL = []
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            Pm  = OrderedDict() # P matrix
+            Sm  = OrderedDict() # S matrix
+            SOL = OrderedDict() # otehr results
             for mode in modes:
-                # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                 # Mode setup & load fields
-
-                print(' Mode  \x1b[0;30;46m ' +  str(mode) + ' \x1b[0m / ' + str(self.nmodes-1)+'  calculating:')
-
-                sol = Series({'freq'    : freqs_bare_vals[mode]*10**-9,
-                              'modeQ'   : freqs_bare_dict['Q_'+str(mode)]
-                             })
-
+                print('  Mode ' +  str(mode) + ' / ' + str(self.nmodes-1))
                 self.solutions.set_mode(mode+1, 0)
                 self.fields = self.setup.get_fields()
 
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                 # EPR calculations
-
-                print_NoNewLine('   U_H ...')
+                print_NoNewLine('\tU_H')
                 self.U_H = self.calc_U_H(variation)
-                print_NoNewLine('   U_E')
+                print_NoNewLine(', U_E')
                 self.U_E = self.calc_U_E(variation)
-                print(  "   =>   U_L = %.3f%%" %( (self.U_E - self.U_H )/(2*self.U_E)) )
-                sol['U_H'] = self.U_H
-                sol['U_E'] = self.U_E
-
-                if self.pinfo.options.Pj_from_current:
-                    #print('   Calculating p_mj from fields')
-                    sol_PJ = self.calc_Pjs_from_I_for_mode(variation,
-                                                           self.U_H,
-                                                           self.U_E,
-                                                           self.LJs,
-                                                           junc_rect,
-                                                           self.pinfo.junc_lens,
-                                                           method    = self.pinfo.options.pJ_method,
-                                                           freq      = freqs_bare_vals[mode]*10**-9,
-                                                           calc_sign = self.pinfo.junc_lines
-                                                           )
-                    sol = sol.append(sol_PJ)
-
-                if len(junc_rect) == 1:             # Single-junction method using global U_H and U_E
-                    sol['pj1'] = self.get_p_j(mode)
-                    self.pjs.update(sol['pj1'])     # convinience function for single junction case,TODO: maybe this should be removed
+                print(  "; U_L -> {:>9.2E}" .format( (self.U_E - self.U_H )/self.U_E) )
+                sol = Series({'U_H':self.U_H, 'U_E':self.U_E})
+                # calcualte for each of the junctions
+                Pm[mode], Sm[mode] = self.calculate_p_mj(variation, self.U_H, self.U_E, Ljs)
 
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                 # Dissipative EPR calculations
 
-                self.omega  = 2*np.pi*freqs_bare_vals[mode]    #TODO: this should really be passed as argument  to the functions rather than a property of the calss I would say
+                self.omega  = 2*np.pi*freqs_bare_GHz[mode]    #TODO: this should really be passed as argument  to the functions rather than a property of the calss I would say
                 if self.pinfo.dissipative.seams is not None:           # get seam Q
                     for seam in self.pinfo.dissipative.seams:
                         sol = sol.append(self.get_Qseam(seam,mode,variation))
@@ -707,19 +700,20 @@ class pyEPR_HFSS(object):
                 if self.pinfo.dissipative.resistive_surfaces is not None:
                     raise NotImplementedError("Join the team, by helping contribute this piece of code.")
 
-                SOL += [sol]
+                SOL[mode] = sol
 
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
             # Save
+            hdf['v'+variation+'/P_matrix']   = pd.DataFrame(Pm).transpose()
+            hdf['v'+variation+'/S_matrix']   = pd.DataFrame(Pm).transpose()
+            hdf['v'+variation+'/pyEPR_sols'] = pd.DataFrame(SOL).transpose()
+
             if self.pinfo.options.save_mesh_stats:
                 self._save_mesh_conv_stats(hdf, variation)
 
-            self.sols[variation] = pd.DataFrame(SOL, index = modes)
-            hdf['v'+variation+'/pyEPR_solution']  = self.sols[variation]
-
 
         hdf.close()
-        print('ANALYSIS DONE.' + '. '*40 + '\nData saved to:\n\n' + self.data_filename+'\n\n')
+        print('\nANALYSIS DONE. Data saved to:\n\n' + self.data_filename+'\n\n')
 
         self.bbq_analysis = pyEPR_Analysis(self.data_filename, variations=variations)
         return self.bbq_analysis
@@ -733,9 +727,6 @@ class pyEPR_HFSS(object):
         if conv is not None:
             hdf['v'+variation+'/convergence'] = conv
 
-        self.mesh_stats[variation] = msh
-        self.conv_stats[variation] = conv
-
 
 
 #==============================================================================
@@ -743,7 +734,10 @@ class pyEPR_HFSS(object):
 #==============================================================================
 
 
-def pyEPR_ND(freqs, PJ, Om, EJ, LJs, SIGN, cos_trunc = 6, fock_trunc  = 7, use_1st_order = False):
+def pyEPR_ND(freqs, PJ, Om, EJ, LJs, SIGN,
+             cos_trunc     = 6,
+             fock_trunc    = 7,
+             use_1st_order = False):
     '''
         #TODO: MAKE THE input arguments nicer?
         numerical diagonalizaiton for energy BBQ
@@ -757,18 +751,18 @@ def pyEPR_ND(freqs, PJ, Om, EJ, LJs, SIGN, cos_trunc = 6, fock_trunc  = 7, use_1
     fzpfs = np.zeros(PJ.T.shape)
     for junc in range(fzpfs.shape[0]):
         for mode in range(fzpfs.shape[1]):
-            fzpfs[junc, mode] = np.sqrt(PJ[mode,junc] * Om[mode,mode] /  EJ[junc,junc] ) #*0.001
+            fzpfs[junc, mode] = np.sqrt(PJ[mode,junc] * Om[mode,mode] /  (2*EJ[junc,junc]) ) #*0.001
     fzpfs = fzpfs * SIGN.T
 
     Hs = bbq_hmt(freqs*10**9, LJs.astype(np.float), fluxQ*fzpfs, cos_trunc, fock_trunc, individual = use_1st_order)
     f1s, CHI_ND, fzpfs, f0s  = make_dispersive(Hs, fock_trunc, fzpfs, freqs,use_1st_order = use_1st_order)  # f0s = freqs
-    CHI_ND = -1*CHI_ND *1E-6;
+    CHI_ND = -1*CHI_ND *1E-6
 
     return f1s, CHI_ND, fzpfs, f0s
 
 
 def pyEPR_Pmj_to_H_params(s,
-                         meta_data,
+                         Ljs,
                          cos_trunc     = None,
                          fock_trunc    = None,
                          _renorm_pj    = True,
@@ -802,12 +796,13 @@ def pyEPR_Pmj_to_H_params(s,
 
     f0s        = np.array( s['freq'] )
     Qs         = s['modeQ']
-    LJ_nms     = meta_data['junc_LJ_names']                           # ordered
-    LJs        = np.array([meta_data['LJs'][nm] for nm in LJ_nms])    # LJ in Henries, must make sure these are given in the right order
-    EJs        = (fluxQ**2/LJs/Planck*10**-9).astype(np.float)        # EJs in GHz
+    #LJ_nms     = meta_data['junc_LJ_names']                           # ordered
+    #LJs        = np.array([meta_data['LJs'][nm] for nm in LJ_nms])    # LJ in Henries, must make sure these are given in the right order
+    Ljs        = np.array(Ljs)
+    EJs        = (fluxQ**2/Ljs/Planck*10**-9).astype(np.float)        # EJs in GHz
     PJ_Jsu     = s.loc[:,s.keys().str.contains('pJ')]                 # EPR from Jsurf avg
     PJ_Jsu_sum = PJ_Jsu.apply(sum, axis = 1)                          # sum of participations as calculated by avg surf current
-    PJ_glb_sum = (s['U_E'] - s['U_H'])/(2*s['U_E'])                   # sum of participations as calculated by global UH and UE
+    PJ_glb_sum = (s['U_E'] - s['U_H'])/s['U_E']                       # sum of participations as calculated by global UH and UE
     diff       = (PJ_Jsu_sum-PJ_glb_sum)/PJ_glb_sum*100               # debug
 
     if _renorm_pj:  # Renormalize
@@ -827,16 +822,16 @@ def pyEPR_Pmj_to_H_params(s,
     PJ    = np.mat(PJs.values)
     Om    = np.mat(np.diagflat(f0s))
     EJ    = np.mat(np.diagflat(EJs))
-    CHI_O1= Om * PJ * EJ.I * PJ.T * Om * 1000.      # MHz
+    CHI_O1= 0.25* Om * PJ * EJ.I * PJ.T * Om * 1000.      # MHz
     CHI_O1= divide_diagonal_by_2(CHI_O1)            # Make the diagonals alpha
     f1s   = f0s - np.diag(CHI_O1/1000.)             # 1st order PT expect freq to be dressed down by alpha
 
     if cos_trunc is not None:
-        f1s, CHI_ND, fzpfs, f0s = pyEPR_ND(f0s, PJ, Om, EJ, LJs, SIGN, cos_trunc = cos_trunc, fock_trunc = fock_trunc, use_1st_order = use_1st_order)
+        f1s, CHI_ND, fzpfs, f0s = pyEPR_ND(f0s, PJ, Om, EJ, Ljs, SIGN, cos_trunc = cos_trunc, fock_trunc = fock_trunc, use_1st_order = use_1st_order)
     else:
         CHI_ND, fzpfs = None, None
 
-    return CHI_O1, CHI_ND, PJ, Om, EJ, diff, LJs, SIGN, f0s, f1s, fzpfs, Qs
+    return CHI_O1, CHI_ND, PJ, Om, EJ, diff, Ljs, SIGN, f0s, f1s, fzpfs, Qs
     # the return could be made clener, or dictionary
 
 
@@ -862,6 +857,7 @@ class pyEPR_Analysis(object):
         self.data_filename = data_filename
         with HDFStore(data_filename, mode = 'r') as hdf:  # = h5py.File(data_filename, 'r')
 
+            self.junctions            = hdf['/project_info_junctions']
             self.project_info         = Series(hdf['project_info'])
             self.project_info_dissip  = Series(hdf['/project_info_dissip'])
             self.project_info_options = Series(hdf['/project_info_options'])
@@ -876,21 +872,32 @@ class pyEPR_Analysis(object):
 
             self.variations     = variations
             self.hfss_variables = OrderedDict()
-            self.sols           = OrderedDict()
+            self.freqs_bare     = OrderedDict()
+            self.Qs_bare        = OrderedDict()
             self.Ljs            = OrderedDict()
+            self.PM             = OrderedDict() # participation matrices
+            self.SM             = OrderedDict() # sign matrices
+            self.sols           = OrderedDict()
             self.mesh_stats     = OrderedDict()
             self.convergence    = OrderedDict()
 
             for variation in self.variations:
-                try:
+                #try:
                     self.hfss_variables[variation] = hdf['v'+variation+'/hfss_variables']
                     self.Ljs[variation]            = hdf['v'+variation+'/Ljs']
-                    self.sols[variation]           = hdf['v'+variation+'/pyEPR_solution']
-                    self.mesh_stats[variation]     = hdf['v'+variation+'/mesh_stats']
-                    self.convergence[variation]    = hdf['v'+variation+'/convergence']
-                except Exception  as e:
-                    print('\t!! ERROR in variation ' + str(variation)+ ':  ' + e)
+                    self.PM[variation]             = hdf['v'+variation+'/P_matrix']
+                    self.SM[variation]             = hdf['v'+variation+'/S_matrix']
+                    self.freqs_bare[variation]     = hdf['v'+variation+'/freqs_bare_GHz']
+                    self.Qs_bare[variation]        = hdf['v'+variation+'/Qs_bare']
+                    self.sols[variation]           = hdf['v'+variation+'/pyEPR_sols']
+                    self.mesh_stats[variation]     = hdf['v'+variation+'/mesh_stats']   # could be made to panel
+                    self.convergence[variation]    = hdf['v'+variation+'/convergence']  # could be made to panel
+                #except Exception  as e:
+                #    print('\t!! ERROR in variation ' + str(variation)+ ':  ' + e)
 
+        self.freqs_bare           = sort_df_col(DataFrame(self.freqs_bare))
+        self.Qs_bare              = sort_df_col(DataFrame(self.Qs_bare))
+        self.Ljs                  = sort_df_col(DataFrame(self.Ljs))
         self.hfss_variables       = sort_df_col(DataFrame(self.hfss_variables))
         self.nmodes               = self.sols[variations[0]].shape[0]
         self._renorm_pj           = True
@@ -903,6 +910,12 @@ class pyEPR_Analysis(object):
             print("\t Differences in variations:" )
             print(self.hfss_variables[DataFrame_col_diff(self.hfss_variables)])
             print('\n')
+
+    def get_index_juncs(self):
+        return self.Ljs.index
+
+    def get_P_matrix(self, variation):
+        return self.sols[variation][['pJ_'+v for v in self.get_index_juncs()]]
 
     def get_variable_vs(self, swpvar):
         ret = OrderedDict()
@@ -986,37 +999,37 @@ class pyEPR_Analysis(object):
         EJ [GHz] : Diagonal matrix of junction energies, in GHz.
         '''
 
-        print_color('. '*40, bg = 42, style = 2)
-        print('\t\t Analysing single variation: %s'% variation)
+        #print_color('. '*40, bg = 42, style = 2)
+        print('\n\t Analyzing variation: %s\n   '% variation,'-'*32)
 
-        s         = self.sols[variation];
-        meta_data = self.meta_data[variation]
+        s         = self.sols[variation]
         varz      = self.hfss_variables[variation]
 
         CHI_O1, CHI_ND, PJ, Om, EJ, diff, LJs, SIGN, f0s, f1s, fzpfs, Qs = \
             pyEPR_Pmj_to_H_params(s,
-                                 meta_data,
-                                 cos_trunc = cos_trunc,
-                                 fock_trunc = fock_trunc,
-                                 _renorm_pj = self._renorm_pj)
+                                  self.Ljs[variation],
+                                  cos_trunc  = cos_trunc,
+                                  fock_trunc = fock_trunc,
+                                  _renorm_pj = self._renorm_pj
+                                  )
 
         if print_results: ##TODO: generalize to more modes
 
-            print( '\nPJ=\t(renorm.)'  )
-            print_matrix(PJ*SIGN, frmt = "{:7.4f}")
-            print( "\n","* "*5, "CHI matrix (MHz)", "* "*5)
+            print( '\nPJ ='  )
+            print_matrix(PJ*SIGN, frmt = "{:8.4f}")
+            #print( "\n","* "*5, "CHI matrix (MHz)", "* "*5)
 
             if cos_trunc is not None:
-                print( '\nCHI_ND=\t PJ O(%d) [alpha diag]'%(cos_trunc))
-                print_matrix(CHI_ND, append_row ="MHz", frmt = frmt)
+                print( '\nCHI_ND =\t PJ O(%d) [alpha diag]'%(cos_trunc))
+                print_matrix(CHI_ND, append_row =" MHz", frmt = frmt)
             else:
-                print( '\nCHI_O1=\t [alpha diag]')
-                print_matrix(CHI_O1, append_row ="MHz", frmt = frmt)
+                print( '\nCHI_O1 =\t [alpha diag]')
+                print_matrix(CHI_O1, append_row =" MHz", frmt = frmt)
 
             if len(f0s) == 3:
-                print( '\nf0={:6.2f} {:7.2f} {:7.2f} GHz'.format(*f0s))
-                print( '\nf1={:6.2f} {:7.2f} {:7.2f} GHz'.format(*(f1s*1E-9))   )
-                print( 'Q={:8.1e} {:7.1e} {:6.0f}'.format(*(Qs)))
+                print( '\nf0 ={:6.2f} {:7.2f} {:7.2f} GHz'.format(*f0s))
+                print( '\nf1 ={:6.2f} {:7.2f} {:7.2f} GHz'.format(*(f1s*1E-9))   ) # dressed
+                print( 'Q  ={:8.1e} {:7.1e} {:6.0f}'.format(*(Qs)))
             else:
                 print( "\n","* "*5, "Eigen (Linear) vs Dressed Frequencies MHz", "* "*5)
                 print( pd.DataFrame(np.array([f0s*1E3,f1s*1E3]).transpose(), columns = ['Linear', 'Dressed']))
