@@ -946,14 +946,14 @@ class pyEPR_Analysis(object):
             Pm_norm    = Pm_glb_sum/Pm.sum(axis = 1)
             # should we still dothis when Pm_glb_sum is very small
             print('\n*** NORM: '); print(Pm_norm);   # for debug
-            Pm.mul(Pm_norm, axis=0)
+            Pm = Pm.mul(Pm_norm, axis=0)
         else:
             print('NO renorm!')
 
         if np.any(Pm < 0.0):
             print_color("  ! Warning:  Some p_mj was found <= 0. This is probably a numerical error, or a super low-Q mode.  We will take the abs value.  Otherwise, rerun with more precision, inspect, and do due dilligence.)")
             print(Pm,'\n')
-            Pm =np.abs(Pm)
+            Pm = np.abs(Pm)
 
         # Analytic 4-th order
         f0s   = self.freqs_bare[variation]
@@ -982,6 +982,8 @@ class pyEPR_Analysis(object):
         result['chi_O1']  = pd.DataFrame(CHI_O1)
         result['chi_ND']  = pd.DataFrame(CHI_ND)
         result['ZPF']     = pd.DataFrame(fzpfs)
+        result['Pm_normed'] = Pm
+        result['_Pm_norm']  = Pm_norm
 
         self.results[variation]  = result
 
@@ -996,13 +998,16 @@ class pyEPR_Analysis(object):
             print( '\n*** Different parameters'  )
             print(self.hfss_variables[self.hfss_vars_diff_idx][variation], '\n')
 
-        print( '*** P (participation matrix)'  )
+        print( '*** P (participation matrix, not normlz.)'  )
         print(self.PM[variation])
 
         print( '\n*** S (sign-bit matrix)'  )
         print(self.SM[variation])
 
     def print_result(self, result):
+        print( '*** P (participation matrix, normalized.)'  )
+        print(result['Pm_normed'])
+        
         print( '\n*** Chi matrix O1 PT (MHz)\n    Diag is anharmonicity, off diag is full cross-Kerr.'  )
         print(result['chi_O1'])
 
