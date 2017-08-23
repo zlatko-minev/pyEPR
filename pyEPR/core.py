@@ -21,7 +21,7 @@ from collections import OrderedDict
 from . import hfss
 from . import config
 from .hfss        import CalcObject
-from .toolbox     import print_NoNewLine, print_color, deprecated, pi, fact, epsilon_0, hbar, fluxQ, nck, \
+from .toolbox     import print_NoNewLine, print_color, deprecated, pi, fact, epsilon_0, hbar, Planck, fluxQ, nck, \
                          divide_diagonal_by_2, print_matrix, DataFrame_col_diff, isint, get_instance_vars
 from .numeric_diag import bbq_hmt, make_dispersive
 
@@ -641,7 +641,7 @@ class pyEPR_HFSS(object):
         ###  Main loop - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         for ii, variation in enumerate(variations):
             # Get variation, see if analyzed previously
-            print_color('\nVariation:  ' + variation + ' / ' + str(self.nvariations-1), bg = 44)
+            print('\nVariation:  ' + variation + ' / ' + str(self.nvariations-1), bg = 44)
             if (variation+'/hfss_variables') in hdf.keys() and self.append_analysis:
                 print_NoNewLine('  previously analyzed ...\n')
                 continue
@@ -674,7 +674,7 @@ class pyEPR_HFSS(object):
                 self.U_H = self.calc_U_H(variation)
                 print_NoNewLine(', U_E')
                 self.U_E = self.calc_U_E(variation)
-                print(  "; U_L -> {:>9.2E}" .format( (self.U_E - self.U_H )/self.U_E) )
+                print(  "; U_L=  {:>9.2E}" .format( (self.U_E - self.U_H )/self.U_E) )
                 sol = Series({'U_H':self.U_H, 'U_E':self.U_E})
                 # calcualte for each of the junctions
                 Pm[mode], Sm[mode] = self.calculate_p_mj(variation, self.U_H, self.U_E, Ljs)
@@ -705,7 +705,7 @@ class pyEPR_HFSS(object):
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
             # Save
             hdf['v'+variation+'/P_matrix']   = pd.DataFrame(Pm).transpose()
-            hdf['v'+variation+'/S_matrix']   = pd.DataFrame(Pm).transpose()
+            hdf['v'+variation+'/S_matrix']   = pd.DataFrame(Sm).transpose()
             hdf['v'+variation+'/pyEPR_sols'] = pd.DataFrame(SOL).transpose()
 
             if self.pinfo.options.save_mesh_stats:
@@ -715,8 +715,8 @@ class pyEPR_HFSS(object):
         hdf.close()
         print('\nANALYSIS DONE. Data saved to:\n\n' + self.data_filename+'\n\n')
 
-        self.bbq_analysis = pyEPR_Analysis(self.data_filename, variations=variations)
-        return self.bbq_analysis
+        #pyEPR_Analysis(self.data_filename, variations=variations)
+        return self.data_filename, variations
 
     def _save_mesh_conv_stats(self, hdf, variation):
         msh = self.setup.get_mesh_stats(self.listvariations[ureg(variation)])
@@ -740,7 +740,7 @@ def pyEPR_ND(freqs, PJ, Om, EJ, LJs, SIGN,
              use_1st_order = False):
     '''
         #TODO: MAKE THE input arguments nicer?
-        numerical diagonalizaiton for energy BBQ
+        numerical diagonalizaiton for EPR
         fzpfs: reduced zpf  ( in units of \phi_0 )
     '''
 
@@ -755,85 +755,10 @@ def pyEPR_ND(freqs, PJ, Om, EJ, LJs, SIGN,
     fzpfs = fzpfs * SIGN.T
 
     Hs = bbq_hmt(freqs*10**9, LJs.astype(np.float), fluxQ*fzpfs, cos_trunc, fock_trunc, individual = use_1st_order)
-    f1s, CHI_ND, fzpfs, f0s  = make_dispersive(Hs, fock_trunc, fzpfs, freqs,use_1st_order = use_1st_order)  # f0s = freqs
+    f1s, CHI_ND, fzpfs, f0s  = make_dispersive(Hs, fock_trunc, fzpfs, freqs, use_1st_order = use_1st_order)  # f0s = freqs
     CHI_ND = -1*CHI_ND *1E-6
 
     return f1s, CHI_ND, fzpfs, f0s
-
-
-def pyEPR_Pmj_to_H_params(s,
-                         Ljs,
-                         cos_trunc     = None,
-                         fock_trunc    = None,
-                         _renorm_pj    = True,
-                         use_1st_order = False):
-    '''
-    Parameters:
-    ---------------
-        fock_trunc    : None.   If not None, used for numerical diagonalizaiton of the Hamiltonian
-        fock_trunc    : None.   If not None, used for numerical diagonalizaiton of the Hamiltonian
-        _renorm_pj    : True.   If True, Use the difference in W_E and W_H to converge faster on the multi-junction pmjs
-        use_1st_order : False.  If True use 1st O PT  to identify correct eigenvectors in ND
-
-    Returns:
-    ---------------
-    Returns the CHIs as MHz with anharmonicity alpha as the diagonal  (with - sign)
-
-        f0s [GHz]: Eigenmode frequencies computed by HFSS; i.e., linear freq returned in GHz
-        f1s [GHz]: Dressed mode frequencies (by the non-linearity; e.g., Lamb shift, etc. ). If numerical diagonalizaiton is run, then we return the numerically diagonalizaed frequencies, otherwise, use 1st order pertuirbation theory on the 4th order expansion of the cosine.
-
-        CHI_O1 [MHz] : Analytic expression for the chis based on a cos trunc to 4th order, and using 1st order perturbation theory.
-        CHI_ND [MHz] : Numerically diagonalized chi matrix.
-
-        PJ       : Participation matrix
-        Om [GHz] : Diagnoal matrix of of linear mode (HFSS) frequencies
-        EJ [GHz] : Diagonal matrix of junction energies, in GHz.
-
-        ask Zlatko for more info.
-    '''
-    import  scipy
-    Planck     = scipy.constants.Planck
-
-    f0s        = np.array( s['freq'] )
-    Qs         = s['modeQ']
-    #LJ_nms     = meta_data['junc_LJ_names']                           # ordered
-    #LJs        = np.array([meta_data['LJs'][nm] for nm in LJ_nms])    # LJ in Henries, must make sure these are given in the right order
-    Ljs        = np.array(Ljs)
-    EJs        = (fluxQ**2/Ljs/Planck*10**-9).astype(np.float)        # EJs in GHz
-    PJ_Jsu     = s.loc[:,s.keys().str.contains('pJ')]                 # EPR from Jsurf avg
-    PJ_Jsu_sum = PJ_Jsu.apply(sum, axis = 1)                          # sum of participations as calculated by avg surf current
-    PJ_glb_sum = (s['U_E'] - s['U_H'])/s['U_E']                       # sum of participations as calculated by global UH and UE
-    diff       = (PJ_Jsu_sum-PJ_glb_sum)/PJ_glb_sum*100               # debug
-
-    if _renorm_pj:  # Renormalize
-        PJs = PJ_Jsu.divide(PJ_Jsu_sum, axis=0).mul(PJ_glb_sum,axis=0)
-    else:
-        PJs = PJ_Jsu
-        print('NO renorm')
-
-    if (PJs < 0).any().any() == True:
-        print("\n\n**************\n\n")
-        print_color("Warning,  caution!  Some p_mj was found <= 0. This is probably a numerical error, or a super low-Q mode.  We will take the abs value.  Otherwise, rerun with more precision, inspect, and do due dilligence.)")
-        print(PJs)
-        print("\n\n**************\n\n")
-        PJs = np.abs(PJs)
-
-    SIGN  = s.loc[:,s.keys().str.contains('sign_')]
-    PJ    = np.mat(PJs.values)
-    Om    = np.mat(np.diagflat(f0s))
-    EJ    = np.mat(np.diagflat(EJs))
-    CHI_O1= 0.25* Om * PJ * EJ.I * PJ.T * Om * 1000.      # MHz
-    CHI_O1= divide_diagonal_by_2(CHI_O1)            # Make the diagonals alpha
-    f1s   = f0s - np.diag(CHI_O1/1000.)             # 1st order PT expect freq to be dressed down by alpha
-
-    if cos_trunc is not None:
-        f1s, CHI_ND, fzpfs, f0s = pyEPR_ND(f0s, PJ, Om, EJ, Ljs, SIGN, cos_trunc = cos_trunc, fock_trunc = fock_trunc, use_1st_order = use_1st_order)
-    else:
-        CHI_ND, fzpfs = None, None
-
-    return CHI_O1, CHI_ND, PJ, Om, EJ, diff, Ljs, SIGN, f0s, f1s, fzpfs, Qs
-    # the return could be made clener, or dictionary
-
 
 #==============================================================================
 # ANALYSIS BBQ
@@ -901,6 +826,7 @@ class pyEPR_Analysis(object):
         self.hfss_variables       = sort_df_col(DataFrame(self.hfss_variables))
         self.nmodes               = self.sols[variations[0]].shape[0]
         self._renorm_pj           = True
+        self.hfss_vars_diff_idx   = DataFrame_col_diff(self.hfss_variables)
 
         if do_print_info:
             self.print_info()
@@ -908,14 +834,8 @@ class pyEPR_Analysis(object):
     def print_info(self):
             print('. '*40)
             print("\t Differences in variations:" )
-            print(self.hfss_variables[DataFrame_col_diff(self.hfss_variables)])
+            print(self.hfss_variables[self.hfss_vars_diff_idx])
             print('\n')
-
-    def get_index_juncs(self):
-        return self.Ljs.index
-
-    def get_P_matrix(self, variation):
-        return self.sols[variation][['pJ_'+v for v in self.get_index_juncs()]]
 
     def get_variable_vs(self, swpvar):
         ret = OrderedDict()
@@ -965,58 +885,161 @@ class pyEPR_Analysis(object):
         Qs  = DataFrame(Qs, index = swp)
         return Qs if not sort else Qs.sort_index()
 
-    def get_Qs(self, swp_var, sort = True):
+    def get_Qs_vs_swp(self, swp_var, sort = True):
+        raise NotImplementedError()
         return self.get_solution_column('modeQ', swp_var, sort)
 
-    def get_Fs(self, swp_var, sort = True):
+    def get_Fs_vs_swp(self, swp_var, sort = True):
+        raise NotImplementedError()
         ''' this returns the linear frequencies that HFSS gives'''
         return self.get_solution_column('freq', swp_var, sort)
 
+    def get_Ejs(self, variation):
+        ''' EJs in GHz '''
+        Ljs = self.Ljs[variation]
+        Ejs = fluxQ**2/Ljs/Planck*10**-9
+        return Ejs
 
-    def get_junc_rect_names(self):
-        return self.meta_data.loc['junc_rect',:]
+
+    def pyEPR_Pmj_to_H_params(self,
+                              s,
+                              Ljs,
+                              cos_trunc     = None,
+                              fock_trunc    = None,
+                              _renorm_pj    = True,
+                              use_1st_order = False):
+        '''
+        Parameters:
+        ---------------
+            fock_trunc    : None.   If not None, used for numerical diagonalizaiton of the Hamiltonian
+            fock_trunc    : None.   If not None, used for numerical diagonalizaiton of the Hamiltonian
+            _renorm_pj    : True.   If True, Use the difference in W_E and W_H to converge faster on the multi-junction pmjs
+            use_1st_order : False.  If True use 1st O PT  to identify correct eigenvectors in ND
+
+        Returns:
+        ---------------
+        Returns the CHIs as MHz with anharmonicity alpha as the diagonal  (with - sign)
+
+            f0s [GHz]: Eigenmode frequencies computed by HFSS; i.e., linear freq returned in GHz
+            f1s [GHz]: Dressed mode frequencies (by the non-linearity; e.g., Lamb shift, etc. ). If numerical diagonalizaiton is run, then we return the numerically diagonalizaed frequencies, otherwise, use 1st order pertuirbation theory on the 4th order expansion of the cosine.
+
+            CHI_O1 [MHz] : Analytic expression for the chis based on a cos trunc to 4th order, and using 1st order perturbation theory.
+            CHI_ND [MHz] : Numerically diagonalized chi matrix.
+
+            PJ       : Participation matrix
+            Om [GHz] : Diagnoal matrix of of linear mode (HFSS) frequencies
+            EJ [GHz] : Diagonal matrix of junction energies, in GHz.
+
+            ask Zlatko for more info.
+        '''
 
     def analyze_variation(self,
                           variation,
                           cos_trunc     = None,
                           fock_trunc    = None,
-                          print_results = True,
+                          print_result  = True,
                           frmt          = "{:7.2f}"):
+
         '''
-        Container function to call eBBQ_Pmj_to_H_params
         Can also print results neatly.
 
         Returns
         ----------------------------
-        f0s [GHz]: Eigenmode frequencies computed by HFSS; i.e., linear freq returned in GHz
-        f1s [GHz]: Dressed mode frequencies (by the non-linearity; e.g., Lamb shift, etc. ). If numerical diagonalizaiton is run, then we return the numerically diagonalizaed frequencies, otherwise, use 1st order pertuirbation theory on the 4th order expansion of the cosine.
+            f0s [GHz]: Eigenmode frequencies computed by HFSS; i.e., linear freq returned in GHz
+            f1s [GHz]: Dressed mode frequencies (by the non-linearity; e.g., Lamb shift, etc. ). If numerical diagonalizaiton is run, then we return the numerically diagonalizaed frequencies, otherwise, use 1st order pertuirbation theory on the 4th order expansion of the cosine.
 
-        CHI_O1 [MHz] : Analytic expression for the chis based on a cos trunc to 4th order, and using 1st order perturbation theory.
-        CHI_ND [MHz] : Numerically diagonalized chi matrix.
+            CHI_O1 [MHz] : Analytic expression for the chis based on a cos trunc to 4th order, and using 1st order perturbation theory.
+            CHI_ND [MHz] : Numerically diagonalized chi matrix.
 
-        PJ       : Participation matrix
-        Om [GHz] : Diagnoal matrix of of linear mode (HFSS) frequencies
-        EJ [GHz] : Diagonal matrix of junction energies, in GHz.
+            PJ       : Participation matrix
+            Om [GHz] : Diagnoal matrix of of linear mode (HFSS) frequencies
+            EJ [GHz] : Diagonal matrix of junction energies, in GHz.
         '''
+        print('\nVariation: %s' % variation)
 
-        #print_color('. '*40, bg = 42, style = 2)
-        print('\n\t Analyzing variation: %s\n   '% variation,'-'*32)
+        Pm = self.PM[variation]   # EPR matrix from Jsurf avg
+        if self._renorm_pj:  # Renormalize
+            s          = self.sols[variation]
+            Pm_glb_sum = (s['U_E'] - s['U_H'])/s['U_E']                       # sum of participations as calculated by global UH and UE
+            Pm_norm    = Pm_glb_sum/Pm.sum(axis = 1)
+            # should we still dothis when Pm_glb_sum is very small
+            print('\nNORM: '); print(Pm_norm);   # for debug
+            Pm.mul(Pm_norm, axis=0)
+        else:
+            print('NO renorm!')
 
-        s         = self.sols[variation]
-        varz      = self.hfss_variables[variation]
+        if np.any(Pm < 0.0):
+            print_color("  ! Warning:  Some p_mj was found <= 0. This is probably a numerical error, or a super low-Q mode.  We will take the abs value.  Otherwise, rerun with more precision, inspect, and do due dilligence.)")
+            print(Pm,'\n')
+            Pm =np.abs(Pm)
 
-        CHI_O1, CHI_ND, PJ, Om, EJ, diff, LJs, SIGN, f0s, f1s, fzpfs, Qs = \
-            pyEPR_Pmj_to_H_params(s,
-                                  self.Ljs[variation],
-                                  cos_trunc  = cos_trunc,
-                                  fock_trunc = fock_trunc,
-                                  _renorm_pj = self._renorm_pj
-                                  )
+        # Analytic 4-th order
+        f0s   = self.freqs_bare[variation]
+        PJ    = np.mat(Pm)
+        Om    = np.mat(np.diagflat(f0s.values))
+        EJ    = np.mat(np.diagflat(self.get_Ejs(variation).values )) # GHz
+        CHI_O1= 0.25* Om * PJ * EJ.I * PJ.T * Om * 1000.      # MHz
+        CHI_O1= divide_diagonal_by_2(CHI_O1)                  # Make the diagonals alpha
+        f1s   = f0s - np.diag(CHI_O1/1000.)                   # 1st order PT expect freq to be dressed down by alpha
 
-        if print_results: ##TODO: generalize to more modes
+        # numerical diag
+        if cos_trunc is not None:
+            f1_ND, CHI_ND, fzpfs, f0p = pyEPR_ND(f0s, PJ, Om, EJ,
+                                               self.Ljs[variation],
+                                               self.SM[variation],
+                                               cos_trunc     = cos_trunc,
+                                               fock_trunc    = fock_trunc,
+                                               use_1st_order = False)
+        else:
+            CHI_ND, f1_ND, fzpfs = None, None, None
 
-            print( '\nPJ ='  )
-            print_matrix(PJ*SIGN, frmt = "{:8.4f}")
+        result            = OrderedDict()
+        result['variation'] = variation
+        result['f_0']     = f0s
+        result['f_1']     = pd.Series(f1s)
+        result['f_ND']    = pd.Series(f1_ND)
+        result['chi_O1']  = pd.DataFrame(CHI_O1)
+        result['chi_ND']  = pd.DataFrame(CHI_ND)
+        result['ZPF']     = pd.DataFrame(fzpfs)
+
+        if print_result:
+            self.print_variation(variation)
+            self.print_result(result)
+
+        return result
+
+    def print_variation(self, variation):
+        print( '\n*** Different parameters'  )
+        print(self.hfss_variables[self.hfss_vars_diff_idx][variation], '\n')
+
+        print( '*** P (participation matrix)'  )
+        print(self.PM[variation])
+
+        print( '\n*** S (sign-bit matrix)'  )
+        print(self.PM[variation])
+
+    def print_result(self, result):
+        print( '\n*** Chi matrix O1 PT (MHz).\n    Diag is anharmonicity, off diag is full cross-Kerr.'  )
+        print(result['chi_O1'])
+
+        print( '\n*** Chi matrix ND (MHz). '  )
+        print(result['chi_ND'])
+
+        print( '\n*** Frequencies O1 PT (GHz).'  )
+        print(result['f_1'])
+
+        print( '\n*** Frequencies ND (GHz).'  )
+        print(result['f_ND'])
+
+
+
+
+
+
+
+        '''
+        if print_results:
+            #TODO: generalize to more modes
             #print( "\n","* "*5, "CHI matrix (MHz)", "* "*5)
 
             if cos_trunc is not None:
@@ -1037,10 +1060,10 @@ class pyEPR_Analysis(object):
 
                 print( "\n","* "*5, "Eigen (linear) Qs ", "* "*5)
                 print( pd.Series(Qs))  # Q =0 means no dissipation used in sim.
+        '''
 
-        #TODO: use dictonary in the future
-        return CHI_O1, CHI_ND, PJ, Om, EJ, diff, LJs, SIGN, f0s, f1s, fzpfs, Qs, varz
-    #TODO: add print feature
+
+
 
     '''
     @deprecated

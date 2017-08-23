@@ -9,7 +9,8 @@ import warnings
 import numpy as np
 
 ### Constants
-from scipy.constants import hbar, e as e_el, epsilon_0, pi
+from scipy.constants import hbar, Planck, e as e_el, epsilon_0, pi
+
 fluxQ = hbar / (2*e_el) # reduced flux quantum
 
 #==============================================================================
