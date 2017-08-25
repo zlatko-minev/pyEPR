@@ -6,7 +6,7 @@ Created on Fri Oct 30 14:21:45 2015
 
 #------------------------------------------------------------
 # Directories 
-root_dir = r'C:\data_pyEPR\\'
+root_dir = r'C:\Users\awe4\Documents\Backed\data_pyEPR\\'
 
 
 class Dissipation_params:
