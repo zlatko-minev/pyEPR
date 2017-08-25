@@ -772,16 +772,46 @@ def sort_df_col(df):
     else:
         return df
 
-class pyEPR_Analysis(object):
-    ''' defines an analysis object which loads and plots data from a h5 file
-    This data is obtained using pyEPR_HFSS
+class Results_Hamiltonian(OrderedDict):
+    '''
+         Class to store and process results from the analysis of H_nl.
+    '''
+    #TODO: make this savable and loadable
 
+    def get_vs_variation(self, quantity):
+        res = OrderedDict()
+        for k, r in self.items():
+            res[k] = r[quantity]
+        return res
+
+    def get_frequencies_HFSS(self):
+        z = pd.DataFrame(self.get_vs_variation('f_0'))
+        z.index.name   = 'eigenmode'
+        z.columns.name = 'variation'
+        return z
+
+    def get_HFSS_frequencies_O1(self):
+        z = pd.DataFrame(self.get_vs_variation('f_1'))
+        z.index.name   = 'eigenmode'
+        z.columns.name = 'variation'
+        return z
+
+    def get_HFSS_frequencies_ND(self):
+        z = pd.DataFrame(self.get_vs_variation('f_ND'))
+        z.index.name   = 'eigenmode'
+        z.columns.name = 'variation'
+        return z
+
+
+class pyEPR_Analysis(object):
+    '''
+        Defines an analysis object which loads and plots data from a h5 file
+        This data is obtained using pyEPR_HFSS
     '''
     def __init__(self, data_filename, variations=None, do_print_info = True):
 
         self.data_filename = data_filename
-        self.results       = OrderedDict() # container for solved results
-                                           # TODO: make this savable and loadable
+        self.results       = Results_Hamiltonian()
 
         with HDFStore(data_filename, mode = 'r') as hdf:  # = h5py.File(data_filename, 'r')
 
@@ -830,7 +860,7 @@ class pyEPR_Analysis(object):
         self.nmodes               = self.sols[variations[0]].shape[0]
         self._renorm_pj           = True
         dum                       = DataFrame_col_diff(self.hfss_variables)
-        self.hfss_vars_diff_idx   = dum if not (dum == False) else []
+        self.hfss_vars_diff_idx   = dum if not (dum.any() == False) else []
 
         if do_print_info:
             self.print_info()
@@ -879,8 +909,9 @@ class pyEPR_Analysis(object):
             ret[key] = m['Num Tets  '].sum()
         return ret
 
+    '''
     def get_solution_column(self, col_name, swp_var, sort = True):
-        ''' sort by variation -- must be numeric '''
+        # sort by variation -- must be numeri
         Qs, swp = [], []
         for key, sol in self.sols.items():
             Qs  += [ sol[col_name] ]
@@ -888,6 +919,7 @@ class pyEPR_Analysis(object):
             swp += [ ureg.Quantity(varz['_'+swp_var]).magnitude ]
         Qs  = DataFrame(Qs, index = swp)
         return Qs if not sort else Qs.sort_index()
+    '''
 
     def get_Qs_vs_swp(self, swp_var, sort = True):
         raise NotImplementedError()
@@ -945,7 +977,8 @@ class pyEPR_Analysis(object):
             Pm_glb_sum = (s['U_E'] - s['U_H'])/s['U_E']                       # sum of participations as calculated by global UH and UE
             Pm_norm    = Pm_glb_sum/Pm.sum(axis = 1)
             # should we still dothis when Pm_glb_sum is very small
-            print('\n*** NORM: '); print(Pm_norm);   # for debug
+            #print('\n*** NORM: ')
+            print(Pm_norm)   # for debug
             Pm = Pm.mul(Pm_norm, axis=0)
         else:
             print('NO renorm!')
@@ -954,6 +987,8 @@ class pyEPR_Analysis(object):
             print_color("  ! Warning:  Some p_mj was found <= 0. This is probably a numerical error, or a super low-Q mode.  We will take the abs value.  Otherwise, rerun with more precision, inspect, and do due dilligence.)")
             print(Pm,'\n')
             Pm = np.abs(Pm)
+
+
 
         # Analytic 4-th order
         f0s   = self.freqs_bare[variation]
@@ -1007,7 +1042,7 @@ class pyEPR_Analysis(object):
     def print_result(self, result):
         print( '*** P (participation matrix, normalized.)'  )
         print(result['Pm_normed'])
-        
+
         print( '\n*** Chi matrix O1 PT (MHz)\n    Diag is anharmonicity, off diag is full cross-Kerr.'  )
         print(result['chi_O1'])
 
