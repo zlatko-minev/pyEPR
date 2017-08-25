@@ -23,6 +23,7 @@ from . import config
 from .hfss        import CalcObject
 from .toolbox     import print_NoNewLine, print_color, deprecated, pi, fact, epsilon_0, hbar, Planck, fluxQ, nck, \
                          divide_diagonal_by_2, print_matrix, DataFrame_col_diff, isint, get_instance_vars
+from .toolbox_plotting import *
 from .numeric_diag import bbq_hmt, make_dispersive
 
 ### Definitions
@@ -772,6 +773,15 @@ def sort_df_col(df):
     else:
         return df
 
+def sort_Series_idx(sr):
+    '''         sort by numerical int order    '''
+    idx_names = sr.index
+    if np.all(idx_names.map(isint)):
+        return sr[idx_names.astype(int).sort_values().astype(str)]
+    else:
+        return sr
+
+
 class Results_Hamiltonian(OrderedDict):
     '''
          Class to store and process results from the analysis of H_nl.
@@ -785,21 +795,29 @@ class Results_Hamiltonian(OrderedDict):
         return res
 
     def get_frequencies_HFSS(self):
-        z = pd.DataFrame(self.get_vs_variation('f_0'))
+        z = sort_df_col(pd.DataFrame(self.get_vs_variation('f_0')))
         z.index.name   = 'eigenmode'
         z.columns.name = 'variation'
         return z
 
-    def get_HFSS_frequencies_O1(self):
-        z = pd.DataFrame(self.get_vs_variation('f_1'))
+    def get_frequencies_O1(self):
+        z = sort_df_col(pd.DataFrame(self.get_vs_variation('f_1')))
         z.index.name   = 'eigenmode'
         z.columns.name = 'variation'
         return z
 
-    def get_HFSS_frequencies_ND(self):
-        z = pd.DataFrame(self.get_vs_variation('f_ND'))
+    def get_frequencies_ND(self):
+        z = sort_df_col(pd.DataFrame(self.get_vs_variation('f_ND')))
         z.index.name   = 'eigenmode'
         z.columns.name = 'variation'
+        return z
+
+    def get_chi_O1(self):
+        z = self.get_vs_variation('chi_O1')
+        return z
+
+    def get_chi_ND(self):
+        z = self.get_vs_variation('chi_O1')
         return z
 
 
@@ -1019,6 +1037,8 @@ class pyEPR_Analysis(object):
         result['ZPF']     = pd.DataFrame(fzpfs)
         result['Pm_normed'] = Pm
         result['_Pm_norm']  = Pm_norm
+        result['hfss_variables'] = self.hfss_variables[variation] # just propagate
+        result['Ljs']            = self.Ljs[variation]
 
         self.results[variation]  = result
 
