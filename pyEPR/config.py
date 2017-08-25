@@ -33,6 +33,11 @@ class Dissipation_params:
 	gseam          = 1.0e3 # per Ohm meter: seam conductance
 
 
-#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+import matplotlib.pyplot as plt
+
+class Plotting_Options:
+    default_color_map = plt.cm.viridis
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Internal
 ipython        = None
