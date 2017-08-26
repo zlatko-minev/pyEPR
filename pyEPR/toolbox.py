@@ -17,6 +17,12 @@ fluxQ = hbar / (2*e_el) # reduced flux quantum
 # Utility functions
 #==============================================================================
 
+def combinekw(kw1, kw2):
+    ''' Copy kw1,  update with kw2, return result '''
+    kw = kw1.copy()
+    kw.update(kw2)
+    return kw
+
 def fact(n):
     ''' Factorial '''
     if n <= 1:
@@ -116,8 +122,10 @@ def DataFrame_col_diff(PS, indx=0):
 
 
 
+
+
 __all__  = ['hbar', 'e_el', 'epsilon_0', 'pi', 'fluxQ',
-            'fact', 'nck',
+            'fact', 'nck', 'combinekw',
             'divide_diagonal_by_2',
             'print_matrix', 'print_NoNewLine',
             'DataFrame_col_diff']

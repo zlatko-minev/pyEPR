@@ -23,7 +23,7 @@ from . import config
 from .hfss        import CalcObject
 from .toolbox     import print_NoNewLine, print_color, deprecated, pi, fact, epsilon_0, hbar, Planck, fluxQ, nck, \
                          divide_diagonal_by_2, print_matrix, DataFrame_col_diff, isint, get_instance_vars
-from .toolbox_plotting import *
+from .toolbox_plotting import cmap_discrete, legend_translucent
 from .numeric_diag import bbq_hmt, make_dispersive
 
 ### Definitions
@@ -817,7 +817,7 @@ class Results_Hamiltonian(OrderedDict):
         return z
 
     def get_chi_ND(self):
-        z = self.get_vs_variation('chi_O1')
+        z = self.get_vs_variation('chi_ND')
         return z
 
 
@@ -848,8 +848,8 @@ class pyEPR_Analysis(object):
 
             self.variations     = variations
             self.hfss_variables = OrderedDict()
-            self.freqs_bare     = OrderedDict()
-            self.Qs_bare        = OrderedDict()
+            self.freqs_hfss     = OrderedDict()
+            self.Qs             = OrderedDict()
             self.Ljs            = OrderedDict()
             self.PM             = OrderedDict() # participation matrices
             self.SM             = OrderedDict() # sign matrices
@@ -863,16 +863,16 @@ class pyEPR_Analysis(object):
                     self.Ljs[variation]            = hdf['v'+variation+'/Ljs']
                     self.PM[variation]             = hdf['v'+variation+'/P_matrix']
                     self.SM[variation]             = hdf['v'+variation+'/S_matrix']
-                    self.freqs_bare[variation]     = hdf['v'+variation+'/freqs_bare_GHz']
-                    self.Qs_bare[variation]        = hdf['v'+variation+'/Qs_bare']
+                    self.freqs_hfss[variation]     = hdf['v'+variation+'/freqs_bare_GHz']
+                    self.Qs[variation]             = hdf['v'+variation+'/Qs_bare']
                     self.sols[variation]           = hdf['v'+variation+'/pyEPR_sols']
                     self.mesh_stats[variation]     = hdf['v'+variation+'/mesh_stats']   # could be made to panel
                     self.convergence[variation]    = hdf['v'+variation+'/convergence']  # could be made to panel
                 #except Exception  as e:
                 #    print('\t!! ERROR in variation ' + str(variation)+ ':  ' + e)
 
-        self.freqs_bare           = sort_df_col(DataFrame(self.freqs_bare))
-        self.Qs_bare              = sort_df_col(DataFrame(self.Qs_bare))
+        self.freqs_hfss           = sort_df_col(DataFrame(self.freqs_hfss))
+        self.Qs                   = sort_df_col(DataFrame(self.Qs))
         self.Ljs                  = sort_df_col(DataFrame(self.Ljs))
         self.hfss_variables       = sort_df_col(DataFrame(self.hfss_variables))
         self.nmodes               = self.sols[variations[0]].shape[0]
@@ -984,6 +984,9 @@ class pyEPR_Analysis(object):
             chi_O1 [MHz] : Analytic expression for the chis based on a cos trunc to 4th order, and using 1st order perturbation theory. Diag is anharmonicity, off diag is full cross-Kerr.
             chi_ND [MHz] : Numerically diagonalized chi matrix. Diag is anharmonicity, off diag is full cross-Kerr.
         '''
+        if (fock_trunc == None) or (cos_trunc == None):
+            fock_trunc = cos_trunc = None
+
         if print_result:
             print('\n', '. '*40)
         else:
@@ -1009,7 +1012,7 @@ class pyEPR_Analysis(object):
 
 
         # Analytic 4-th order
-        f0s   = self.freqs_bare[variation]
+        f0s   = self.freqs_hfss[variation]
         PJ    = np.mat(Pm)
         Om    = np.mat(np.diagflat(f0s.values))
         EJ    = np.mat(np.diagflat(self.get_Ejs(variation).values )) # GHz
@@ -1039,6 +1042,9 @@ class pyEPR_Analysis(object):
         result['_Pm_norm']  = Pm_norm
         result['hfss_variables'] = self.hfss_variables[variation] # just propagate
         result['Ljs']            = self.Ljs[variation]
+        result['Qs']             = self.Qs[variation]
+        result['fock_trunc']     = fock_trunc
+        result['cos_trunc']      = cos_trunc
 
         self.results[variation]  = result
 
@@ -1074,6 +1080,82 @@ class pyEPR_Analysis(object):
 
         print( '\n*** Frequencies ND (MHz)'  )
         print(result['f_ND'])
+
+    def plot_Hresults(self):
+        '''
+            versus varaitions
+        '''
+        import matplotlib.pyplot as plt
+
+        epr = self # lazyhack
+
+        fig, axs = plt.subplots(2,2, num=1, figsize=(10,6))
+
+        ax = axs[0,0]
+        ax.set_title('Modal frequencies (MHz)')
+        f0 = epr.results.get_frequencies_HFSS()
+        f1 = epr.results.get_frequencies_O1()
+        f_ND = epr.results.get_frequencies_ND()
+        mode_idx = list(f0.index)
+        nmodes   = len(mode_idx)
+        cmap     = cmap_discrete(nmodes)
+
+        if f_ND.empty:
+            plt_me_line = f1
+            markerf1    = 'o'
+        else:
+            plt_me_line = f_ND
+            markerf1    = '.'
+            f_ND.transpose().plot(ax = ax, lw=0, marker='o',ms=4, legend=False, zorder =30, color = cmap)
+
+        f0.transpose().plot(ax = ax, lw=0, marker='x',ms=2, legend=False, zorder = 10, color = cmap)
+        f1.transpose().plot(ax = ax, lw=0, marker=markerf1,ms=4, legend=False, zorder = 20, color = cmap)
+        plt_me_line.transpose().plot(ax = ax, lw=1, alpha = 0.2, color = 'grey', legend=False)
+
+        ax = axs[1,0]
+        ax.set_title('Quality factors')
+        Qs = epr.Qs
+        Qs.transpose().plot(ax = ax, lw=0, marker=markerf1, ms=4, legend=True, zorder = 20, color = cmap)
+        Qs.transpose().plot(ax = ax, lw=1, alpha = 0.2, color = 'grey', legend=False)
+        ax.set_yscale('log')
+
+
+        axs[0][1].set_title('Anharmonicities (MHz)')
+        axs[1][1].set_title('Cross-Kerr frequencies (MHz)')
+        def plot_chi_alpha(chi, primary):
+            for i, m in enumerate(mode_idx):
+                ax = axs[0,1]
+                z = sort_Series_idx(pd.Series({k: chim.loc[m,m] for k, chim in chi.items()}))
+                z.plot(ax = ax, lw=0, ms=4, label = m, color = cmap[i], marker='o' if primary else 'x')
+                if primary:
+                    z.plot(ax = ax, lw=1, alpha = 0.2, color = 'grey', label = '_nolegend_')
+                for i, n in enumerate(mode_idx):
+                    if int(n) > int(m):
+                        # plot chi
+                        ax = axs[1,1]
+                        z = sort_Series_idx(pd.Series({k: chim.loc[m,n] for k, chim in chi.items()}))
+                        z.plot(ax = ax, lw=0, ms=4, label = str(m)+','+str(n), color = cmap[i], marker='o' if primary else 'x')
+                        if primary:
+                            z.plot(ax = ax, lw=1, alpha = 0.2, color = 'grey', label = '_nolegend_')
+
+        def do_legends():
+            legend_translucent(axs[0][1],  leg_kw = dict(fontsize = 7, title = 'Mode'))
+            legend_translucent(axs[1][1],  leg_kw = dict(fontsize = 7))
+
+        chiND  = epr.results.get_chi_ND()
+        chiO1  = epr.results.get_chi_O1()
+        use_ND = not (np.any([r['fock_trunc'] == None for k, r in epr.results.items()]))
+        if use_ND:
+            plot_chi_alpha(chiND, True)
+            do_legends()
+            plot_chi_alpha(chiO1, False)
+        else:
+            plot_chi_alpha(chiO1, True)
+            do_legends()
+
+        fig.tight_layout()
+
+        return fig, axs
 
 
 
