@@ -22,7 +22,8 @@ from . import hfss
 from . import config
 from .hfss        import CalcObject
 from .toolbox     import print_NoNewLine, print_color, deprecated, pi, fact, epsilon_0, hbar, Planck, fluxQ, nck, \
-                         divide_diagonal_by_2, print_matrix, DataFrame_col_diff, isint, get_instance_vars
+                         divide_diagonal_by_2, print_matrix, DataFrame_col_diff, get_instance_vars,\
+                         sort_df_col, sort_Series_idx
 from .toolbox_plotting import cmap_discrete, legend_translucent
 from .numeric_diag import bbq_hmt, make_dispersive
 
@@ -101,6 +102,7 @@ class Project_Info(object):
 
         ## HFSS desgin: describe junction parameters
         self.junctions     = OrderedDict()
+        # TODO: introduce modal labels
 
         ## Dissipative HFSS volumes and surfaces
         self.dissipative   = self._Dissipative()
@@ -765,23 +767,6 @@ def pyEPR_ND(freqs, PJ, Om, EJ, LJs, SIGN,
 # ANALYSIS BBQ
 #==============================================================================
 
-def sort_df_col(df):
-    '''         sort by numerical int order    '''
-    col_names = df.columns
-    if np.all(col_names.map(isint)):
-        return df[col_names.astype(int).sort_values().astype(str)]
-    else:
-        return df
-
-def sort_Series_idx(sr):
-    '''         sort by numerical int order    '''
-    idx_names = sr.index
-    if np.all(idx_names.map(isint)):
-        return sr[idx_names.astype(int).sort_values().astype(str)]
-    else:
-        return sr
-
-
 class Results_Hamiltonian(OrderedDict):
     '''
          Class to store and process results from the analysis of H_nl.
@@ -1002,6 +987,7 @@ class pyEPR_Analysis(object):
             print(Pm_norm)   # for debug
             Pm = Pm.mul(Pm_norm, axis=0)
         else:
+            Pm_norm     = 1
             print('NO renorm!')
 
         if np.any(Pm < 0.0):
@@ -1016,9 +1002,9 @@ class pyEPR_Analysis(object):
         PJ    = np.mat(Pm)
         Om    = np.mat(np.diagflat(f0s.values))
         EJ    = np.mat(np.diagflat(self.get_Ejs(variation).values )) # GHz
-        CHI_O1= 0.25* Om * PJ * EJ.I * PJ.T * Om * 1000.      # MHz
+        CHI_O1= 0.25* Om * PJ * EJ.I * PJ.T * Om * 1000.             # MHz
+        f1s   = f0s - 0.5*np.ndarray.flatten( np.array(CHI_O1.sum(1))) / 1000.                  # 1st order PT expect freq to be dressed down by alpha
         CHI_O1= divide_diagonal_by_2(CHI_O1)                  # Make the diagonals alpha
-        f1s   = f0s - np.diag(CHI_O1/1000.)                   # 1st order PT expect freq to be dressed down by alpha
 
         # numerical diag
         if cos_trunc is not None:
@@ -1032,7 +1018,7 @@ class pyEPR_Analysis(object):
             CHI_ND, f1_ND, fzpfs = None, None, None
 
         result            = OrderedDict()
-        result['f_0']     = pd.Series(f0s)*1E3     # MHz
+        result['f_0']     = f0s*1E3                # MHz
         result['f_1']     = pd.Series(f1s)*1E3     # MHz
         result['f_ND']    = pd.Series(f1_ND)*1E-6  # MHz
         result['chi_O1']  = pd.DataFrame(CHI_O1)
@@ -1158,35 +1144,6 @@ class pyEPR_Analysis(object):
         return fig, axs
 
 
-
-
-
-
-
-        '''
-        if print_results:
-            #TODO: generalize to more modes
-            #print( "\n","* "*5, "CHI matrix (MHz)", "* "*5)
-
-            if cos_trunc is not None:
-                print( '\nCHI_ND =\t PJ O(%d) [alpha diag]'%(cos_trunc))
-                print_matrix(CHI_ND, append_row =" MHz", frmt = frmt)
-            else:
-                print( '\nCHI_O1 =\t [alpha diag]')
-                print_matrix(CHI_O1, append_row =" MHz", frmt = frmt)
-
-            if len(f0s) == 3:
-                print( '\nf0 ={:6.2f} {:7.2f} {:7.2f} GHz'.format(*f0s))
-                print( '\nf1 ={:6.2f} {:7.2f} {:7.2f} GHz'.format(*(f1s*1E-9))   ) # dressed
-                print( 'Q  ={:8.1e} {:7.1e} {:6.0f}'.format(*(Qs)))
-            else:
-                print( "\n","* "*5, "Eigen (Linear) vs Dressed Frequencies MHz", "* "*5)
-                print( pd.DataFrame(np.array([f0s*1E3,f1s*1E3]).transpose(), columns = ['Linear', 'Dressed']))
-                #print( "\n", "* "*5, "Dressed freqs Frequencies MHz", "* "*5  # these are the ND if ND was used, else it is the O1PT)
-
-                print( "\n","* "*5, "Eigen (linear) Qs ", "* "*5)
-                print( pd.Series(Qs))  # Q =0 means no dissipation used in sim.
-        '''
 
 
 
