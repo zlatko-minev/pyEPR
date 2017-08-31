@@ -48,6 +48,23 @@ def isfloat(value):
     return False
 
 
+def sort_df_col(df):
+    '''         sort by numerical int order    '''
+    col_names = df.columns
+    if np.all(col_names.map(isint)):
+        return df[col_names.astype(int).sort_values().astype(str)]
+    else:
+        return df
+
+def sort_Series_idx(sr):
+    '''         sort by numerical int order    '''
+    idx_names = sr.index
+    if np.all(idx_names.map(isint)):
+        return sr[idx_names.astype(int).sort_values().astype(str)]
+    else:
+        return sr
+
+
 
 def get_instance_vars(obj, Forbidden=[]):
     VARS = {}
@@ -84,10 +101,10 @@ def print_matrix(M, frmt = "{:7.2f}", append_row = ""):
             print( frmt.format(chi), end='')
         print( append_row+"\n", end='')
 
-def divide_diagonal_by_2(CHI0):
+def divide_diagonal_by_2(CHI0, div_fact = 2.):
     CHI = CHI0.copy();
-    CHI[np.diag_indices_from(CHI)] /= 2
-    return CHI;
+    CHI[np.diag_indices_from(CHI)] /= div_fact
+    return CHI
 
 def print_NoNewLine(text):
     print((text), end='')
@@ -127,6 +144,7 @@ def DataFrame_col_diff(PS, indx=0):
 __all__  = ['hbar', 'e_el', 'epsilon_0', 'pi', 'fluxQ',
             'fact', 'nck', 'combinekw',
             'divide_diagonal_by_2',
+            'sort_df_col', 'sort_Series_idx',
             'print_matrix', 'print_NoNewLine',
             'DataFrame_col_diff']
 
