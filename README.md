@@ -103,3 +103,5 @@ Either HFSS popped an error dialogue, froze up, or you miss-typed the name of so
 If your script terminates improperly, this can happen. pyHFSS tries to catch termination events and handle them. Your safety should be guaranteed however, if you call `hfss.release()` when you have finished. Use the Task-manager (Activity Monitor on MAC) to kill HFSS if you want.   
                                                                                                                                                                                     
                                                                                                                                                                                     
+###### Parametric Sweep Error
+When running a parametric sweep in HFSS, make sure you are actually saving the fields for each variation before running pyEPR. This can be done by right-clicking on your ParametricSetup -> properties -> options -> "Save Fields and Mesh".
