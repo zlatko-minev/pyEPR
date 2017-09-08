@@ -75,4 +75,19 @@ def cmap_discrete_CubeHelix(n, helix_kw = {}):
     return cube.mpl_colors
 
 
-__all__  = [ 'legend_translucent', 'cmap_discrete', 'get_color_cycle']
+def xarr_heatmap(fg, title = None, kwheat = {}, fmt = ('%.3f', '%.2f'), fig = None):
+    ''' Needs seaborn and xarray'''
+    fig = plt.figure() if fig == None  else fig
+    df  = fg.to_pandas()
+    # format indecies
+    df.index   = [float(fmt[0]%x) for x in df.index]
+    df.columns = [float(fmt[1]%x) for x in df.columns]
+    import seaborn as sns
+    ax = sns.heatmap(df, annot=True, **kwheat)
+    ax.invert_yaxis()
+    ax.set_title(title)
+    ax.set_xlabel(fg.dims[1])
+    ax.set_ylabel(fg.dims[0])
+
+
+__all__  = [ 'legend_translucent', 'cmap_discrete', 'get_color_cycle', 'xarr_heatmap']
