@@ -850,7 +850,7 @@ class pyEPR_Analysis(object):
                     self.SM[variation]             = hdf['v'+variation+'/S_matrix']
                     self.freqs_hfss[variation]     = hdf['v'+variation+'/freqs_bare_GHz']
                     self.Qs[variation]             = hdf['v'+variation+'/Qs_bare']
-                    self.sols[variation]           = hdf['v'+variation+'/pyEPR_sols']
+                    self.sols[variation]           = hdf['v'+variation+'/pyEPR_sols']   # contains U_E and U_H
                     self.mesh_stats[variation]     = hdf['v'+variation+'/mesh_stats']   # could be made to panel
                     self.convergence[variation]    = hdf['v'+variation+'/convergence']  # could be made to panel
                 #except Exception  as e:
@@ -880,7 +880,7 @@ class pyEPR_Analysis(object):
             ret[key] = ureg.Quantity(varz['_'+swpvar]).magnitude
         return ret
 
-    def get_convergences_max_tets(self):
+    def get_convergences_Max_Tets(self):
         ''' Index([u'Pass Number', u'Solved Elements', u'Max Delta Freq. %' ])  '''
         ret = OrderedDict()
         for key, df in self.convergence.items():
@@ -1144,7 +1144,19 @@ class pyEPR_Analysis(object):
         return fig, axs
 
 
-
+    def plot_convergence_f_lin(self, ax = None):
+        if ax is None:
+            fig, ax = plt.subplots(1,1)
+        Tets    = self.get_convergences_Tets_vs_pass()
+        DeltaF  = self.get_convergences_MaxDeltaFreq_vs_pass()
+        for var in Tets:
+            ax.plot(Tets[var].values, DeltaF[var].values, label =var)
+        ax.set_yscale('log')
+        ax.grid(True)
+        ax.set_xlabel('Number of mesh elements')
+        ax.set_ylabel('Max $\\Delta f$')
+        ax.set_title('$f_\\mathrm{lin}$ convergence vs. pass number')
+        legend_translucent(ax)
 
 
 
