@@ -1067,7 +1067,7 @@ class pyEPR_Analysis(object):
         print( '\n*** Frequencies ND (MHz)'  )
         print(result['f_ND'])
 
-    def plot_Hresults(self):
+    def plot_Hresults(self, fig = None):
         '''
             versus varaitions
         '''
@@ -1075,7 +1075,7 @@ class pyEPR_Analysis(object):
 
         epr = self # lazyhack
 
-        fig, axs = plt.subplots(2,2, num=1, figsize=(10,6))
+        fig, axs = plt.subplots(2,2, figsize=(10,6)) if fig is None else (fig, fig.axes)
 
         ax = axs[0,0]
         ax.set_title('Modal frequencies (MHz)')
