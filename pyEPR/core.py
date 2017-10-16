@@ -4,6 +4,7 @@
 '''
 from __future__ import print_function    # Python 2.7 and 3 compatibility
 import os
+import sys
 import time
 import shutil
 #import warnings
@@ -674,7 +675,12 @@ class pyEPR_HFSS(object):
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                 # EPR calculations
                 print_NoNewLine('\tU_H')
-                self.U_H = self.calc_U_H(variation)
+                try:
+                    self.U_H = self.calc_U_H(variation)
+                except Exception as e:
+                    tb = sys.exc_info()[2]
+                    print("\n\nError:\n", e)
+                    raise(Exception(' Did you save the field solutions?   Failed during calculation of the total magnetic energy. This is the first calculation step, and is indicative that there are no field solutions saved. ').with_traceback(tb))
                 print_NoNewLine(', U_E')
                 self.U_E = self.calc_U_E(variation)
                 print(  "; U_L=  {:>9.2E}" .format( (self.U_E - self.U_H )/self.U_E) )
