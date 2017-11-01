@@ -663,6 +663,7 @@ class pyEPR_HFSS(object):
             hdf['v'+variation+'/Ljs']            = Ljs
 
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            Om  = OrderedDict() # Angular Freq (of analyzed modes) matrix
             Pm  = OrderedDict() # P matrix
             Sm  = OrderedDict() # S matrix
             SOL = OrderedDict() # otehr results
@@ -687,6 +688,9 @@ class pyEPR_HFSS(object):
                 sol = Series({'U_H':self.U_H, 'U_E':self.U_E})
                 # calcualte for each of the junctions
                 Pm[mode], Sm[mode] = self.calculate_p_mj(variation, self.U_H, self.U_E, Ljs)
+                _Om = pd.Series({})
+                _Om['freq_GHz'] = freqs_bare_GHz[mode] # freq  
+                Om[mode] = _Om
 
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                 # Dissipative EPR calculations
@@ -713,6 +717,7 @@ class pyEPR_HFSS(object):
 
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
             # Save
+            hdf['v'+variation+'/O_matrix'] = pd.DataFrame(Om)
             hdf['v'+variation+'/P_matrix']   = pd.DataFrame(Pm).transpose()
             hdf['v'+variation+'/S_matrix']   = pd.DataFrame(Sm).transpose()
             hdf['v'+variation+'/pyEPR_sols'] = pd.DataFrame(SOL).transpose()
@@ -842,6 +847,7 @@ class pyEPR_Analysis(object):
             self.freqs_hfss     = OrderedDict()
             self.Qs             = OrderedDict()
             self.Ljs            = OrderedDict()
+            self.OM             = OrderedDict()
             self.PM             = OrderedDict() # participation matrices
             self.SM             = OrderedDict() # sign matrices
             self.sols           = OrderedDict()
@@ -851,6 +857,7 @@ class pyEPR_Analysis(object):
             for variation in self.variations:
                 #try:
                     self.hfss_variables[variation] = hdf['v'+variation+'/hfss_variables']
+                    self.OM[variation]             = hdf['v'+variation+'/O_matrix']
                     self.Ljs[variation]            = hdf['v'+variation+'/Ljs']
                     self.PM[variation]             = hdf['v'+variation+'/P_matrix']
                     self.SM[variation]             = hdf['v'+variation+'/S_matrix']
@@ -983,6 +990,7 @@ class pyEPR_Analysis(object):
         else:
             print('%s, ' % variation, end='')
 
+        Om = self.OM[variation]   # Frequencies of analyzed modes
         Pm = self.PM[variation]   # EPR matrix from Jsurf avg
         if self._renorm_pj:  # Renormalize
             s          = self.sols[variation]
@@ -1006,10 +1014,10 @@ class pyEPR_Analysis(object):
         # Analytic 4-th order
         f0s   = self.freqs_hfss[variation]
         PJ    = np.mat(Pm)
-        Om    = np.mat(np.diagflat(f0s.values))
-        EJ    = np.mat(np.diagflat(self.get_Ejs(variation).values )) # GHz
+        Om    = np.diagflat(np.mat(Om))
+        EJ    = np.mat(np.diagflat(self.get_Ejs(variation).values)) # GHz
         CHI_O1= 0.25* Om * PJ * EJ.I * PJ.T * Om * 1000.             # MHz
-        f1s   = f0s - 0.5*np.ndarray.flatten( np.array(CHI_O1.sum(1))) / 1000.                  # 1st order PT expect freq to be dressed down by alpha
+        f1s   = np.diag(Om) - 0.5*np.ndarray.flatten( np.array(CHI_O1.sum(1))) / 1000.                  # 1st order PT expect freq to be dressed down by alpha
         CHI_O1= divide_diagonal_by_2(CHI_O1)                  # Make the diagonals alpha
 
         # numerical diag
