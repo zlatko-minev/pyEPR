@@ -99,3 +99,9 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# exclude scripts
+scripts/*
+
+# exclude config
+pyEPR/config.py
