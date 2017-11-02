@@ -103,6 +103,7 @@ class Project_Info(object):
 
         ## HFSS desgin: describe junction parameters
         self.junctions     = OrderedDict()
+        self.ports     = OrderedDict()
         # TODO: introduce modal labels
 
         ## Dissipative HFSS volumes and surfaces
@@ -126,6 +127,7 @@ class Project_Info(object):
         hdf['project_info_dissip']    = pd.Series(get_instance_vars(self.dissipative))
         hdf['project_info_options']   = pd.Series(get_instance_vars(self.options))
         hdf['project_info_junctions'] = pd.DataFrame(self.junctions)
+        hdf['project_info_ports'] = pd.DataFrame(self.ports)
 
 
     def connect_to_project(self):
@@ -202,6 +204,10 @@ class pyEPR_HFSS(object):
     @property
     def junctions(self):
         return self.pinfo.junctions
+    
+    @property
+    def ports(self):
+        return self.pinfo.ports
 
     def __init__(self, project_info, verbose=True, append_analysis=False):
         '''
@@ -574,6 +580,23 @@ class pyEPR_HFSS(object):
         calc = calc.getQty("H").imag().integrate_line_tangent(name = junc_line_name)
         #self.design.Clear_Field_Clac_Stack()
         return calc.evaluate(lv=lv)
+    
+    def calculate_Q_mp(self, variation, freq_GHz, U_E):
+        ''' calculate the coupling Q of mode m with each port p 
+        Expected that you have specified the mode before calling this'''
+
+        Qp = pd.Series({})
+
+        freq = freq_GHz * 1e9 # freq in Hz
+        for port_nm, port in self.pinfo.ports.items():
+            I_peak = self.calc_avg_current_J_surf_mag(variation, port['rect'],
+                                                      port['length'])
+            U_dissip = 0.5 * port['R'] * I_peak**2 * 1 / freq
+            p = U_dissip / U_E
+            kappa = p * freq
+            Q = 2 * np.pi * freq / kappa
+            Qp['Q_' + port_nm] = Q
+        return Qp
 
     def calculate_p_mj(self, variation, U_H, U_E, Ljs):
         ''' Expected that you have specified the mode before calling this
@@ -666,6 +689,7 @@ class pyEPR_HFSS(object):
             Om  = OrderedDict() # Angular Freq (of analyzed modes) matrix
             Pm  = OrderedDict() # P matrix
             Sm  = OrderedDict() # S matrix
+            Qm_coupling  = OrderedDict()
             SOL = OrderedDict() # otehr results
             for mode in modes:
                 # Mode setup & load fields
@@ -696,6 +720,11 @@ class pyEPR_HFSS(object):
                 # Dissipative EPR calculations
 
                 self.omega  = 2*np.pi*freqs_bare_GHz[mode]    #TODO: this should really be passed as argument  to the functions rather than a property of the calss I would say
+
+                Qm_coupling[mode] = self.calculate_Q_mp(variation,
+                                                        freqs_bare_GHz[mode],
+                                                        self.U_E)
+                    
                 if self.pinfo.dissipative.seams is not None:           # get seam Q
                     for seam in self.pinfo.dissipative.seams:
                         sol = sol.append(self.get_Qseam(seam,mode,variation))
@@ -720,6 +749,7 @@ class pyEPR_HFSS(object):
             hdf['v'+variation+'/O_matrix'] = pd.DataFrame(Om)
             hdf['v'+variation+'/P_matrix']   = pd.DataFrame(Pm).transpose()
             hdf['v'+variation+'/S_matrix']   = pd.DataFrame(Sm).transpose()
+            hdf['v'+variation+'/Q_coupling_matrix']   = pd.DataFrame(Qm_coupling).transpose()
             hdf['v'+variation+'/pyEPR_sols'] = pd.DataFrame(SOL).transpose()
 
             if self.pinfo.options.save_mesh_stats:
@@ -850,6 +880,7 @@ class pyEPR_Analysis(object):
             self.OM             = OrderedDict()
             self.PM             = OrderedDict() # participation matrices
             self.SM             = OrderedDict() # sign matrices
+            self.QM_coupling    = OrderedDict() # sign matrices
             self.sols           = OrderedDict()
             self.mesh_stats     = OrderedDict()
             self.convergence    = OrderedDict()
@@ -861,6 +892,7 @@ class pyEPR_Analysis(object):
                     self.Ljs[variation]            = hdf['v'+variation+'/Ljs']
                     self.PM[variation]             = hdf['v'+variation+'/P_matrix']
                     self.SM[variation]             = hdf['v'+variation+'/S_matrix']
+                    self.QM_coupling[variation]    = hdf['v'+variation+'/Q_coupling_matrix']
                     self.freqs_hfss[variation]     = hdf['v'+variation+'/freqs_bare_GHz']
                     self.Qs[variation]             = hdf['v'+variation+'/Qs_bare']
                     self.sols[variation]           = hdf['v'+variation+'/pyEPR_sols']   # contains U_E and U_H
@@ -998,7 +1030,7 @@ class pyEPR_Analysis(object):
             Pm_norm    = Pm_glb_sum/Pm.sum(axis = 1)
             # should we still dothis when Pm_glb_sum is very small
             #print('\n*** NORM: ')
-            print(Pm_norm)   # for debug
+            print("Pm_norm = %s " % str(Pm_norm))   # for debug
             Pm = Pm.mul(Pm_norm, axis=0)
         else:
             Pm_norm     = 1
@@ -1042,6 +1074,7 @@ class pyEPR_Analysis(object):
         result['_Pm_norm']  = Pm_norm
         result['hfss_variables'] = self.hfss_variables[variation] # just propagate
         result['Ljs']            = self.Ljs[variation]
+        result['Q_coupling']     = self.QM_coupling[variation]
         result['Qs']             = self.Qs[variation]
         result['fock_trunc']     = fock_trunc
         result['cos_trunc']      = cos_trunc
@@ -1081,6 +1114,9 @@ class pyEPR_Analysis(object):
         print( '\n*** Frequencies ND (MHz)'  )
         print(result['f_ND'])
 
+        print( '\n*** Q_coupling'  )
+        print(result['Q_coupling'])
+        
     def plot_Hresults(self, fig = None):
         '''
             versus varaitions
