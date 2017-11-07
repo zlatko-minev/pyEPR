@@ -592,7 +592,7 @@ class pyEPR_HFSS(object):
             I_peak = self.calc_avg_current_J_surf_mag(variation, port['rect'],
                                                       port['length'])
             U_dissip = 0.5 * port['R'] * I_peak**2 * 1 / freq
-            p = U_dissip / U_E
+            p = U_dissip / (U_E/2) # U_E is 2x the peak electrical energy
             kappa = p * freq
             Q = 2 * np.pi * freq / kappa
             Qp['Q_' + port_nm] = Q
