@@ -569,7 +569,8 @@ class pyEPR_HFSS(object):
             The avg. is over the surface of the junction. I.e., spatial. '''
         lv   = self.get_lv(variation)
         calc = CalcObject([],self.setup)
-        calc = calc.getQty("Jsurf").mag().integrate_surf(name = junc_rect)
+        #calc = calc.getQty("Jsurf").mag().integrate_surf(name = junc_rect)
+        calc = (((calc.getQty("Jsurf")).scalar_x()).imag()).integrate_surf(name = junc_rect)
         I    = calc.evaluate(lv=lv) / junc_len #phase = 90
         #self.design.Clear_Field_Clac_Stack()
         return  I
@@ -735,7 +736,7 @@ class pyEPR_HFSS(object):
 
                 if self.pinfo.dissipative.resistive_surfaces is not None:
                     if self.pinfo.dissipative.resistive_surfaces is 'all':             # get Q surface
-                        sol = sol.append( self.get_Qsurface(mode, variation) )
+                        sol = sol.append( self.get_Qsurface_all(mode, variation) )
                     else:
                         raise NotImplementedError("Join the team, by helping contribute this piece of code.")
 
@@ -1117,7 +1118,7 @@ class pyEPR_Analysis(object):
         print( '\n*** Q_coupling'  )
         print(result['Q_coupling'])
         
-    def plot_Hresults(self, fig = None):
+    def plot_Hresults(self, variable=None, fig=None):
         '''
             versus varaitions
         '''

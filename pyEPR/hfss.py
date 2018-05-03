@@ -1200,7 +1200,10 @@ class CalcObject(COMWrapper):
 
     def imag(self):
         return self._unary_op("Imag")
-
+    
+    def complexmag(self):
+        return self._unary_op("CmplxMag")
+    
     def _integrate(self, name, type):
         stack = self.stack + [(type, name), ("CalcOp", "Integrate")]
         return CalcObject(stack, self.setup)
