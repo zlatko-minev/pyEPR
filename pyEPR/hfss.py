@@ -738,12 +738,13 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
     def set_mode(self, n, phase):
         n_modes = int(self.parent.n_modes)
         self._solutions.EditSources(
-            "TotalFields",
+            "EigenStoredEnergy",
             ["NAME:SourceNames", "EigenMode"],
             ["NAME:Modes", n_modes],
             ["NAME:Magnitudes"] + [1 if i + 1 == n else 0 for i in range(n_modes)],
             ["NAME:Phases"] + [phase if i + 1 == n else 0 for i in range(n_modes)],
-            ["NAME:Terminated"], ["NAME:Impedances"]
+            ["NAME:Terminated"], 
+            ["NAME:Impedances"]
         )
 
 class HfssDMDesignSolutions(HfssDesignSolutions):
@@ -1223,6 +1224,16 @@ class CalcObject(COMWrapper):
                                    ("CalcOp",    "Dot")]
         return self.integrate_line(name)
 
+    def line_tangent_coor(self, name, coordinate):
+        ''' integrate line tangent to vector expression \n
+            name = of line to integrate over '''
+        if coordinate not in ['X', 'Y', 'Z']:
+            raise ValueError
+        self.stack = self.stack + [("EnterLine", name),
+                                   ("CalcOp",    "Tangent"),
+                                   ("CalcOp",    "Scalar"+coordinate)]
+        return self.integrate_line(name)
+
     def integrate_surf(self, name="AllObjects"):
         return self._integrate(name, "EnterSurf")
 
@@ -1239,7 +1250,7 @@ class CalcObject(COMWrapper):
 
     def write_stack(self):
         for fn, arg in self.stack:
-            if numpy.size(arg)>1:
+            if numpy.size(arg)>1 and fn not in ['EnterVector']:
                 getattr(self.calc_module, fn)(*arg)
             else:
                 getattr(self.calc_module, fn)(arg)
@@ -1284,6 +1295,11 @@ class ConstantCalcObject(CalcObject):
     def __init__(self, num, setup):
         stack = [("EnterScalar", num)]
         super(ConstantCalcObject, self).__init__(stack, setup)
+
+class ConstantVecCalcObject(CalcObject):
+    def __init__(self, vec, setup):
+        stack = [("EnterVector", vec)]
+        super(ConstantVecCalcObject, self).__init__(stack, setup)
 
 def get_active_project():
     ''' If you see the error:

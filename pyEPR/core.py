@@ -21,7 +21,7 @@ from collections import OrderedDict
 # pyEPR custom imports
 from . import hfss
 from . import config
-from .hfss        import CalcObject
+from .hfss        import CalcObject, ConstantVecCalcObject
 from .toolbox     import print_NoNewLine, print_color, deprecated, pi, fact, epsilon_0, hbar, Planck, fluxQ, nck, \
                          divide_diagonal_by_2, print_matrix, DataFrame_col_diff, get_instance_vars,\
                          sort_df_col, sort_Series_idx
@@ -549,7 +549,7 @@ class pyEPR_HFSS(object):
         A=vecH.times_mu()
         B=vecH.conj()
         A=A.dot(B)
-        A=A.real()
+        A=A.real()        
         A=A.integrate_vol(name=volume)
         return A.evaluate(lv=lv)
 
@@ -564,14 +564,18 @@ class pyEPR_HFSS(object):
         self.design.Clear_Field_Clac_Stack()
         return I
 
-    def calc_avg_current_J_surf_mag(self, variation, junc_rect, junc_len):
+    def calc_avg_current_J_surf_mag(self, variation, junc_rect, junc_line):
         ''' Peak current I_max for mdoe J in junction J
             The avg. is over the surface of the junction. I.e., spatial. '''
         lv   = self.get_lv(variation)
+        
+        jl, uj = self.get_junc_len_dir(variation, junc_line)
+        
+        uj = ConstantVecCalcObject(uj, self.setup)
         calc = CalcObject([],self.setup)
         #calc = calc.getQty("Jsurf").mag().integrate_surf(name = junc_rect)
-        calc = (((calc.getQty("Jsurf")).scalar_x()).imag()).integrate_surf(name = junc_rect)
-        I    = calc.evaluate(lv=lv) / junc_len #phase = 90
+        calc = (((calc.getQty("Jsurf")).dot(uj)).imag()).integrate_surf(name = junc_rect)
+        I    = calc.evaluate(lv=lv) / jl #phase = 90
         #self.design.Clear_Field_Clac_Stack()
         return  I
 
@@ -582,6 +586,26 @@ class pyEPR_HFSS(object):
         #self.design.Clear_Field_Clac_Stack()
         return calc.evaluate(lv=lv)
     
+    def get_junc_len_dir(self, variation, junc_line):
+        '''return the length and direction of a junction defined by a line 
+        inputs: variation: simulation variation
+                junc_line: polyline object
+        outputs: jl (float) junction length
+                 uj (list of 3 floats) x,y,z coordinates of the unit vector
+                 tangent to the junction line
+        '''
+        #
+        lv   = self.get_lv(variation)
+        u = []
+        for coor in ['X', 'Y', 'Z']:
+            calc = CalcObject([],self.setup)
+            calc = calc.line_tangent_coor(junc_line, coor)
+            u.append(calc.evaluate(lv=lv))
+        
+        jl = float(np.sqrt(u[0]**2+u[1]**2+u[2]**2))
+        uj = [float(u[0]/jl), float(u[1]/jl), float(u[2]/jl)]
+        return jl, uj
+    
     def calculate_Q_mp(self, variation, freq_GHz, U_E):
         ''' calculate the coupling Q of mode m with each port p 
         Expected that you have specified the mode before calling this'''
@@ -591,7 +615,7 @@ class pyEPR_HFSS(object):
         freq = freq_GHz * 1e9 # freq in Hz
         for port_nm, port in self.pinfo.ports.items():
             I_peak = self.calc_avg_current_J_surf_mag(variation, port['rect'],
-                                                      port['length'])
+                                                      port['line'])
             U_dissip = 0.5 * port['R'] * I_peak**2 * 1 / freq
             p = U_dissip / (U_E/2) # U_E is 2x the peak electrical energy
             kappa = p * freq
@@ -619,7 +643,7 @@ class pyEPR_HFSS(object):
 
             if self.pinfo.options.p_mj_method is 'J_surf_mag':
                 #print(' Integrating rectangle: ' + junc['rect'])
-                I_peak = self.calc_avg_current_J_surf_mag(variation, junc['rect'], junc['length'])
+                I_peak = self.calc_avg_current_J_surf_mag(variation, junc['rect'], junc['line'])
             else:
                 raise NotImplementedError('Other calculation methods are possible but not implemented here. ')
 
@@ -707,9 +731,13 @@ class pyEPR_HFSS(object):
                     tb = sys.exc_info()[2]
                     print("\n\nError:\n", e)
                     raise(Exception(' Did you save the field solutions?   Failed during calculation of the total magnetic energy. This is the first calculation step, and is indicative that there are no field solutions saved. ').with_traceback(tb))
-                print_NoNewLine(', U_E')
+                print_NoNewLine(', U_E \n')
                 self.U_E = self.calc_U_E(variation)
-                print(  "; U_L=  {:>9.2E}" .format( (self.U_E - self.U_H )/self.U_E) )
+                print(  "U_E=  {:>9.2E}" .format(self.U_E) )
+                print(  "U_H=  {:>9.2E}" .format(self.U_H) )
+                print(  "U_E+U_H=  {:>9.2E}" .format(self.U_E + self.U_H ) )
+                print(  "U_L=U_E-U_H=  {:>9.2E}" .format(self.U_E - self.U_H ) )
+                print(  "U_L/U_E=  {:>9.2E}" .format( (self.U_E - self.U_H )/self.U_E) )
                 sol = Series({'U_H':self.U_H, 'U_E':self.U_E})
                 # calcualte for each of the junctions
                 Pm[mode], Sm[mode] = self.calculate_p_mj(variation, self.U_H, self.U_E, Ljs)
