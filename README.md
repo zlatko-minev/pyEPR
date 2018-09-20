@@ -1,20 +1,28 @@
 Welcome to pyEPR!
 ===================
 
-### The energy-participation ratio (EPR) approach to the design of quantum Josephson circuits <br> — the Python package.
+### EPR Python package: Energy-participation-ratio design of quantum Josephson circuits
 
-##### By Zlatko Minev & Zaki Leghtas.
+Quantum information processing (QIP) based on superconducting systems hinges on the ability to successfully design circuits with the desired Hamiltonians and environmental couplings. The necessary non-linearity can be provided by nearly lossless, inductive elements, which in practice are Josephson tunnel junctions. As the starting point for most QIP circuit-based experiments, the question of what physical circuit realizes a desired Hamiltonian and couplings to input-output ports has attracted a lot of interest, but the general solution to this inverse problem appears to be out of reach.
 
-* Join the project!  Contact Zlatko or Zaki if you wish to contribute
-* Timeframe: 2015 - present
-* Terms of use: Use freely and kindly cite the paper (arXiv link to be posted here) or this package.
+Promising applications of superconducting circuits require designing circuits with an ever-increasing complexity. Therefore, there is a growing need for fast and accurate design, analytic, and optimization techniques.
+
+With the EPR approach, we introduce a robust framework to address this problem in a systematic, practical, and scalable manner. The EPR approach can be used with distributed (3D) and planar (2D) circuits involving arbitrary non-linear inductive elements, such as kinetic-inductance transmission lines, nanowires, weak links, etc.
+
+See: Z.K. Minev, PhD Disseration, Yale University (2018) and Minev et al., in prep., (2018) 
+
+##### Python package authors and contributors 
+* By Zlatko Minev & Zaki Leghtas, with contributions from many friends and colleagues
+* 2015 - present
 * Contributors:  [Zlatko Minev](https://github.com/zlatkom), [Zaki Leghtas](https://github.com/leghtas/), [Phil Rheinhold](https://github.com/PhilReinhold), Lysander Christakis, [Devin Cody](https://github.com/devincody), ...
 * pyHFSS and pyNumericalDiagonalization were contributed by [Phil Rheinhold](https://github.com/PhilReinhold). For his excellent, original pyHFSS interface between python and HFSS see [pyHFSS](https://github.com/PhilReinhold/pyHFSS)
+* Terms of use: Use freely and kindly cite the paper (arXiv link to be posted here) or this package.
+* Contribue: to join the project, please contact [Zlatko](zlatko-minev.com) or [Zaki](http://cas.ensmp.fr/~leghtas/)
 
 # Features
 ---------------------
+![Intro image](read_me_0.png 'Intro image')
 TBA
-
 
 # Installation of pyEPR
 -------------
