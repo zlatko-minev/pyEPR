@@ -78,6 +78,7 @@ def make_dispersive(H, fock_trunc, fzpfs= None, f0s = None, chi_prime = False,
     """
     Input: Hamiltonian Matrix. 
         Optional: phi_zpfs and normal mode frequncies, f0s.
+        use_1st_order : deprecated 
     Output: 
         Return dressed mode frequencies, chis, chi prime, phi_zpf flux (not reduced), and linear frequencies 
     Description: 
