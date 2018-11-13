@@ -25,11 +25,14 @@ def cos_approx(x, cos_trunc=5):
 
 def bbq_hmt(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual = False):
     """
-    :param fs: Zero crossing frequencies in Hz, length N
-    :param ljs: qubit junction inductances in Henries, length M
-    :param fzpfs: Estimated zero-point fluxes for each mode across each junction, shape MxN
+    :param fs: Linearized model, H_lin, normal mode frequencies in Hz, length N
+    :param ljs: junction linerized inductances in Henries, length M
+    :param fzpfs: Zero-point fluctutation of the junction fluxes for each mode across each junction, shape MxN
     :return: Hamiltonian in units of Hz (i.e H / h)
-    All in SI units. The ZPF fed in are the generalized, not reduced flux.
+    All in SI units. The ZPF fed in are the generalized, not reduced, flux.
+    
+    Description:
+     Takes the linear mode frequencies, $\omega_m$, and the zero-point fluctuations, ZPFs, and builds the Hamiltonian matrix of $H_full$, assuming cos potential.
     """
     import qutip
     nmodes = len(fs)
@@ -73,9 +76,15 @@ def bbq_hmt(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual = False):
 def make_dispersive(H, fock_trunc, fzpfs= None, f0s = None, chi_prime = False,
                     use_1st_order = False):
     """
-    Takes hamiltonian, and finds second order dispersive approximation
-    I.e. returns final qubit freqs, chis, chi prime, phi_zpf flux (not reduced), and linear ferq
-        Note, the diagonal chis are the alphas directly.
+    Input: Hamiltonian Matrix. 
+        Optional: phi_zpfs and normal mode frequncies, f0s.
+        use_1st_order : deprecated 
+    Output: 
+        Return dressed mode frequencies, chis, chi prime, phi_zpf flux (not reduced), and linear frequencies 
+    Description: 
+        Takes the Hamiltonian matrix `H` from bbq_hmt. It them finds the eigenvalues/eigenvectors and  assigns quantum numbers to them --- i.e., mode excitations,  such as, for instance, for three mode, |0,0,0> or |0,0,1>, which correspond to no excitations in any of the modes or one excitation in the 3rd mode, resp.    The assignment is performed based on the maximum overlap between the eigenvectors of H_full and H_lin.   If this crude explanation is confusing, let me know, I will write a more detailed one :slightly_smiling_face:
+        Based on the assignment of the excitations, the function returns the dressed mode frequencies $\omega_m^\prime$, and the cross-Kerr matrix (including anharmonicities) extracted from the numerical diagonalization, as well as from 1st order perturbation theory.
+        Note, the diagonal of the CHI matrix is directly the anharmonicity term. 
     """
     import qutip
     if hasattr(H, '__len__'): # is it an array / list?
