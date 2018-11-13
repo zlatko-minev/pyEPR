@@ -112,3 +112,6 @@ If your script terminates improperly, this can happen. pyHFSS tries to catch ter
 
 ###### Parametric Sweep Error
 When running a parametric sweep in HFSS, make sure you are actually saving the fields for each variation before running pyEPR. This can be done by right-clicking on your ParametricSetup -> properties -> options -> "Save Fields and Mesh".
+
+###### Spyder pops up cmd window with tput.exe
+This problem is due to pandas 0.20.1, update to 0.20.3 or better solves this issue.
