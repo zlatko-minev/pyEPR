@@ -1,28 +1,49 @@
 Welcome to pyEPR!
 ===================
 
-### EPR Python package: Energy-participation-ratio design of quantum Josephson circuits
+### A fully automated Python package for the design and quantization of Josephson circuit
+  
+_Overview._ Superconducting circuits incorporating non-linear devices, such as Josephson junctions and nanowires, are among the leading platforms for emerging quantum technologies. Promising applications require designing and optimizing circuits with ever-increasing complexity and controlling their dissipative and Hamiltonian parameters to several significant digits. Therefore, there is a growing need for a systematic, simple, and robust approach for precise circuit design, extensible to increased complexity. The energy-participation ratio (EPR) approach presents such an approach to unify the design of dissipation and Hamiltonians around a single concept — the energy participation, a number between zero and one — in a single-step electromagnetic simulation. This markedly reduces the required number of simulations and allows for robust extension to complex systems. The approach is general purpose, derived ab initio, and valid for arbitrary non-linear devices and circuit architectures. Experimental results on a variety of circuit quantum electrodynamics (cQED) devices and architectures, 3D and flip-chip (2.5D), have been demonstrated to exhibit ten percent to percent-level agreement for non-linear coupling and modal Hamiltonian parameters over five-orders of magnitude and across a dozen samples. Here, in this package, all routines of the EPR approach are fully automated. 
 
-Quantum information processing (QIP) based on superconducting systems hinges on the ability to successfully design circuits with the desired Hamiltonians and environmental couplings. The necessary non-linearity can be provided by nearly lossless, inductive elements, which in practice are Josephson tunnel junctions. As the starting point for most QIP circuit-based experiments, the question of what physical circuit realizes a desired Hamiltonian and couplings to input-output ports has attracted a lot of interest, but the general solution to this inverse problem appears to be out of reach.
+Reference: Z.K. Minev, Z. Leghtas, _et al._ arXiv:very-soon (2018)
 
-Promising applications of superconducting circuits require designing circuits with an ever-increasing complexity. Therefore, there is a growing need for fast and accurate design, analytic, and optimization techniques.
+See also: Z.K. Minev, PhD Disseration, Yale University (2018)
 
-With the EPR approach, we introduce a robust framework to address this problem in a systematic, practical, and scalable manner. The EPR approach can be used with distributed (3D) and planar (2D) circuits involving arbitrary non-linear inductive elements, such as kinetic-inductance transmission lines, nanowires, weak links, etc.
-
-See: Z.K. Minev, PhD Disseration, Yale University (2018) and Minev et al., in prep., (2018) 
-
-##### Python package authors and contributors 
-* By Zlatko Minev & Zaki Leghtas, with contributions from many friends and colleagues
-* 2015 - present
-* Contributors:  [Zlatko Minev](https://github.com/zlatkom), [Zaki Leghtas](https://github.com/leghtas/), [Phil Rheinhold](https://github.com/PhilReinhold), Lysander Christakis, [Devin Cody](https://github.com/devincody), ...
-* pyHFSS and pyNumericalDiagonalization were contributed by [Phil Rheinhold](https://github.com/PhilReinhold). For his excellent, original pyHFSS interface between python and HFSS see [pyHFSS](https://github.com/PhilReinhold/pyHFSS)
-* Terms of use: Use freely and kindly cite the paper (arXiv link to be posted here) or this package.
-* Contribue: to join the project, please contact [Zlatko](zlatko-minev.com) or [Zaki](http://cas.ensmp.fr/~leghtas/)
-
-# Features
----------------------
 ![Intro image](read_me_0.png 'Intro image')
-TBA
+
+
+
+
+# Using pyEPR 
+
+After installing pyEPR (see Sec. Installation below), you can complete full analysis of any distributed circuit with just a few keystrokes, as illustrated by the following startup example of a simple two-qubit, one cavity device to be analyzed.  Just specify the junction rectangles and variables (see Sec. pyEPR Project Setup in HFSS). All operations in the eigen analysis and Hamiltonian computation are fully automated. The results are saved, printed, and nicely plotted. 
+
+```python
+from pyEPR import *
+
+# 1.  Project and design. Open link to HFSS controls.
+project_info = Project_Info('c:/sims', 
+			    project_name = 'two_qubit_one_cavity', # Project file name (string). "None" will get the current active one.
+			    design_name  = 'Alice_Bob'             # Design name (string). "None" will get the current active one.
+			    )
+
+# 2a. Junctions. Specify junctions in HFSS model
+project_info.junctions['jAlice'] = {'Lj_variable':'LJAlice', 'rect':'qubitAlice', 'line': 'alice_line', 'length':0.0001}
+project_info.junctions['jBob']   = {'Lj_variable':'LJBob',   'rect':'qubitBob',   'line': 'bob_line',   'length':0.0001}
+
+# 2b. Dissipative elements.
+project_info.dissipative.dielectrics_bulk    = ['si_substrate']    # supply names here, there are more options in project_info.dissipative.
+project_info.dissipative.dielectric_surfaces = ['interface']   
+
+# 3.  Run analysis
+epr_hfss = pyEPR_HFSS(project_info)
+epr_hfss.do_EPR_analysis()
+
+# 4.  Hamiltonian analysis
+epr      = pyEPR_Analysis(epr_hfss.data_filename)
+epr.analyze_all_variations(cos_trunc = 8, fock_trunc = 7)
+epr.plot_Hresults()
+```
 
 # Installation of pyEPR
 -------------
@@ -54,66 +75,36 @@ Follow the same instructions above. You shouldn't have to install mingw or modif
 You may also choose to install the optional qutip package for some advanced numerical analysis of the Hamiltonian.
 We use [Qutip](http://qutip.org/) to handle quantum objects. Follow the instruction on their website. As of Aug. 2017, qutip is part of conda, and you can use
 ```sh
-	conda install qutip
+conda install qutip
 ```
 If this doesn't work, try  installing from conda forge
 ```sh
-	conda install -c conda-forge qutip
+conda install -c conda-forge qutip
 ```
 
 If you wish to install manually, follow the following procedure. Some of this can get a bit tricky at times.
 First, you need to install a C compiler, since qutip uses Cython. If you dont have VS9, gcc, or mingw installed, the following works:
 ```sh
-	pip install -i https://pypi.anaconda.org/carlkl/simple mingwpy
+pip install -i https://pypi.anaconda.org/carlkl/simple mingwpy
 ```
 Let anaconda know to use this compiler by creating the file `C:\Anaconda2\Lib\distutils\distutils.cfg` with the following content
 ```
-    [build]
-    compiler = mingw32
-    [build_ext]
-    compiler = mingw32
+[build]
+compiler = mingw32
+[build_ext]
+compiler = mingw32
 ```
 Next, let's install qutip. You can choose to use conda intall or pip install, or pull from the git directly  as done here:
 ```sh
-    conda install git
-    pip install git+https://github.com/qutip/qutip.git
+conda install git
+pip install git+https://github.com/qutip/qutip.git
 ```
 
-# Using pyEPR 
-
-An example of a simpe script to analyze a two-qubit, one cavity device.  Just specify the junction rectangles and variables (see Sec. pyEPR Project Setup in HFSS). All operations in the eigen analysis and Hamiltonian computation are fully automated. The results are saved, printed, and nicely plotted. 
-
-```python
-from pyEPR import *
-
-# 1.  Project and design. Open link to HFSS controls.
-project_info = Project_Info('c:/sims', 
-			    project_name = 'two_qubit_one_cavity', # Project file name (string). "None" will get the current active one.
-			    design_name  = 'Alice_Bob'             # Design name (string). "None" will get the current active one.
-			    )
-
-# 2a. Junctions. Specify junctions in HFSS model
-project_info.junctions['jAlice'] = {'Lj_variable':'LJAlice', 'rect':'qubitAlice', 'line': 'alice_line', 'length':0.0001}
-project_info.junctions['jBob']   = {'Lj_variable':'LJBob',   'rect':'qubitBob',   'line': 'bob_line',   'length':0.0001}
-
-# 2b. Dissipative elements.
-project_info.dissipative.dielectrics_bulk    = ['si_substrate']    # supply names here, there are more options in project_info.dissipative.
-project_info.dissipative.dielectric_surfaces = ['interface']   
-
-# 3.  Run analysis
-epr_hfss = pyEPR_HFSS(project_info)
-epr_hfss.do_EPR_analysis()
-
-# 4.  Hamiltonian analysis
-epr      = pyEPR_Analysis(epr_hfss.data_filename)
-epr.analyze_all_variations(cos_trunc = 8, fock_trunc = 7)
-epr.plot_Hresults()
-```
 
 # pyEPR Project Setup in HFSS
 -------------
 #### Eigenmode Design --- How to set up junctions
-You may find an advised workflow and some setup tips here.
+You may find an advised work flow and some setup tips here.
 
  1. Define circuit geometry & electromagnetic boundary condition (BC).
    1. Junction rectangles and BC: Create a rectangle for each Josephson junction and give it a good name; e.g., `jAlice` for a qubit named Alice. We recommend 50 x 100 um rectangle for a simple simulation, although orders of magnitude smaller rectangles work as well. Note the length of this junction, you will supply it to pyEPR. Assign a `Lumped RLC` BC on this rectangle surface, with an inductance value given by a local variable, `Lj1` for instance. The name of this variable will also be supplied to the pyEPR.
@@ -124,19 +115,28 @@ You may find an advised workflow and some setup tips here.
    1. We recommend `mixed order` solutions.
 
 
+##### Python package contributions 
+* By Zlatko Minev & Zaki Leghtas, with contributions from many friends and colleagues
+* 2015 - present
+* Contributors:  [Zlatko Minev](https://github.com/zlatkom), [Zaki Leghtas](https://github.com/leghtas/), [Phil Rheinhold](https://github.com/PhilReinhold), Lysander Christakis, [Devin Cody](https://github.com/devincody), ...
+* pyHFSS and pyNumericalDiagonalization were contributed by [Phil Rheinhold](https://github.com/PhilReinhold). For his excellent, original pyHFSS interface between python and HFSS see [pyHFSS](https://github.com/PhilReinhold/pyHFSS)
+* Terms of use: Use freely and kindly cite the paper (arXiv link to be posted here) or this package.
+* Want to contribute? Contact [Zlatko](zlatko-minev.com) or [Zaki](http://cas.ensmp.fr/~leghtas/)
+
+
 # Troubleshooting pyEPR
 ---------------------
-###### First run: pint error: system='mks' unkown.
+###### First run: pint error: system='mks' unknown.
 Please update to pint version newer than 0.7.2. You may use
 ```
-    pip install pint --upgrade
+pip install pint --upgrade
 ```
 
 ###### COM Error on opening HFSS
 Check the project and design file names carefully. Make sure that the file-path doesn't have apostrophes or other bad characters, such as in C:\\Minev's PC\\my:Project.  Check that HFSS hasn't popped up an error dialogue, such as "File locked." Manually open HFSS and the file.
 
 ###### COM error on calculation of expression
-Either HFSS popped an error dialogue, froze up, or you miss-typed the name of something.
+Either HFSS popped an error dialog, froze up, or you miss-typed the name of something.
 
 ###### HFSS refuses to close
 If your script terminates improperly, this can happen. pyHFSS tries to catch termination events and handle them. Your safety should be guaranteed however, if you call `hfss.release()` when you have finished. Use the Task-manager (Activity Monitor on MAC) to kill HFSS if you want.
@@ -144,5 +144,5 @@ If your script terminates improperly, this can happen. pyHFSS tries to catch ter
 ###### Parametric Sweep Error
 When running a parametric sweep in HFSS, make sure you are actually saving the fields for each variation before running pyEPR. This can be done by right-clicking on your ParametricSetup -> properties -> options -> "Save Fields and Mesh".
 
-###### Spyder pops up cmd window with tput.exe
+###### Spyder pops up command window cmd with tput.exe executed 
 This problem is due to pandas 0.20.1, update to 0.20.3 or better solves this issue.
