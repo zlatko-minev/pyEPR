@@ -72,7 +72,7 @@ If you are starting from scratch, follow the installation guide below to setup a
 #### Note for Mac/Linux.
 Follow the same instructions above. You shouldn't have to install mingw or modify distutils.cfg, since your distribution should come with gcc as the default compiler.
 
-####Optional package installation
+#### Optional package installation
 You may also choose to install the optional qutip package for some advanced numerical analysis of the Hamiltonian.
 We use [Qutip](http://qutip.org/) to handle quantum objects. Follow the instruction on their website. As of Aug. 2017, qutip is part of conda, and you can use
 ```sh
@@ -82,7 +82,7 @@ If this doesn't work, try  installing from conda forge
 ```sh
 conda install -c conda-forge qutip
 ```
-
+### Alternative, manual install 
 If you wish to install manually, follow the following procedure. Some of this can get a bit tricky at times.
 First, you need to install a C compiler, since qutip uses Cython. If you dont have VS9, gcc, or mingw installed, the following works:
 ```sh
