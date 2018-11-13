@@ -1,4 +1,4 @@
-Welcome to pyEPR!
+Welcome to pyEPR
 ===================
 
 ### A fully automated Python package for the design and quantization of Josephson circuit
@@ -139,9 +139,9 @@ When running a parametric sweep in HFSS, make sure you are actually saving the f
 This problem is due to pandas 0.20.1, update to 0.20.3 or better solves this issue.
 
 # Authors and contributors to pyEPR 
-* By Zlatko Minev & Zaki Leghtas, with contributions from many friends and colleagues
-* 2015 - present
+* By Zlatko Minev & Zaki Leghtas, with contributions from many friends and colleagues.
+* 2015 - present.
 * Contributors:  [Zlatko Minev](https://github.com/zlatkom), [Zaki Leghtas](https://github.com/leghtas/), [Phil Rheinhold](https://github.com/PhilReinhold), Lysander Christakis, [Devin Cody](https://github.com/devincody), ...
-* pyHFSS and pyNumericalDiagonalization were contributed by [Phil Rheinhold](https://github.com/PhilReinhold). For his excellent, original pyHFSS interface between python and HFSS see [pyHFSS](https://github.com/PhilReinhold/pyHFSS)
+* Original versions of pyHFSS.py and pyNumericalDiagonalization.py were contributed by [Phil Rheinhold](https://github.com/PhilReinhold). For his excellent, original pyHFSS interface between python and HFSS, see Phil's [pyHFSS](https://github.com/PhilReinhold/pyHFSS).
 * Terms of use: Use freely and kindly cite the paper (arXiv link to be posted here) or this package.
-* Want to contribute? Contact [Zlatko](zlatko-minev.com) or [Zaki](http://cas.ensmp.fr/~leghtas/)
+* Want to contribute? Contact [Zlatko](zlatko-minev.com) or [Zaki](http://cas.ensmp.fr/~leghtas/).
