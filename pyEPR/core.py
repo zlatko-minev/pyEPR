@@ -138,8 +138,18 @@ class Project_Info(object):
         assert self.project_path is not None
 
         self.app, self.desktop, self.project = hfss.load_HFSS_project(self.project_name, self.project_path)
-        self.design  = self.project.get_design(self.design_name) if self.design_name != None else self.project.get_active_design()
-        self.setup   = self.design.get_setup(name=self.setup_name)
+        try:
+            self.design  = self.project.get_design(self.design_name) if self.design_name != None else self.project.get_active_design()
+        except Exception as e:
+            tb = sys.exc_info()[2]
+            print("\n\nOriginal error:\n", e)
+            raise(Exception(' Did you provide the correct design name? Failed to pull up design.').with_traceback(tb))
+        try:
+            self.setup   = self.design.get_setup(name=self.setup_name)
+        except Exception as e:
+            tb = sys.exc_info()[2]
+            print("\n\nOriginal error:\n", e)
+            raise(Exception(' Did you provide the correct setup name? Failed to pull up setup.').with_traceback(tb))
 
         self.project_name = self.project.name
         self.design_name  = self.design.name
@@ -645,7 +655,7 @@ class pyEPR_HFSS(object):
         ###  Main loop - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         for ii, variation in enumerate(variations):
             # Get variation, see if analyzed previously
-            print('\nVariation:  ' + variation + ' / ' + str(self.nvariations-1))
+            print('\nVariation:  ' + variation + ' / ' + str(len(variations)))
             if (variation+'/hfss_variables') in hdf.keys() and self.append_analysis:
                 print_NoNewLine('  previously analyzed ...\n')
                 continue
@@ -980,6 +990,7 @@ class pyEPR_Analysis(object):
 
         if print_result:
             print('\n', '. '*40)
+            print('Variation %s\n' % variation)
         else:
             print('%s, ' % variation, end='')
 
