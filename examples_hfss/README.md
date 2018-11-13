@@ -1,4 +1,4 @@
-Example simulatio files 
+Example simulation files 
 ===================
 
 In this folder, one can find example script files to quickly start using pyEPR.
