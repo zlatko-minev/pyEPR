@@ -7,7 +7,7 @@ _Overview._ Superconducting circuits incorporating non-linear devices, such as J
 
 Reference: Z.K. Minev, Z. Leghtas, _et al._ arXiv:very-soon (2018)
 
-See also: Z.K. Minev, PhD Disseration, Yale University (2018)
+See also: Z.K. Minev, PhD Dissertation, Yale University (2018)
 
 ![Intro image](read_me_0.png 'Intro image')
 
@@ -68,6 +68,7 @@ If you are starting from scratch, follow the installation guide below to setup a
  5. Edit pyEPR module `config.py`  to set your data-saving directory and other parameters of interest.
  6. **ENJOY! **  :+1:
 
+ 
 #### Note for Mac/Linux.
 Follow the same instructions above. You shouldn't have to install mingw or modify distutils.cfg, since your distribution should come with gcc as the default compiler.
 
