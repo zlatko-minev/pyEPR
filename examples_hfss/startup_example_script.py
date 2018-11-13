@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Example bare bones script to perform full quantization of a two qubit Josephson circuit.
+Example startup script to perform full quantization of a two qubit, one cavity Josephson circuit.
+The results are saved, printed, and nicely plotted.
+
 @author: Zlatko
 """
 
