@@ -29,7 +29,7 @@ if 1: # Hamiltonian analysis
     filename = epr_hfss.data_filename
     #filename = r'C:\\Users\\rslqulab\\Desktop\\zkm\\2017_pyEPR_data\\\\/2017_08_Zlatko_Shyam_AutStab/2 pyEPR/2 pyEPR_20170825_170550.hdf5'
     epr      = pyEPR_Analysis(filename)
-    epr._renorm_pj = False
+
     #result = epr.analyze_variation('1', cos_trunc = 8, fock_trunc = 7)
     epr.analyze_all_variations(cos_trunc = 8, fock_trunc = 7)
     epr.plot_Hresults()

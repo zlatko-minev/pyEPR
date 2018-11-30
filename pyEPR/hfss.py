@@ -157,10 +157,19 @@ def make_prop(name, prop_tab=None, prop_server=None, prop_args=None):
     return property(get_prop, set_prop)
 
 class HfssApp(COMWrapper):
-    def __init__(self):
+    def __init__(self, ProgID = 'AnsoftHfss.HfssScriptInterface'):
+        '''
+         Connect to IDispatch-based COM object.
+             Parameter is the ProgID or CLSID of the COM object.
+             This is found in the regkey.
+             
+         Version changes for Ansys HFSS for the main object
+             v2016 - 'Ansoft.ElectronicsDesktop'
+             v2017 and subsequent - 'AnsoftHfss.HfssScriptInterface'
+             
+        '''
         super(HfssApp, self).__init__()
-        self._app = Dispatch('AnsoftHfss.HfssScriptInterface')
-        # in v2016 the main object is 'Ansoft.ElectronicsDesktop'
+        self._app = Dispatch(ProgID)
 
     def get_app_desktop(self):
         return HfssDesktop(self, self._app.GetAppDesktop())
@@ -738,12 +747,13 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
     def set_mode(self, n, phase):
         n_modes = int(self.parent.n_modes)
         self._solutions.EditSources(
-            "TotalFields",
+            "EigenStoredEnergy",
             ["NAME:SourceNames", "EigenMode"],
             ["NAME:Modes", n_modes],
             ["NAME:Magnitudes"] + [1 if i + 1 == n else 0 for i in range(n_modes)],
             ["NAME:Phases"] + [phase if i + 1 == n else 0 for i in range(n_modes)],
-            ["NAME:Terminated"], ["NAME:Impedances"]
+            ["NAME:Terminated"], 
+            ["NAME:Impedances"]
         )
 
 class HfssDMDesignSolutions(HfssDesignSolutions):
@@ -1200,7 +1210,10 @@ class CalcObject(COMWrapper):
 
     def imag(self):
         return self._unary_op("Imag")
-
+    
+    def complexmag(self):
+        return self._unary_op("CmplxMag")
+    
     def _integrate(self, name, type):
         stack = self.stack + [(type, name), ("CalcOp", "Integrate")]
         return CalcObject(stack, self.setup)
@@ -1220,6 +1233,16 @@ class CalcObject(COMWrapper):
                                    ("CalcOp",    "Dot")]
         return self.integrate_line(name)
 
+    def line_tangent_coor(self, name, coordinate):
+        ''' integrate line tangent to vector expression \n
+            name = of line to integrate over '''
+        if coordinate not in ['X', 'Y', 'Z']:
+            raise ValueError
+        self.stack = self.stack + [("EnterLine", name),
+                                   ("CalcOp",    "Tangent"),
+                                   ("CalcOp",    "Scalar"+coordinate)]
+        return self.integrate_line(name)
+
     def integrate_surf(self, name="AllObjects"):
         return self._integrate(name, "EnterSurf")
 
@@ -1236,7 +1259,7 @@ class CalcObject(COMWrapper):
 
     def write_stack(self):
         for fn, arg in self.stack:
-            if numpy.size(arg)>1:
+            if numpy.size(arg)>1 and fn not in ['EnterVector']:
                 getattr(self.calc_module, fn)(*arg)
             else:
                 getattr(self.calc_module, fn)(arg)
@@ -1281,6 +1304,11 @@ class ConstantCalcObject(CalcObject):
     def __init__(self, num, setup):
         stack = [("EnterScalar", num)]
         super(ConstantCalcObject, self).__init__(stack, setup)
+
+class ConstantVecCalcObject(CalcObject):
+    def __init__(self, vec, setup):
+        stack = [("EnterVector", vec)]
+        super(ConstantVecCalcObject, self).__init__(stack, setup)
 
 def get_active_project():
     ''' If you see the error:

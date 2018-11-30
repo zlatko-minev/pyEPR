@@ -7,8 +7,11 @@ Created on Sat Feb 04 09:32:46 2017
 from __future__ import division, print_function, absolute_import   # Python 2.7 and 3 compatibility
 import warnings
 import numpy as np
+import pandas as pd
+
 
 ### Constants
+from collections import OrderedDict
 from scipy.constants import hbar, Planck, e as e_el, epsilon_0, pi
 
 fluxQ = hbar / (2*e_el) # reduced flux quantum
@@ -138,6 +141,29 @@ def DataFrame_col_diff(PS, indx=0):
         return np.logical_not(np.logical_and.reduce(R))
 
 
+def xarray_unravel_levels(arr, names, my_convert = lambda x: x):
+    ''' Takes in nested dict of dict of dataframes
+        names : names of lists; you dont have to include the last two dataframe columns & rows, but you can to override them
+        requires  xarray
+    '''
+    import xarray
+    if type(arr) == pd.DataFrame:
+        return xarray.DataArray(arr, dims = None if len(names)==0 else names)
+    elif type(arr) in  [OrderedDict, dict]:
+        return xarray.concat([xarray_unravel_levels(item, names[1:]) for k, item in arr.items()], pd.Index(arr.keys(), name=names[0]) )
+    elif type(arr) == xarray.DataArray:
+        return arr
+    else:
+        return my_convert(arr)
+
+def robust_percentile(calc_data, ROBUST_PERCENTILE = 2.):
+    '''
+        analysis helper function
+    '''
+    vmin = np.percentile(calc_data, ROBUST_PERCENTILE)
+    vmax = np.percentile(calc_data, 100 - ROBUST_PERCENTILE)
+    return vmin, vmax
+
 
 
 
@@ -146,5 +172,5 @@ __all__  = ['hbar', 'e_el', 'epsilon_0', 'pi', 'fluxQ',
             'divide_diagonal_by_2',
             'sort_df_col', 'sort_Series_idx',
             'print_matrix', 'print_NoNewLine',
-            'DataFrame_col_diff']
+            'DataFrame_col_diff', 'xarray_unravel_levels', 'robust_percentile']
 
