@@ -157,10 +157,19 @@ def make_prop(name, prop_tab=None, prop_server=None, prop_args=None):
     return property(get_prop, set_prop)
 
 class HfssApp(COMWrapper):
-    def __init__(self):
+    def __init__(self, ProgID = 'AnsoftHfss.HfssScriptInterface'):
+        '''
+         Connect to IDispatch-based COM object.
+             Parameter is the ProgID or CLSID of the COM object.
+             This is found in the regkey.
+             
+         Version changes for Ansys HFSS for the main object
+             v2016 - 'Ansoft.ElectronicsDesktop'
+             v2017 and subsequent - 'AnsoftHfss.HfssScriptInterface'
+             
+        '''
         super(HfssApp, self).__init__()
-        self._app = Dispatch('AnsoftHfss.HfssScriptInterface')
-        # in v2016 the main object is 'Ansoft.ElectronicsDesktop'
+        self._app = Dispatch(ProgID)
 
     def get_app_desktop(self):
         return HfssDesktop(self, self._app.GetAppDesktop())
