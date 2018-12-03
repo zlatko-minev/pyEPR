@@ -81,7 +81,7 @@ class Project_Info(object):
             self.p_mj_method      = 'J_surf_mag'
             self.save_mesh_stats  = True
 
-    def __init__(self, project_path):
+    def __init__(self, project_path, project_name=None,design_name=None):
         '''
         HFSS app connection settings
         -----------------------
@@ -97,8 +97,8 @@ class Project_Info(object):
             * length - of Junciton rect. length, measured in meters.
         '''
         self.project_path  = project_path
-        self.project_name  = None
-        self.design_name   = None
+        self.project_name  = project_name
+        self.design_name   = design_name
         self.setup_name    = None
 
         ## HFSS desgin: describe junction parameters
@@ -472,6 +472,7 @@ class pyEPR_HFSS(object):
 
         U_dielectric = self.calc_U_E(variation, volume=dielectric)
         p_dielectric = U_dielectric/self.U_E
+        #TODO: Update make p saved sep. and get Q for diff materials, indep. specify in pinfo
         Qdielectric['Qdielectric_'+dielectric+'_'+str(mode)] = 1/(p_dielectric*config.Dissipation_params.tan_delta_sapp)
         print('p_dielectric'+'_'+dielectric+'_'+str(mode)+' = ' + str(p_dielectric))
         return Series(Qdielectric)
@@ -725,7 +726,7 @@ class pyEPR_HFSS(object):
             Pm  = OrderedDict() # P matrix
             Sm  = OrderedDict() # S matrix
             Qm_coupling  = OrderedDict()
-            SOL = OrderedDict() # otehr results
+            SOL = OrderedDict() # other results
             for mode in modes:
                 # Mode setup & load fields
                 print('  Mode ' +  str(mode) + ' / ' + str(self.nmodes-1))
@@ -785,7 +786,7 @@ class pyEPR_HFSS(object):
 
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
             # Save
-            hdf['v'+variation+'/O_matrix'] = pd.DataFrame(Om)
+            hdf['v'+variation+'/O_matrix']   = pd.DataFrame(Om)
             hdf['v'+variation+'/P_matrix']   = pd.DataFrame(Pm).transpose()
             hdf['v'+variation+'/S_matrix']   = pd.DataFrame(Sm).transpose()
             hdf['v'+variation+'/Q_coupling_matrix']   = pd.DataFrame(Qm_coupling).transpose()
