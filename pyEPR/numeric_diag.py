@@ -8,7 +8,12 @@
 from __future__ import print_function    # Python 2.7 and 3 compatibility
 import numpy as np
 
-from qutip import basis, tensor
+try:
+    from qutip import basis, tensor
+except ImportError:
+    log.error('Could not load qutip package. Is it installed? Must be missing. Try: >> conda install -c conda-forge qutip') # TODO: FIX
+
+import numpy as np
 from functools import  reduce
 
 from .toolbox import fluxQ, fact
