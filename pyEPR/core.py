@@ -103,7 +103,7 @@ class Project_Info(object):
 
         ## HFSS desgin: describe junction parameters
         self.junctions     = OrderedDict()
-        self.ports     = OrderedDict()
+        self.ports         = OrderedDict()
         # TODO: introduce modal labels
 
         ## Dissipative HFSS volumes and surfaces
@@ -127,7 +127,7 @@ class Project_Info(object):
         hdf['project_info_dissip']    = pd.Series(get_instance_vars(self.dissipative))
         hdf['project_info_options']   = pd.Series(get_instance_vars(self.options))
         hdf['project_info_junctions'] = pd.DataFrame(self.junctions)
-        hdf['project_info_ports'] = pd.DataFrame(self.ports)
+        hdf['project_info_ports']     = pd.DataFrame(self.ports)
 
 
     def connect_to_project(self):
@@ -243,24 +243,18 @@ class pyEPR_HFSS(object):
         self.fields           = self.setup.get_fields()
         self.solutions        = self.setup.get_solutions()
 
-        # Variations
-        self.nmodes           = int(self.setup.n_modes)
-        self.listvariations   = self.design._solutions.ListVariations(str(self.setup.solution_name))
-        self.nominalvariation = self.design.get_nominal_variation()
-        self.nvariations      = np.size(self.listvariations)
-
         # Solutions
+        self.update_variation_information()
         self.hfss_variables   = OrderedDict()                             # container for eBBQ list of varibles
 
         if self.verbose:
             print('Design \"%s\" info:'%self.design.name)
             print('\t%-15s %d\n\t%-15s %d' %('# eigenmodes', self.nmodes, '# variations', self.nvariations))
 
+        # Setup data saving
         self.setup_data()
-
         self.latest_h5_path = None # #self.get_latest_h5()
-        #TODO: to be implemented
-        '''
+        '''         #TODO: to be implemented to use old files
         if self.latest_h5_path is not None and self.append_analysis:
             latest_bbq_analysis = pyEPR_Analysis(self.latest_h5_path)
             if self.verbose:
@@ -268,7 +262,18 @@ class pyEPR_HFSS(object):
                        'Variations : ', latest_bbq_analysis.variations)
             '''
 
+    def update_variation_information(self):
+        # Variations
+        self.nmodes           = int(self.setup.n_modes)
+        self.listvariations   = self.design._solutions.ListVariations(str(self.setup.solution_name))
+        self.nominalvariation = self.design.get_nominal_variation()
+        self.nvariations      = np.size(self.listvariations)
+        
+
     def get_latest_h5(self):
+        '''
+            No longer used. Could be added back in. 
+        '''
         dirpath = self.data_dir
 
         entries1 = (os.path.join(dirpath, fn) for fn in os.listdir(dirpath))     # get all entries in the directory w/ stats
@@ -686,10 +691,10 @@ class pyEPR_HFSS(object):
         """
 
         self._run_time = time.strftime('%Y%m%d_%H%M%S', time.localtime())
-
+        
+        self.update_variation_information()
         if variations      is None:
-            variations = (['-1'] if self.listvariations == (u'',)  else [str(i) for i in range(self.nvariations)] )
-
+            variations = (['-1'] if self.listvariations == (u'',)  else [str(i) for i in range(self.nvariations)] )    
         if modes           is None:
             modes = range(self.nmodes)
 
@@ -716,17 +721,22 @@ class pyEPR_HFSS(object):
             Ljs = pd.Series({})
             for junc_name, val in self.junctions.items(): # junction nickname
                 Ljs[junc_name] = ureg.Quantity(self.hfss_variables[variation]['_'+val['Lj_variable']]).to_base_units().magnitude
+            # TODO: add this as pass and then set an attribute that specifies which pass is the last pass.
+            # so we can save vs pass
             hdf['v'+variation+'/freqs_bare_GHz'] = freqs_bare_GHz
             hdf['v'+variation+'/Qs_bare']        = Qs_bare
             hdf['v'+variation+'/hfss_variables'] = self.hfss_variables[variation]
             hdf['v'+variation+'/Ljs']            = Ljs
 
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-            Om  = OrderedDict() # Angular Freq (of analyzed modes) matrix
-            Pm  = OrderedDict() # P matrix
-            Sm  = OrderedDict() # S matrix
-            Qm_coupling  = OrderedDict()
+            # This is crummy now. Maybe use xarray.
+            
+            Om  = OrderedDict() # Matrix of angular frequency (of analyzed modes) 
+            Pm  = OrderedDict() # Participation P matrix
+            Sm  = OrderedDict() # Sign          S matrix
+            Qm_coupling  = OrderedDict() # Quality factor matrix 
             SOL = OrderedDict() # other results
+            
             for mode in modes:
                 # Mode setup & load fields
                 print('  Mode ' +  str(mode) + ' / ' + str(self.nmodes-1))
@@ -787,7 +797,7 @@ class pyEPR_HFSS(object):
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
             # Save
             hdf['v'+variation+'/O_matrix']   = pd.DataFrame(Om)
-            hdf['v'+variation+'/P_matrix']   = pd.DataFrame(Pm).transpose()
+            hdf['v'+variation+'/P_matrix']   = pd.DataFrame(Pm).transpose() # raw, not normalized
             hdf['v'+variation+'/S_matrix']   = pd.DataFrame(Sm).transpose()
             hdf['v'+variation+'/Q_coupling_matrix']   = pd.DataFrame(Qm_coupling).transpose()
             hdf['v'+variation+'/pyEPR_sols'] = pd.DataFrame(SOL).transpose()
