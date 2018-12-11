@@ -13,16 +13,18 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Standard imports
-from stat        import S_ISREG, ST_CTIME, ST_MODE
-from pandas      import HDFStore, Series, DataFrame
-from pint        import UnitRegistry
-from collections import OrderedDict
+from numpy        import pi, sqrt
+from numpy.linalg import inv
+from stat         import S_ISREG, ST_CTIME, ST_MODE
+from pandas       import HDFStore, Series, DataFrame
+from pint         import UnitRegistry
+from collections  import OrderedDict
 
 # pyEPR custom imports
 from . import hfss
 from . import config
 from .hfss        import CalcObject, ConstantVecCalcObject
-from .toolbox     import print_NoNewLine, print_color, deprecated, pi, fact, epsilon_0, hbar, Planck, fluxQ, nck, \
+from .toolbox     import print_NoNewLine, print_color, deprecated, fact, epsilon_0, hbar, Planck, fluxQ, nck, \
                          divide_diagonal_by_2, print_matrix, DataFrame_col_diff, get_instance_vars,\
                          sort_df_col, sort_Series_idx
 from .toolbox_plotting import cmap_discrete, legend_translucent
@@ -823,36 +825,55 @@ class pyEPR_HFSS(object):
 
 
 
-#==============================================================================
+#%%==============================================================================
 ### ANALYSIS FUNCTIONS
 #==============================================================================
 
+def epr_to_zpf(PJ, SJ, OM, EJ):
+    '''
+        INPUTS:
+            All as matrices
+            :PM: Participatuion matrix, p_mj
+            :SIGN: Sign matrix, s_mj
+            :Om: Omega_mm matrix (in hertz of GHz) (\hbar = 1)
+            :EJ: E_jj matrix of Josephson energies (in same units as hbar omega matrix)
+            
+        RETURNS: 
+            reduced zpf  (in units of $\phi_0$)
+    '''
+    assert (PJ>0).any(), "ND -- p_{mj} are not all > 0; \n %s" % (PJ)
+  
+    ''' technically, there the equation is hbar omega / 2J, but here we assume 
+    that the hbar is absrobed in the units of omega, and omega and Ej have the same units. 
+    PHI=np.zeros((3,3))
+    for m in range(3):
+        for j in range(3):
+            PHI[m,j] = SJ[m,j]*sqrt(PJ[m,j]*Om[m,m]/(2.*EJ[j,j]))
+    '''
+    return SJ * sqrt(0.5* OM @ PJ @ inv(EJ))
 
-def pyEPR_ND(freqs, PJ, Om, EJ, LJs, SIGN,
-             cos_trunc     = 6,
-             fock_trunc    = 7,
+#%%
+def pyEPR_ND(freqs, LJs, fzpfs,
+             cos_trunc     = 8,
+             fock_trunc    = 9,
              use_1st_order = False):
     '''
-        #TODO: MAKE THE input arguments nicer?
-        numerical diagonalizaiton for EPR
-        fzpfs: reduced zpf  ( in units of \phi_0 )
+    Numerical diagonalizaiton for pyEPR.
+    
+    INPUT:
+        :freqs: in GHz (not radians)
+    RETURNS:
+        Dressed frequencies, chis 
     '''
-
+    
     assert(all(freqs<1E6)), "Please input the frequencies in GHz"
     assert(all(LJs  <1E-3)),"Please input the inductances in Henries"
-    assert((PJ   >0).any()),"ND -- PJs are not all > 0; \n %s" % (PJ)
-
-    fzpfs = np.zeros(PJ.T.shape)
-    for junc in range(fzpfs.shape[0]):
-        for mode in range(fzpfs.shape[1]):
-            fzpfs[junc, mode] = np.sqrt(PJ[mode,junc] * Om[mode,mode] /  (2*EJ[junc,junc]) ) #*0.001
-    fzpfs = fzpfs * SIGN.T
-
+    
     Hs = bbq_hmt(freqs*10**9, LJs.astype(np.float), fluxQ*fzpfs, cos_trunc, fock_trunc, individual = use_1st_order)
-    f1s, CHI_ND, fzpfs, f0s  = make_dispersive(Hs, fock_trunc, fzpfs, freqs, use_1st_order = use_1st_order)  # f0s = freqs
+    f1s, CHI_ND, fzpfs, f0s = make_dispersive(Hs, fock_trunc, fzpfs, freqs, use_1st_order = use_1st_order)
     CHI_ND = -1*CHI_ND *1E-6
 
-    return f1s, CHI_ND, fzpfs, f0s
+    return f1s, CHI_ND
 
 #==============================================================================
 # ANALYSIS BBQ
@@ -1045,7 +1066,62 @@ class pyEPR_Analysis(object):
         for variation in self.variations:
             result[variation] = self.analyze_variation(variation, cos_trunc, fock_trunc, print_result)
         return result
+    
+    def get_Pmj(self, variation, _renorm_pj=None, print_=False):
+        '''
+            Get normalized Pmj Matrix
+            
+            Return DataFrame object for PJ
+        '''
+        if _renorm_pj is None:
+            _renorm_pj = self._renorm_pj
+        
+        Pm = self.PM[variation].copy()   # EPR matrix from Jsurf avg, DataFrame
+        
+        if self._renorm_pj:  # Renormalize
+            s          = self.sols[variation]
+            Pm_glb_sum = (s['U_E'] - s['U_H'])/s['U_E']     # sum of participations as calculated by global UH and UE
+            Pm_norm    = Pm_glb_sum/Pm.sum(axis = 1)
+            # Should we still do this when Pm_glb_sum is very small
+            if print_:
+                print("Pm_norm = %s " % str(Pm_norm)) 
+            Pm = Pm.mul(Pm_norm, axis=0)
+        else:
+            Pm_norm     = 1
+            if print_:
+                print('NO renorm!')
 
+        if np.any(Pm < 0.0):
+            print_color("  ! Warning:  Some p_mj was found <= 0. This is probably a numerical error, or a super low-Q mode.  We will take the abs value.  Otherwise, rerun with more precision, inspect, and do due dilligence.)")
+            print(Pm,'\n')
+            Pm = np.abs(Pm)
+            
+        return {'PJ':Pm, 'Pm_norm':Pm_norm}
+    
+    def get_matrices(self, variation, _renorm_pj=None, print_=False):
+        '''
+            All as matrices
+            :PJ: Participatuion matrix, p_mj
+            :SJ: Sign matrix, s_mj
+            :Om: Omega_mm matrix (in GHz) (\hbar = 1) Not radians.
+            :EJ: E_jj matrix of Josephson energies (in same units as hbar omega matrix)
+            :PHI_zpf: ZPFs in units of \phi_0 reduced flux quantum 
+            
+            Return all as *np.array*
+                PM, SIGN, Om, EJ, Phi_ZPF
+        '''
+            
+        PJ = self.get_Pmj(variation, _renorm_pj=_renorm_pj, print_=print_)
+        PJ = np.array(PJ['PJ'])
+        SJ = np.array(self.SM[variation])                # DataFrame
+        Om = np.diagflat(self.OM[variation].values)      # GHz. Frequencies of HFSS linear modes. Input in dataframe but of one line. Output nd array 
+        EJ = np.diagflat(self.get_Ejs(variation).values) # GHz
+        
+        PHI_zpf = epr_to_zpf(PJ, SJ, Om, EJ)
+        
+        return PJ, SJ, Om, EJ, PHI_zpf                   # All as np.array
+            
+    
     def analyze_variation(self,
                           variation,
                           cos_trunc     = None,
@@ -1073,56 +1149,34 @@ class pyEPR_Analysis(object):
         else:
             print('%s, ' % variation, end='')
 
-        Om = self.OM[variation]   # Frequencies of analyzed modes
-        Pm = self.PM[variation]   # EPR matrix from Jsurf avg
-        if self._renorm_pj:  # Renormalize
-            s          = self.sols[variation]
-            Pm_glb_sum = (s['U_E'] - s['U_H'])/s['U_E']                       # sum of participations as calculated by global UH and UE
-            Pm_norm    = Pm_glb_sum/Pm.sum(axis = 1)
-            # should we still dothis when Pm_glb_sum is very small
-            #print('\n*** NORM: ')
-            print("Pm_norm = %s " % str(Pm_norm))   # for debug
-            Pm = Pm.mul(Pm_norm, axis=0)
-        else:
-            Pm_norm     = 1
-            print('NO renorm!')
-
-        if np.any(Pm < 0.0):
-            print_color("  ! Warning:  Some p_mj was found <= 0. This is probably a numerical error, or a super low-Q mode.  We will take the abs value.  Otherwise, rerun with more precision, inspect, and do due dilligence.)")
-            print(Pm,'\n')
-            Pm = np.abs(Pm)
-
-
-
+        # Get matrices
+        PJ, SJ, Om, EJ, PHI_zpf = self.get_matrices(variation)
+        
         # Analytic 4-th order
-        f0s   = self.freqs_hfss[variation]
-        PJ    = np.mat(Pm)
-        Om    = np.diagflat(np.mat(Om))
-        EJ    = np.mat(np.diagflat(self.get_Ejs(variation).values)) # GHz
-        CHI_O1= 0.25* Om * PJ * EJ.I * PJ.T * Om * 1000.             # MHz
-        f1s   = np.diag(Om) - 0.5*np.ndarray.flatten( np.array(CHI_O1.sum(1))) / 1000.                  # 1st order PT expect freq to be dressed down by alpha
-        CHI_O1= divide_diagonal_by_2(CHI_O1)                  # Make the diagonals alpha
+        CHI_O1 = 0.25* Om @ PJ @ inv(EJ) @ PJ.T @ Om * 1000. # MHz
+        f1s    = np.diag(Om) - 0.5*np.ndarray.flatten( np.array(CHI_O1.sum(1))) / 1000.                  # 1st order PT expect freq to be dressed down by alpha
+        CHI_O1 = divide_diagonal_by_2(CHI_O1)   # Make the diagonals alpha
 
-        # numerical diag
+        # Numerical diag
         if cos_trunc is not None:
-            f1_ND, CHI_ND, fzpfs, f0p = pyEPR_ND(f0s, PJ, Om, EJ,
-                                               self.Ljs[variation],
-                                               self.SM[variation],
-                                               cos_trunc     = cos_trunc,
-                                               fock_trunc    = fock_trunc,
-                                               use_1st_order = False)
+            f1_ND, CHI_ND = pyEPR_ND(self.freqs_hfss[variation], 
+                                     self.Ljs[variation],
+                                     PHI_zpf,
+                                     cos_trunc     = cos_trunc,
+                                     fock_trunc    = fock_trunc)
         else:
-            CHI_ND, f1_ND, fzpfs = None, None, None
+            f1_ND, CHI_ND = None, None
 
         result            = OrderedDict()
-        result['f_0']     = f0s*1E3                # MHz
+        result['f_0']     = self.freqs_hfss[variation]*1E3  # MHz - obtained directly from HFSS
         result['f_1']     = pd.Series(f1s)*1E3     # MHz
         result['f_ND']    = pd.Series(f1_ND)*1E-6  # MHz
         result['chi_O1']  = pd.DataFrame(CHI_O1)
-        result['chi_ND']  = pd.DataFrame(CHI_ND)
-        result['ZPF']     = pd.DataFrame(fzpfs)
-        result['Pm_normed'] = Pm
-        result['_Pm_norm']  = Pm_norm
+        result['chi_ND']  = pd.DataFrame(CHI_ND)   # why dataframe?
+        result['ZPF']     = PHI_zpf
+        result['Pm_normed'] = PJ
+        result['_Pm_norm']  = self.get_Pmj(variation, _renorm_pj=self._renorm_pj, 
+                                           print_=print_result)['Pm_norm'] # calling again
         result['hfss_variables'] = self.hfss_variables[variation] # just propagate
         result['Ljs']            = self.Ljs[variation]
         result['Q_coupling']     = self.QM_coupling[variation]
@@ -1150,14 +1204,16 @@ class pyEPR_Analysis(object):
         print(self.SM[variation])
 
     def print_result(self, result):
+        pritm = lambda x: print_matrix(x, frmt = "{:9.2g}",) #TODO: actually make into dataframe with mode labela and junction labels
+        
         print( '*** P (participation matrix, normalized.)'  )
-        print(result['Pm_normed'])
+        pritm(result['Pm_normed'])
 
         print( '\n*** Chi matrix O1 PT (MHz)\n    Diag is anharmonicity, off diag is full cross-Kerr.'  )
-        print(result['chi_O1'])
+        pritm(result['chi_O1'])
 
         print( '\n*** Chi matrix ND (MHz) '  )
-        print(result['chi_ND'])
+        pritm(result['chi_ND'])
 
         print( '\n*** Frequencies O1 PT (MHz)'  )
         print(result['f_1'])
