@@ -15,9 +15,12 @@ import numpy
 import signal
 import pythoncom
 import time
+import pandas as pd
+
 from sympy.parsing import sympy_parser
 from pint import UnitRegistry # units
 from win32com.client import Dispatch, CDispatch
+
 
 ureg = UnitRegistry()
 Q    = ureg.Quantity
@@ -503,15 +506,23 @@ class HfssDesign(COMWrapper):
         self._fields_calc.CalcStack("Clear")
 
 class HfssSetup(HfssPropertyObject):
-    prop_tab = "HfssTab"
-    passes = make_int_prop("Passes")
+    prop_tab       = "HfssTab"
+    passes         = make_int_prop("Passes")  # see EditSetup
+    nmodes         = make_int_prop("Modes") 
     pct_refinement = make_float_prop("Percent Refinement")
-    basis_order = make_str_prop("Basis Order")
+    delta_f        = make_float_prop("Delta F")
+    min_freq       = make_float_prop("Min Freq")
+    basis_order    = make_str_prop("Basis Order")
 
     def __init__(self, design, setup):
         """
         :type design: HfssDesign
         :type setup: Dispatch
+
+        :COM Scripting Help: "Analysis Setup Module Script Commands"
+        
+        Get properties: 
+            setup.parent._design.GetProperties("HfssTab",'AnalysisSetup:Setup1')
         """
         super(HfssSetup, self).__init__()
         self.parent = design
@@ -525,9 +536,46 @@ class HfssSetup(HfssPropertyObject):
         self.expression_cache_items = []
 
     def analyze(self, name=None):
+        '''
+        Use:             Solves a single solution setup and all of its frequency sweeps.
+        Command:         Right-click a solution setup in the project tree, and then click Analyze on the shortcut menu.
+        Syntax:          Analyze(<SetupName>)
+        Parameters:      <setupName>
+        Return Value:    None
+        -----------------------------------------------------
+        
+        Will block the until the analysis is completly done. 
+        Will raise a com_error if analysis is aborted in HFSS.
+        '''
         if name is None:
             name = self.name
-        self.parent._design.Analyze(name)
+        return self.parent._design.Analyze(name)
+        
+    def solve(self, name=None):
+        '''
+        Use:             Performs a blocking simulation. 
+                         The next script command will not be executed 
+                         until the simulation is complete.
+                         
+        Command:         HFSS>Analyze
+        Syntax:          Solve <SetupNameArray>
+        Return Value:   Type: <int>
+                        -1: simulation error
+                        0: normal completion
+        Parameters:      <SetupNameArray>: Array(<SetupName>, <SetupName>, ...)
+           <SetupName>
+        Type: <string>
+        Name of the solution setup to solve.
+        Example:      
+            return_status = oDesign.Solve Array("Setup1", "Setup2")
+        -----------------------------------------------------
+        
+        HFSS abort: still returns 0 , since termination by user. 
+        
+        '''
+        if name is None:
+            name = self.name
+        return self.parent._design.Solve(name)
 
     def insert_sweep(self, start_ghz, stop_ghz, count=None, step_ghz=None,
                      name="Sweep", type="Fast", save_fields=False):
@@ -560,28 +608,28 @@ class HfssSetup(HfssPropertyObject):
     def delete_sweep(self, name):
         self._setup_module.DeleteSweep(self.name, name)
 
-    def add_fields_convergence_expr(self, expr, pct_delta, phase=0):
-        """note: because of hfss idiocy, you must call "commit_convergence_exprs" after adding all exprs"""
-        assert isinstance(expr, NamedCalcObject)
-        self.expression_cache_items.append(
-            ["NAME:CacheItem",
-             "Title:=", expr.name+"_conv",
-             "Expression:=", expr.name,
-             "Intrinsics:=", "Phase='{}deg'".format(phase),
-             "IsConvergence:=", True,
-             "UseRelativeConvergence:=", 1,
-             "MaxConvergenceDelta:=", pct_delta,
-             "MaxConvergeValue:=", "0.05",
-             "ReportType:=", "Fields",
-             ["NAME:ExpressionContext"]])
+#    def add_fields_convergence_expr(self, expr, pct_delta, phase=0):
+#        """note: because of hfss idiocy, you must call "commit_convergence_exprs" after adding all exprs"""
+#        assert isinstance(expr, NamedCalcObject)
+#        self.expression_cache_items.append(
+#            ["NAME:CacheItem",
+#             "Title:=", expr.name+"_conv",
+#             "Expression:=", expr.name,
+#             "Intrinsics:=", "Phase='{}deg'".format(phase),
+#             "IsConvergence:=", True,
+#             "UseRelativeConvergence:=", 1,
+#             "MaxConvergenceDelta:=", pct_delta,
+#             "MaxConvergeValue:=", "0.05",
+#             "ReportType:=", "Fields",
+#             ["NAME:ExpressionContext"]])
 
-    def commit_convergence_exprs(self):
-        """note: this will eliminate any convergence expressions not added through this interface"""
-        args = [
-            "NAME:"+self.name,
-            ["NAME:ExpressionCache", self.expression_cache_items]
-        ]
-        self._setup_module.EditSetup(self.name, args)
+#    def commit_convergence_exprs(self):
+#        """note: this will eliminate any convergence expressions not added through this interface"""
+#        args = [
+#            "NAME:"+self.name,
+#            ["NAME:ExpressionCache", self.expression_cache_items]
+#        ]
+#        self._setup_module.EditSetup(self.name, args)
 
     def get_sweep_names(self):
         return self._setup_module.GetSweeps(self.name)
@@ -648,7 +696,6 @@ class HfssSetup(HfssPropertyObject):
         temp = tempfile.NamedTemporaryFile(); temp.close()
         #print(temp.name0
         self.parent._design.ExportMeshStats(self.name, variation, temp.name+ '.mesh', True)  # seems broken in 2016 because of extra text added to the top of the file
-        import pandas as pd
         try:
             df = pd.read_csv(temp.name+'.mesh', delimiter = '|',skipinitialspace = True , skiprows = 7, skipfooter=1, skip_blank_lines=True, engine='python')
             df = df.drop('Unnamed: 9',1)
@@ -662,7 +709,10 @@ class HfssSetup(HfssPropertyObject):
     def get_profile(self, variation=""):
         fn = tempfile.mktemp()
         self.parent._design.ExportProfile(self.name, variation, fn, False)
-        return numpy.loadtxt(fn)
+        df = pd.read_csv(fn, delimiter = '\t',skipinitialspace = True , skiprows = 6, 
+                         skipfooter=1, skip_blank_lines=True, engine='python')
+        # just borken down by new lines 
+        return  df
 
     def get_fields(self):
         return HfssFieldsCalc(self)

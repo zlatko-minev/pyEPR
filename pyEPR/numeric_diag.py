@@ -6,9 +6,17 @@
 '''
 
 from __future__ import print_function    # Python 2.7 and 3 compatibility
-import numpy as np
+import logging
+log = logging.getLogger('pyEPR.numeric_diag')
 
-from qutip import basis, tensor
+
+try:
+    import qutip
+    from qutip import basis, tensor
+except ImportError:
+    log.error('Could not load qutip package. Is it installed? Must be missing. Try: >> conda install -c conda-forge qutip') # TODO: FIX
+
+import numpy as np
 from functools import  reduce
 
 from .toolbox import fluxQ, fact
@@ -27,26 +35,27 @@ def bbq_hmt(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual = False):
     """
     :param fs: Linearized model, H_lin, normal mode frequencies in Hz, length N
     :param ljs: junction linerized inductances in Henries, length M
-    :param fzpfs: Zero-point fluctutation of the junction fluxes for each mode across each junction, shape MxN
+    :param fzpfs: Zero-point fluctutation of the junction fluxes for each mode across each junction, shape MxJ
     :return: Hamiltonian in units of Hz (i.e H / h)
     All in SI units. The ZPF fed in are the generalized, not reduced, flux.
     
     Description:
      Takes the linear mode frequencies, $\omega_m$, and the zero-point fluctuations, ZPFs, and builds the Hamiltonian matrix of $H_full$, assuming cos potential.
     """
-    import qutip
     nmodes = len(fs)
-    nqubits = len(ljs)
+    njuncs = len(ljs)
     fs, ljs, fzpfs = map(np.array, (fs, ljs, fzpfs))
     ejs = fluxQ**2 / ljs
     fjs = ejs / h ;
+    
+    fzpfs = np.transpose(fzpfs)  # Take from MxJ  to JxM
 
     assert np.isnan(fzpfs).any() == False, "Phi ZPF has NAN, this is NOT allowed! Fix me. \n%s" %fzpfs
     assert np.isnan(ljs).any() == False, "Ljs has NAN, this is NOT allowed! Fix me."
     assert np.isnan(fs).any() == False, "freqs has NAN, this is NOT allowed! Fix me."
-    assert fzpfs.shape == (nqubits, nmodes), "incorrect shape for zpf array, {} not {}".format(fzpfs.shape, (nqubits, nmodes))
+    assert fzpfs.shape == (njuncs, nmodes), "incorrect shape for zpf array, {} not {}".format(fzpfs.shape, (njuncs, nmodes))
     assert fs.shape == (nmodes,), "incorrect number of mode frequencies"
-    assert ejs.shape == (nqubits,), "incorrect number of qubit frequencies"
+    assert ejs.shape == (njuncs,), "incorrect number of qubit frequencies"
 
     def tensor_out(op, loc):
         "Make operator <op> tensored with identities at locations other than <loc>"

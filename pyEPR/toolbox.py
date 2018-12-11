@@ -50,6 +50,15 @@ def isfloat(value):
   except ValueError:
     return False
 
+def floor_10(x):
+    ''' round to nearest lower power of 10 c'''
+    return  10.**(np.floor(np.log10(x)))
+
+def get_above_diagonal(M):
+    ''' extract the values that are above the diagonal.
+        Assumes square matrix
+    '''
+    return M[np.triu_indices(M.shape[0],k=1)]
 
 def sort_df_col(df):
     '''         sort by numerical int order    '''
@@ -73,7 +82,6 @@ def get_instance_vars(obj, Forbidden=[]):
     VARS = {}
     for v in dir(obj):
         if not ((v.startswith('__')) or (v.startswith('_'))):
-            print(v)
             if not callable(getattr(obj,v)):
                 if not (v in Forbidden):
                     VARS[v] = getattr(obj,v)
