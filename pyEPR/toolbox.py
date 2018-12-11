@@ -54,6 +54,12 @@ def floor_10(x):
     ''' round to nearest lower power of 10 c'''
     return  10.**(np.floor(np.log10(x)))
 
+def get_above_diagonal(M):
+    ''' extract the values that are above the diagonal.
+        Assumes square matrix
+    '''
+    return M[np.triu_indices(M.shape[0],k=1)]
+
 def sort_df_col(df):
     '''         sort by numerical int order    '''
     col_names = df.columns
