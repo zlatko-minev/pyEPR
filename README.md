@@ -145,12 +145,13 @@ This problem is due to pandas 0.20.1, update to 0.20.3 or better solves this iss
 
 # Contributors
 * _Authors:_ [Zlatko Minev](https://www.zlatko-minev.com/) & [Zaki Leghtas](http://cas.ensmp.fr/~leghtas/), with contributions from many friends and colleagues.
-* 2015 - present. [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/zlatko-minev/pyEPR/graphs/commit-activity)
+* 2015 - present. 
 * Contributors: [Phil Rheinhold](https://github.com/PhilReinhold), Lysander Christakis, [Devin Cody](https://github.com/devincody), ...
 Original versions of pyHFSS.py and pyNumericalDiagonalization.py contributed by [Phil Rheinhold](https://github.com/PhilReinhold), excellent original [repo](https://github.com/PhilReinhold/pyHFSS).
 * Terms of use: Use freely and kindly cite the paper (arXiv link to be posted here) and/or this package.
 * How can I contribute? Contact [Z. Minev](zlatko-minev.com) or [Z. Leghtas](http://cas.ensmp.fr/~leghtas/).
 
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/zlatko-minev/pyEPR/graphs/commit-activity)
 
 [![Twitter](https://github.frapsoft.com/social/twitter.png)](https://twitter.com/zlatko_minev)
 [![Github](https://github.frapsoft.com/social/github.png)](https://github.com/zlatko-minev/)
