@@ -20,9 +20,13 @@ Superconducting circuits incorporating non-linear devices, such as Josephson jun
 
 # Using pyEPR 
 
-1. :fork_and_knife:  **Fork** the [``pyEPR top-level repository`` ](https://github.com/zlatko-minev/pyEPR) on GitHub. ([How to fork a GitHub repo?](https://help.github.com/en/articles/fork-a-repo)). Nice to **star** :star: the pyEPR master repository too.
+1. **Fork**  :fork_and_knife: the [``pyEPR top-level repository`` ](https://github.com/zlatko-minev/pyEPR) on GitHub. ([How to fork a GitHub repo?](https://help.github.com/en/articles/fork-a-repo)). Nice to **star** :star: the pyEPR master repository too.
+2. **Clone** :point_down: your forked repository locally. ([How to clone a GitHub repo?](https://help.github.com/en/articles/cloning-a-repository)). Setup the `pyEPR` python code by following [Installation and Python Setup](#installation-of-pyepr).
+3. Run the `pyEPR` script and interface to analyze and optimize your quantum circuits. Examples provided below, more to come soon. 
+4. Cite us :clap: and enjoy :birthday:! [arXiv:1902.10355](https://arxiv.org/abs/1902.10355) 
 
-After installing pyEPR (see Sec. Installation below), you can complete full analysis of any distributed circuit with just a few keystrokes, as illustrated by the following startup example of a simple two-qubit, one cavity device to be analyzed.  Just specify the junction rectangles and variables (see Sec. pyEPR Project Setup in HFSS). All operations in the eigen analysis and Hamiltonian computation are fully automated. The results are saved, printed, and nicely plotted. 
+#### Start-up example 
+The following code illustrates how to perform a complete analysis of a simple two-qubit, one-cavity device in just a few lines of code with `pyEPR`.  Just specify the junction rectangles and variables (see Sec. pyEPR Project Setup in HFSS). All operations in the eigen analysis and Hamiltonian computation are fully automated. The results are saved, printed, and nicely plotted. 
 
 ```python
 from pyEPR import *
