@@ -20,6 +20,8 @@ Superconducting circuits incorporating non-linear devices, such as Josephson jun
 
 # Using pyEPR 
 
+1. :fork_and_knife:  **Fork** the [``pyEPR top-level repository`` ](https://github.com/zlatko-minev/pyEPR) on GitHub. ([How to fork a GitHub repo?](https://help.github.com/en/articles/fork-a-repo)). Nice to **star** :star: the pyEPR master repository too.
+
 After installing pyEPR (see Sec. Installation below), you can complete full analysis of any distributed circuit with just a few keystrokes, as illustrated by the following startup example of a simple two-qubit, one cavity device to be analyzed.  Just specify the junction rectangles and variables (see Sec. pyEPR Project Setup in HFSS). All operations in the eigen analysis and Hamiltonian computation are fully automated. The results are saved, printed, and nicely plotted. 
 
 ```python
