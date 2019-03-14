@@ -7,35 +7,33 @@ Welcome to pyEPR :beers:!
 
 ### Automated Python module for the design and quantization of Josephson quantum circuit
 
-* [About `pyEPR`](#about-pyEPR)
-* [Using `pyEPR`](#using-pyepr)
-* [Setup and Installation](#installation-of-pyepr)
-* [HFSS Project Setup for `pyEPR`](#hfss-project-setup-for-pyepr)
-* [Troubleshooting `pyEPR`](#troubleshooting-pyepr)
-* [Authors and Contributors](#authors-and-contributors)
-
-### About `pyEPR` & References
-
 Superconducting circuits incorporating non-linear devices, such as Josephson junctions and nanowires, are among the leading platforms for emerging quantum technologies. Promising applications require designing and optimizing circuits with ever-increasing complexity and controlling their dissipative and Hamiltonian parameters to several significant digits. Therefore, there is a growing need for a systematic, simple, and robust approach for precise circuit design, extensible to increased complexity. The energy-participation ratio (EPR) approach presents such an approach to unify the design of dissipation and Hamiltonians around a single concept — the energy participation, a number between zero and one — in a single-step electromagnetic simulation. This markedly reduces the required number of simulations and allows for robust extension to complex systems. The approach is general purpose, derived ab initio, and valid for arbitrary non-linear devices and circuit architectures. Experimental results on a variety of circuit quantum electrodynamics (cQED) devices and architectures, 3D and flip-chip (2.5D), have been demonstrated to exhibit ten percent to percent-level agreement for non-linear coupling and modal Hamiltonian parameters over five-orders of magnitude and across a dozen samples. Here, in this package, all routines of the EPR approach are fully automated. 
 
-**References:**
+### References:
 * Z.K. Minev, Z. Leghtas, _et al._ (to appear soon on arXiv) (2019)
 * Chapter 4 of Z.K. Minev, Ph.D. Dissertation, Yale University (2018) [arXiv:1902.10355](https://arxiv.org/abs/1902.10355)
 
 ![Intro image](read_me_0.png 'Intro image')
 
 
+## Contents: 
+* [Start here: Using `pyEPR`](#start-here--using-pyepr)
+* [Setup and Installation](#installation-and-setup-of-pyepr)
+* [HFSS Project Setup for `pyEPR`](#hfss-project-setup-for-pyepr)
+* [Troubleshooting `pyEPR`](#troubleshooting-pyepr)
+* [Authors and Contributors](#authors-and-contributors)
 
 
-# Using `pyEPR`
+
+# Start here: Using `pyEPR`
 
 1. **Fork**  :fork_and_knife: the [``pyEPR top-level repository`` ](https://github.com/zlatko-minev/pyEPR) on GitHub. ([How to fork a GitHub repo?](https://help.github.com/en/articles/fork-a-repo)). Nice to **star** :star: the pyEPR master repository too.
 2. **Clone** :point_down: your forked repository locally. ([How to clone a GitHub repo?](https://help.github.com/en/articles/cloning-a-repository)). Setup the `pyEPR` python code by following [Installation and Python Setup](#installation-of-pyepr).
-3. Run the `pyEPR` script and interface to analyze and optimize your quantum circuits. Examples provided below, more to come soon. 
-4. Cite us :clap: and enjoy :birthday:! [arXiv:1902.10355](https://arxiv.org/abs/1902.10355) 
+3. **Run** the `pyEPR` script and interface to analyze and optimize your quantum circuits. Examples provided below, more to come soon. 
+4. **Cite us** :clap: and enjoy :birthday:! [arXiv:1902.10355](https://arxiv.org/abs/1902.10355) 
 
 #### Start-up example 
-The following code illustrates how to perform a complete analysis of a simple two-qubit, one-cavity device in just a few lines of code with `pyEPR`.  Just specify the junction rectangles and variables (see Sec. pyEPR Project Setup in HFSS). All operations in the eigen analysis and Hamiltonian computation are fully automated. The results are saved, printed, and nicely plotted. 
+The following code illustrates how to perform a complete analysis of a simple two-qubit, one-cavity device in just a few lines of code with `pyEPR`.  In the HFSS file, before running the script, first specify the non-linear junction rectangles and variables (see Sec. pyEPR Project Setup in HFSS). All operations in the eigen analysis and Hamiltonian computation are fully automated. The results are saved, printed, and succinctly plotted. 
 
 ```python
 from pyEPR import *
