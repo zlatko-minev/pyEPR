@@ -18,7 +18,7 @@ Superconducting circuits incorporating non-linear devices, such as Josephson jun
 
 ### Showcase
 
-![Intro image](read_me_0.png 'Intro image')
+![Intro image](imgs/read_me_0.png 'Intro image')
 
 <br><br>
 
@@ -138,6 +138,10 @@ You may find an advised work flow and some setup tips here.
  3. Simulation setup
    1. We recommend `mixed order` solutions.
 
+<p align="center">
+  <img width="50%" height="50%" src="imgs/xmon-example.gif">
+</p>
+
 
 # Troubleshooting pyEPR
 ---------------------
@@ -161,6 +165,7 @@ When running a parametric sweep in HFSS, make sure you are actually saving the f
 
 ###### Spyder pops up command window cmd with tput.exe executed 
 This problem is due to pandas 0.20.1, update to 0.20.3 or better solves this issue.
+<br>
 
 # Authors and Contributors
 * _Authors:_ [Zlatko Minev](https://www.zlatko-minev.com/) & [Zaki Leghtas](http://cas.ensmp.fr/~leghtas/), with contributions from many friends and colleagues.
