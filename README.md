@@ -151,6 +151,13 @@ Please update to pint version newer than 0.7.2. You may use
 pip install pint --upgrade
 ```
 
+###### When importing qutip an error occurs `AttributeError: module 'numpy' has no attribute '__config__'`
+You probably have to update your numpy installation. For me, the following bash sequence worked:
+```
+conda update qutip
+conda update numpy
+```
+
 ###### COM Error on opening HFSS
 Check the project and design file names carefully. Make sure that the file-path doesn't have apostrophes or other bad characters, such as in C:\\Minev's PC\\my:Project.  Check that HFSS hasn't popped up an error dialogue, such as "File locked." Manually open HFSS and the file.
 
