@@ -81,48 +81,20 @@ If you are starting from scratch, follow the installation guide below to setup a
       $ echo %PATH%
       `
 
- 2. Install the required package [pint](http://pint.readthedocs.io/en/latest/). In a terminal window
+ 2. Install the required packages, including [pint](http://pint.readthedocs.io/en/latest/). In a terminal window
  ```sh
  conda install -c conda-forge pint
+ 
  ```
-   * We also use [pandas](http://pandas.pydata.org/). However, as of Aug. 2017, Anaconda includes the pandas package by default, so you do not need to install it manually.
  3. Fork this pyEPR repository on GitHub with your GitHub account. You may clone the fork to your PC and manage it using the [SourceTree](https://www.sourcetreeapp.com/) git-gui manager.
- 4. Add the pyEPR repository folder to your python search path.
+ 4. Add the pyEPR repository folder to your python search path. Make sure to add the git remote branch  `github.com/zlatko-minev/pyEPR`!  [(Help?)](https://stackoverflow.com/questions/11266478/git-add-remote-branch) 
  5. Edit pyEPR module `config.py`  to set your data-saving directory and other parameters of interest.
- 6. **ENJOY! **  :+1:
+ 6. **ENJOY and cite pyEPR! **  :+1:
 
  
 #### Note for Mac/Linux.
 Follow the same instructions above. You shouldn't have to install mingw or modify distutils.cfg, since your distribution should come with gcc as the default compiler.
 
-#### Optional package installation
-You may also choose to install the optional qutip package for some advanced numerical analysis of the Hamiltonian.
-We use [Qutip](http://qutip.org/) to handle quantum objects. Follow the instruction on their website. As of Aug. 2017, qutip is part of conda, and you can use
-```sh
-conda install qutip
-```
-If this doesn't work, try  installing from conda forge
-```sh
-conda install -c conda-forge qutip
-```
-### Alternative, manual install 
-If you wish to install manually, follow the following procedure. Some of this can get a bit tricky at times.
-First, you need to install a C compiler, since qutip uses Cython. If you dont have VS9, gcc, or mingw installed, the following works:
-```sh
-pip install -i https://pypi.anaconda.org/carlkl/simple mingwpy
-```
-Let anaconda know to use this compiler by creating the file `C:\Anaconda2\Lib\distutils\distutils.cfg` with the following content
-```
-[build]
-compiler = mingw32
-[build_ext]
-compiler = mingw32
-```
-Next, let's install qutip. You can choose to use conda intall or pip install, or pull from the git directly  as done here:
-```sh
-conda install git
-pip install git+https://github.com/qutip/qutip.git
-```
 
 
 # HFSS Project Setup for `pyEPR`
@@ -157,6 +129,36 @@ You probably have to update your numpy installation. For me, the following bash 
 conda update qutip
 conda update numpy
 ```
+
+###### Qutip installation
+You may also choose to install the optional qutip package for some advanced numerical analysis of the Hamiltonian.
+We use [Qutip](http://qutip.org/) to handle quantum objects. Follow the instruction on their website. As of Aug. 2017, qutip is part of conda, and you can use
+```sh
+conda install qutip
+```
+If this doesn't work, try  installing from conda forge
+```sh
+conda install -c conda-forge qutip
+```
+######  Qutip installation -- alternative, manual install 
+If you wish to install manually, follow the following procedure. Some of this can get a bit tricky at times.
+First, you need to install a C compiler, since qutip uses Cython. If you dont have VS9, gcc, or mingw installed, the following works:
+```sh
+pip install -i https://pypi.anaconda.org/carlkl/simple mingwpy
+```
+Let anaconda know to use this compiler by creating the file `C:\Anaconda2\Lib\distutils\distutils.cfg` with the following content
+```
+[build]
+compiler = mingw32
+[build_ext]
+compiler = mingw32
+```
+Next, let's install qutip. You can choose to use conda intall or pip install, or pull from the git directly  as done here:
+```sh
+conda install git
+pip install git+https://github.com/qutip/qutip.git
+```
+
 
 ###### COM Error on opening HFSS
 Check the project and design file names carefully. Make sure that the file-path doesn't have apostrophes or other bad characters, such as in C:\\Minev's PC\\my:Project.  Check that HFSS hasn't popped up an error dialogue, such as "File locked." Manually open HFSS and the file.
