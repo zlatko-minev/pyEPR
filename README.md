@@ -74,7 +74,8 @@ If you are starting from scratch, follow the installation guide below to setup a
 
 **Recommended procedure.**   <br />
 
- 1. Install Python 3.x, we recommend the [Anaconda](https://www.anaconda.com/distribution/#download-section) distribution. (The code has been tested with Python 3.6 and 3.7, and should also be compatible with Python 2.7).<br>
+ 1. Install Python 3.x, we recommend the [Anaconda](https://www.anaconda.com/distribution/#download-section) distribution. <br>
+ The code is currently under dev with Python 3.6/7. It was developed under 2.7 and should still be compatible. <br>
   After the install, make sure you configure your system PATH variables. On Windows, in the taskbar search or control panel, search for ["Edit environment variables for your account"](https://superuser.com/questions/949560/how-do-i-set-system-environment-variables-in-windows-10). In the section System Variables, find the PATH environment variable and select it. Click Edit.  Place`C:\Anaconda3;C:\Anaconda3\Scripts;C:\Anaconda3\Library\bin;` at the beginning of the path. If you have a previous Python installation this step is *very* important, especially to compile the qutip module. You may verity your path using the following command in the Command Prompt (terminal):
       `sh
       $ echo %PATH%
