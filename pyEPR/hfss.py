@@ -5,6 +5,11 @@
     Updated and modified by Zlatko Minev & Zaki Leghtas.
 '''
 from __future__ import division, print_function    # Python 2.7 and 3 compatibility
+import logging
+logger = logging.getLogger('pyEPR')
+from .config import __STD_END_MSG
+    
+    
 import atexit
 from copy import copy
 import os
@@ -13,13 +18,38 @@ import tempfile
 import types
 import numpy
 import signal
-import pythoncom
 import time
 import pandas as pd
 
 from sympy.parsing import sympy_parser
-from pint import UnitRegistry # units
-from win32com.client import Dispatch, CDispatch
+### A few usually troublesome packages
+try:
+    import pythoncom
+except (ImportError, ModuleNotFoundError):
+    logger.warning("""IMPORT WARNING: 
+   Python package 'pythoncom' could not be loaded
+   It is used in communicting with HFSS on PCs. If you wish to do this, please set it up. 
+   For Linux, check the HFSS python linux files for the com module used. It is equivalent, 
+   and can be used just as well. 
+   """ + __STD_END_MSG)
+    
+try:
+    from win32com.client import Dispatch, CDispatch
+except (ImportError, ModuleNotFoundError):
+    logger.warning("""IMPORT WARNING:
+   Could not load from 'win32com.client'.
+   The communication to hfss won't work. If you want to use it, you need to set it up. 
+   """ + __STD_END_MSG)
+    
+try:
+    from pint import UnitRegistry # units
+except (ImportError, ModuleNotFoundError):
+    logger.error("""IMPORT ERROR: 
+   Python package 'pint' could not be loaded
+   It is used in communicting with HFSS. 
+   try  `conda install -c conda-forge pint`
+   """ + __STD_END_MSG)
+    raise(ImportError("Please install python package `pint`"))
 
 
 ureg = UnitRegistry()

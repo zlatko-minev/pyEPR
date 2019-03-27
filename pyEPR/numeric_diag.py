@@ -1,20 +1,21 @@
 '''
-    Written by Phil Reinhold
-    Updated by Zlatko Minev & Lysander Christakis
+    Original code by Phil Reinhold
+    Revised and updated by Zlatko Minev & Lysander Christakis
 
     This file is tricky, use caution to modify.
 '''
 
 from __future__ import print_function    # Python 2.7 and 3 compatibility
 import logging
-log = logging.getLogger('pyEPR.numeric_diag')
+logger = logging.getLogger('pyEPR')
+from .config import __STD_END_MSG
 
 
 try:
     import qutip
     from qutip import basis, tensor
 except ImportError:
-    log.error('Could not load qutip package. Is it installed? Must be missing. Try: >> conda install -c conda-forge qutip') # TODO: FIX
+    logger.error('IMPORT ERRROR:\n   Could not load qutip package. Is it installed? Must be missing. Try: >> conda install -c conda-forge qutip\n'+__STD_END_MSG)
 
 import numpy as np
 from functools import  reduce
@@ -30,6 +31,21 @@ def dot(ais, bis):
 
 def cos_approx(x, cos_trunc=5):
     return sum((-1)**i * x**(2*i) / float(fact(2*i)) for i in range(2, cos_trunc + 1))
+
+"""
+class HamOps(object):
+    @staticmethod
+    def fock_state_on(d, fock_trunc, N_modes):
+        ''' d={mode number: # of photons} In the bare eigen basis 
+        '''
+        return qutip.tensor(*[qutip.basis(fock_trunc, d.get(i, 0)) for i in range(N_modes)])  # give me the value d[i]  or 0 if d[i] does not exist
+    
+    @staticmethod
+    def closest_state_to(s, energyMHz, evecs):
+        def distance(s2):
+            return (s.dag() * s2[1]).norm()
+        return max(zip(energyMHz, evecs), key=distance)
+"""
 
 def bbq_hmt(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual = False):
     """
@@ -109,6 +125,7 @@ def make_dispersive(H, fock_trunc, fzpfs= None, f0s = None, chi_prime = False,
     assert H.shape[0] == fock_trunc ** N
 
     def fock_state_on(d):
+        ''' d={mode number: # of photons} '''
         return qutip.tensor(*[qutip.basis(fock_trunc, d.get(i, 0)) for i in range(N)])  # give me the value d[i]  or 0 if d[i] does not exist
 
 
@@ -165,9 +182,9 @@ def make_dispersive(H, fock_trunc, fzpfs= None, f0s = None, chi_prime = False,
                 return (s.dag() * s2[1]).norm()
             return max(zip(evals, evecs), key=distance)
 
-    f1s = [closest_state_to(fock_state_on({i:1}))[0] for i in range(N)]
+    f1s  = [closest_state_to(fock_state_on({i:1}))[0] for i in range(N)]
     chis = [[0]*N for _ in range(N)]
-    if chi_prime: chips = [[0]*N for _ in range(N)]
+    chips= [[0]*N for _ in range(N)]
     for i in range(N):
         for j in range(i, N):
             d = {k: 0 for k in range(N)}       # put 0 photons in each mode (k)
