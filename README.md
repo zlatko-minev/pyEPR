@@ -81,10 +81,10 @@ If you are starting from scratch, follow the installation guide below to setup a
       $ echo %PATH%
       `
 
- 2. Install the required packages, including [pint](http://pint.readthedocs.io/en/latest/). In a terminal window
+ 2. Install the required packages, including [pint](http://pint.readthedocs.io/en/latest/) and [qutip](http://qutip.org/). In a terminal window
  ```sh
  conda install -c conda-forge pint
- 
+ conda install -c conda-forge qutip
  ```
  3. Fork this pyEPR repository on GitHub with your GitHub account. You may clone the fork to your PC and manage it using the [SourceTree](https://www.sourcetreeapp.com/) git-gui manager.
  4. Add the pyEPR repository folder to your python search path. Make sure to add the git remote branch  `github.com/zlatko-minev/pyEPR`!  [(Help?)](https://stackoverflow.com/questions/11266478/git-add-remote-branch) 
