@@ -5,7 +5,7 @@ Welcome to pyEPR :beers:!
 [![star this repo](http://githubbadges.com/star.svg?user=zlatko-minev&repo=pyEPR&style=flat)](https://github.com/zlatko-minev/pyEPR)
 [![fork this repo](http://githubbadges.com/fork.svg?user=zlatko-minev&repo=pyEPR&style=flat)](https://github.com/zlatko-minev/pyEPR/fork)
 
-### Automated Python module for the design and quantization of Josephson quantum circuit
+### Automated Python module for the design and quantization of Josephson quantum circuits
 
 Superconducting circuits incorporating non-linear devices, such as Josephson junctions and nanowires, are among the leading platforms for emerging quantum technologies. Promising applications require designing and optimizing circuits with ever-increasing complexity and controlling their dissipative and Hamiltonian parameters to several significant digits. Therefore, there is a growing need for a systematic, simple, and robust approach for precise circuit design, extensible to increased complexity. The energy-participation ratio (EPR) approach presents such an approach to unify the design of dissipation and Hamiltonians around a single concept — the energy participation, a number between zero and one — in a single-step electromagnetic simulation. This markedly reduces the required number of simulations and allows for robust extension to complex systems. The approach is general purpose, derived ab initio, and valid for arbitrary non-linear devices and circuit architectures. Experimental results on a variety of circuit quantum electrodynamics (cQED) devices and architectures, 3D and flip-chip (2.5D), have been demonstrated to exhibit ten percent to percent-level agreement for non-linear coupling and modal Hamiltonian parameters over five-orders of magnitude and across a dozen samples. Here, in this package, all routines of the EPR approach are fully automated. 
 
@@ -35,7 +35,7 @@ Superconducting circuits incorporating non-linear devices, such as Josephson jun
 
 1. **Fork**  :fork_and_knife: the [``pyEPR top-level repository`` ](https://github.com/zlatko-minev/pyEPR) on GitHub. ([How to fork a GitHub repo?](https://help.github.com/en/articles/fork-a-repo)). Nice to **star** :star: the pyEPR master repository too.
 2. **Clone** :point_down: your forked repository locally. ([How to clone a GitHub repo?](https://help.github.com/en/articles/cloning-a-repository)). Setup the `pyEPR` python code by following [Installation and Python Setup](#installation-of-pyepr).
-3. **Run** the `pyEPR` script and interface to analyze and optimize your quantum circuits. Examples provided below, more to come soon. 
+3. **Run** the `pyEPR` script and interface to analyze and optimize your quantum circuits. Make sure to git add the master remote branch github.com/zlatko-minev/pyEPR [(help?)](https://stackoverflow.com/questions/11266478/git-add-remote-branch). Examples provided below, more to come soon. 
 4. **Cite us** :clap: and enjoy :birthday:! [arXiv:1902.10355](https://arxiv.org/abs/1902.10355) 
 
 #### Start-up example 
@@ -74,55 +74,27 @@ If you are starting from scratch, follow the installation guide below to setup a
 
 **Recommended procedure.**   <br />
 
- 1. Install a Python 2.7 or 3.x environment.
-   * We recommend [Anaconda CE](https://www.continuum.io/downloads), and have tested this installation procedure with Anaconda v4.4 64-bit edition on Windows. Other environments, such as Python XY, or 32 bit have been used in the past, and should work too. We assume you will use Anaconda. First, install Anaconda in "C:\Anaconda2". Note if you are using Python 3, remember to change 2 to 3 in the filenames.
-   * Set the Windows System PATH variable. In Control Panel, search for Environment Variables (in System), and open it. In the section System Variables, find the PATH environment variable and select it. Click Edit.  Place`C:\Anaconda2;C:\Anaconda2\Scripts;C:\Anaconda2\Library\bin;` at the beginning. If you have a previous Python installation this step is *very* important, especially to compile the qutip module. You may verity your path using the following command in the Command Prompt (terminal):
-      ```sh
+ 1. Install Python 3.x, we recommend the [Anaconda](https://www.anaconda.com/distribution/#download-section) distribution. <br>
+ The code is currently under dev with Python 3.6/7. It was developed under 2.7 and should still be compatible. <br>
+  After the install, make sure you configure your system PATH variables. On Windows, in the taskbar search or control panel, search for ["Edit environment variables for your account"](https://superuser.com/questions/949560/how-do-i-set-system-environment-variables-in-windows-10). In the section System Variables, find the PATH environment variable and select it. Click Edit.  Place`C:\Anaconda3;C:\Anaconda3\Scripts;C:\Anaconda3\Library\bin;` at the beginning of the path. If you have a previous Python installation this step is *very* important, especially to compile the qutip module. You may verity your path using the following command in the Command Prompt (terminal):
+      `sh
       $ echo %PATH%
-      ```
+      `
 
- 2. Install the required package [pint](http://pint.readthedocs.io/en/latest/). In a terminal window
+ 2. Install the required packages, including [pint](http://pint.readthedocs.io/en/latest/). In a terminal window
  ```sh
  conda install -c conda-forge pint
+ 
  ```
-   * We also use [pandas](http://pandas.pydata.org/). However, as of Aug. 2017, Anaconda includes the pandas package by default, so you do not need to install it manually.
  3. Fork this pyEPR repository on GitHub with your GitHub account. You may clone the fork to your PC and manage it using the [SourceTree](https://www.sourcetreeapp.com/) git-gui manager.
- 4. Add the pyEPR repository folder to your python search path.
+ 4. Add the pyEPR repository folder to your python search path. Make sure to add the git remote branch  `github.com/zlatko-minev/pyEPR`!  [(Help?)](https://stackoverflow.com/questions/11266478/git-add-remote-branch) 
  5. Edit pyEPR module `config.py`  to set your data-saving directory and other parameters of interest.
- 6. **ENJOY! **  :+1:
+ 6. **ENJOY and cite pyEPR! **  :+1:
 
  
 #### Note for Mac/Linux.
 Follow the same instructions above. You shouldn't have to install mingw or modify distutils.cfg, since your distribution should come with gcc as the default compiler.
 
-#### Optional package installation
-You may also choose to install the optional qutip package for some advanced numerical analysis of the Hamiltonian.
-We use [Qutip](http://qutip.org/) to handle quantum objects. Follow the instruction on their website. As of Aug. 2017, qutip is part of conda, and you can use
-```sh
-conda install qutip
-```
-If this doesn't work, try  installing from conda forge
-```sh
-conda install -c conda-forge qutip
-```
-### Alternative, manual install 
-If you wish to install manually, follow the following procedure. Some of this can get a bit tricky at times.
-First, you need to install a C compiler, since qutip uses Cython. If you dont have VS9, gcc, or mingw installed, the following works:
-```sh
-pip install -i https://pypi.anaconda.org/carlkl/simple mingwpy
-```
-Let anaconda know to use this compiler by creating the file `C:\Anaconda2\Lib\distutils\distutils.cfg` with the following content
-```
-[build]
-compiler = mingw32
-[build_ext]
-compiler = mingw32
-```
-Next, let's install qutip. You can choose to use conda intall or pip install, or pull from the git directly  as done here:
-```sh
-conda install git
-pip install git+https://github.com/qutip/qutip.git
-```
 
 
 # HFSS Project Setup for `pyEPR`
@@ -150,6 +122,43 @@ Please update to pint version newer than 0.7.2. You may use
 ```
 pip install pint --upgrade
 ```
+
+###### When importing qutip an error occurs `AttributeError: module 'numpy' has no attribute '__config__'`
+You probably have to update your numpy installation. For me, the following bash sequence worked:
+```
+conda update qutip
+conda update numpy
+```
+
+###### Qutip installation
+You may also choose to install the optional qutip package for some advanced numerical analysis of the Hamiltonian.
+We use [Qutip](http://qutip.org/) to handle quantum objects. Follow the instruction on their website. As of Aug. 2017, qutip is part of conda, and you can use
+```sh
+conda install qutip
+```
+If this doesn't work, try  installing from conda forge
+```sh
+conda install -c conda-forge qutip
+```
+######  Qutip installation -- alternative, manual install 
+If you wish to install manually, follow the following procedure. Some of this can get a bit tricky at times.
+First, you need to install a C compiler, since qutip uses Cython. If you dont have VS9, gcc, or mingw installed, the following works:
+```sh
+pip install -i https://pypi.anaconda.org/carlkl/simple mingwpy
+```
+Let anaconda know to use this compiler by creating the file `C:\Anaconda2\Lib\distutils\distutils.cfg` with the following content
+```
+[build]
+compiler = mingw32
+[build_ext]
+compiler = mingw32
+```
+Next, let's install qutip. You can choose to use conda intall or pip install, or pull from the git directly  as done here:
+```sh
+conda install git
+pip install git+https://github.com/qutip/qutip.git
+```
+
 
 ###### COM Error on opening HFSS
 Check the project and design file names carefully. Make sure that the file-path doesn't have apostrophes or other bad characters, such as in C:\\Minev's PC\\my:Project.  Check that HFSS hasn't popped up an error dialogue, such as "File locked." Manually open HFSS and the file.
