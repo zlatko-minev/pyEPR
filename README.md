@@ -24,6 +24,7 @@ Superconducting circuits incorporating non-linear devices, such as Josephson jun
 
 # Contents: 
 * [Start here: Using `pyEPR`](#start-here-using-pyepr)
+* [Video Tutorials](#pyepr-video-tutorials)
 * [Setup and Installation](#installation-and-setup-of-pyepr)
 * [HFSS Project Setup for `pyEPR`](#hfss-project-setup-for-pyepr)
 * [Troubleshooting `pyEPR`](#troubleshooting-pyepr)
@@ -67,6 +68,36 @@ epr      = pyEPR_Analysis(epr_hfss.data_filename)
 epr.analyze_all_variations(cos_trunc = 8, fock_trunc = 7)
 epr.plot_Hresults()
 ```
+# `pyEPR` Video Tutorials <img src="https://developers.google.com/site-assets/logo-youtube.svg" height=30>
+<div style="overflow:auto;">
+<table style="">
+  <tr>
+    <th>
+	<a href="https://www.youtube.com/watch?v=fSRYvD-ITnQ&list=PLnak_fVcHp17tydgFosNtetDNjKbEaXtv&index=1">
+	Tutorial 1 - Overview
+	<br>
+	<img src="https://img.youtube.com/vi/fSRYvD-ITnQ/0.jpg" alt="pyEPR Tutorial 1 - Overview" width=250>
+	</a>
+    </th>
+    <th>
+	<a href="https://www.youtube.com/watch?v=ZTi1pb6wSbE&list=PLnak_fVcHp17tydgFosNtetDNjKbEaXtv&index=2">
+	Tutorial 2 - Setup of Conda & Git
+	<br>
+	<img src="https://img.youtube.com/vi/ZTi1pb6wSbE/0.jpg" alt="pyEPR Tutorial 2 - Setup of Conda & Git" width=250>
+	</a>	    
+    </th>
+    <th>
+	<a href="https://www.youtube.com/watch?v=L79nlXY2w4s&list=PLnak_fVcHp17tydgFosNtetDNjKbEaXtv&index=3">
+	Tutorial 3 - Setup of Packages & Config
+	<br>
+	<img src="https://img.youtube.com/vi/L79nlXY2w4s/0.jpg" alt="pyEPR Tutorial 3 - Setup of Packages & Config" width=250>
+	</a>	    
+    </th> 
+  </tr>
+</table>
+</div>
+<!--
+ [![pyEPR Tutorial 1 - Overview](https://img.youtube.com/vi/fSRYvD-ITnQ/0.jpg)](https://www.youtube.com/watch?v=fSRYvD-ITnQ&list=PLnak_fVcHp17tydgFosNtetDNjKbEaXtv&index=1) -->
 
 # Installation and setup of `pyEPR`
 -------------
