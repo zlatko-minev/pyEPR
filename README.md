@@ -36,7 +36,7 @@ Superconducting circuits incorporating non-linear devices, such as Josephson jun
 
 1. **Fork**  :fork_and_knife: the [``pyEPR top-level repository`` ](https://github.com/zlatko-minev/pyEPR) on GitHub. ([How to fork a GitHub repo?](https://help.github.com/en/articles/fork-a-repo)). Nice to **star** :star: the pyEPR master repository too.
 2. **Clone** :point_down: your forked repository locally. ([How to clone a GitHub repo?](https://help.github.com/en/articles/cloning-a-repository)). Setup the `pyEPR` python code by following [Installation and Python Setup](#installation-of-pyepr).
-3. **Run** the `pyEPR` script and interface to analyze and optimize your quantum circuits. Make sure to git add the master remote branch github.com/zlatko-minev/pyEPR [(help?)](https://stackoverflow.com/questions/11266478/git-add-remote-branch). Examples provided below, more to come soon. 
+3. **Run** the `pyEPR` script and interface to analyze and optimize your quantum circuits. Make sure to git add the master remote branch  `git remote add MASTER_MINEV git://github.com/zlatko-minev/pyEPR.git` [(help?)](https://stackoverflow.com/questions/11266478/git-add-remote-branch). Examples provided below, more to come soon. 
 4. **Cite us** :clap: and enjoy :birthday:! [arXiv:1902.10355](https://arxiv.org/abs/1902.10355) 
 
 #### Start-up example 
@@ -118,7 +118,7 @@ If you are starting from scratch, follow the installation guide below to setup a
  conda install -c conda-forge qutip
  ```
  3. Fork this pyEPR repository on GitHub with your GitHub account. You may clone the fork to your PC and manage it using the [SourceTree](https://www.sourcetreeapp.com/) git-gui manager.
- 4. Add the pyEPR repository folder to your python search path. Make sure to add the git remote branch  `github.com/zlatko-minev/pyEPR`!  [(Help?)](https://stackoverflow.com/questions/11266478/git-add-remote-branch) 
+ 4. Add the pyEPR repository folder to your python search path. Make sure to add the git remote to the master is set up,  `git remote add MASTER_MINEV git://github.com/zlatko-minev/pyEPR.git`!  [(Help?)](https://stackoverflow.com/questions/11266478/git-add-remote-branch) 
  5. Edit pyEPR module `config.py`  to set your data-saving directory and other parameters of interest.
  6. **ENJOY and cite pyEPR! **  :+1:
 
