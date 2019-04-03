@@ -207,6 +207,9 @@ When running a parametric sweep in HFSS, make sure you are actually saving the f
 This problem is due to pandas 0.20.1, update to 0.20.3 or better solves this issue.
 <br>
 
+###### `ValueError: cannot set WRITEABLE flag to True of this array`
+This error happens when trying to read in an hdf file with numpy version 1.16, see [git issue here](https://github.com/numpy/numpy/issues/12791). A solution is to downgrade numpy to 1.15.4 or upgrade to newer versions of hdf and numpy.  
+
 # Authors and Contributors
 * _Authors:_ [Zlatko Minev](https://www.zlatko-minev.com/) & [Zaki Leghtas](http://cas.ensmp.fr/~leghtas/), with contributions from many friends and colleagues.
 * 2015 - present. 
