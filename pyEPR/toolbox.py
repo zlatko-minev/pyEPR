@@ -11,9 +11,13 @@ import pandas as pd
 
 ### Constants
 from collections import OrderedDict
-from scipy.constants import hbar, Planck, e as e_el, epsilon_0, pi
+from scipy.constants import Planck, elementary_charge, epsilon_0, pi
 
-fluxQ = hbar / (2*e_el) # reduced flux quantum
+# Convinience  
+π   = pi
+ħ   = hbar  = Planck/(2*pi)              # Reduced Planks constant
+ϕ0  = fluxQ = ħ / (2*elementary_charge)  # Reduced Flux Quantum  (3.29105976 × 10-16 Webers) 
+e_el        = elementary_charge          # Magnitude of the electric charge carried by a single electron
 
 #==============================================================================
 # Utility functions
