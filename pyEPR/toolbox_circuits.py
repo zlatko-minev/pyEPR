@@ -54,12 +54,13 @@ class Convert(object):
 
     # Known SI units
     _SI_units = ['H',  # Henries
-                'F',  # Farads
-                'Hz', # Hertz
-                'Ohm',# Ohms
-                'Ω',  # Ohms
-                'Wb'  # Webers
-                'J'   # Joules
+                 'F',  # Farads
+                 'Hz', # Hertz
+                 'Ohm',# Ohms
+                 'Ω',  # Ohms
+                 'Wb'  # Webers
+                 'J',  # Joules
+                 'A'   # Amps  
                ]
     
     @staticmethod
