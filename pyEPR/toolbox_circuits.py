@@ -14,7 +14,7 @@ import pandas as pd
 #from collections import OrderedDict
 
 from numpy import sqrt
-from .toolbox import fluxQ, Planck, hbar, e_el, pi
+from .toolbox import ϕ0, fluxQ, Planck, hbar, e_el, pi, ħ, elementary_charge, π
 #from scipy.constants import hbar, Planck, e as e_el, epsilon_0, pi
 
 class Convert(object):
@@ -30,51 +30,125 @@ class Convert(object):
 
         ```
     '''
+    # Known SI prefixed
+    _prefix =  {'y': -24,  # yocto
+                'z': -21,  # zepto
+                'a': -18,  # atto
+                'f': -15,  # femto
+                'p': -12,  # pico
+                'n': -9,   # nano
+                'u': -6,   # micro
+                'm': -3,   # mili
+                'c': -2,   # centi
+                'd': -1,   # deci
+                ' ': 0,
+                'k': 3,    # kilo
+                'M': 6,    # mega
+                'G': 9,    # giga
+                'T': 12,   # tera
+                'P': 15,   # peta
+                'E': 18,   # exa
+                'Z': 21,   # zetta
+                'Y': 24,   # yotta
+              }
+
+    # Known SI units
+    _SI_units = ['H',  # Henries
+                'F',  # Farads
+                'Hz', # Hertz
+                'Ohm',# Ohms
+                'Ω',  # Ohms
+                'Wb'  # Webers
+                'J'   # Joules
+               ]
     
     @staticmethod
-    def Ejj_from_Lj(Lj, units_Lj='nH'):
+    def toSI(number, from_units : str):
+        """
+            Convert from SI unit prefix to regular SI units
+            If the from_units is ' ' or not in the prefix list,
+            then the unit is assumed to be 
+        """
+        if from_units in Convert._SI_units:
+            from_units = ' '
+        #else: we assume that the first letter is a prefix
+        return number*(10**Convert._prefix.get(from_units[0]))
+    
+    @staticmethod
+    def fromSI(number, from_units : str):
+        if from_units in Convert._SI_units:
+            from_units = ' '
+        #else: we assume that the first letter is a prefix
+        return number*(10**(-Convert._prefix.get(from_units[0])))
+    
+    @staticmethod
+    def _convert_num(out_func, in_num, in_units, out_units):
+        in_num  = 1.0*in_num # to float
+        in_num  = Convert.toSI(in_num, in_units) # convert units of input number 
+        out_num = out_func(in_num) # Assume func processes all in SI units
+        out_num = Convert.fromSI(out_num, out_units)
+        return out_num 
+        
+    @staticmethod
+    def Ej_from_Lj(Lj, units_in='nH', units_out='MHz'):
         ''' 
             Josephson Junction energy from Josephson inductance. 
             Returns in MHz
                 
             $E_j = \phi_0^2 / L_J$
         '''
-        Lj = 1.0*Lj # to float
-        if units_Lj == 'nH':
-            return (fluxQ**2.)/(Lj*1.0E-3*Planck)
-        else:
-            raise(NotImplementedError()) 
+        return Convert._convert_num(
+                 lambda _Lj: Planck**-1 * (ϕ0**2)/_Lj, # Plank to go from Joules to Hz 
+                 Lj, units_in, units_out )
 
     @staticmethod
-    def Ljj_from_Ejj(Ej, units_Ej='MHz'):
+    def Lj_from_Ej(Ej, units_in='MHz', units_out='nH'):
         ''' 
             Josephson Junction ind from Josephson energy in MHZ. 
-            Returns in SI units of Henries
+            Returns in units of nano Henries by default
                 
             $E_j = \phi_0^2 / L_J$
         '''
-        Ej = 1.0*Ej # to float
-        if units_Ej == 'MHz':
-            return (fluxQ**2.)/(Ej*1.0E6*Planck)
-        else:
-            raise(NotImplementedError()) 
+        return Convert._convert_num(
+                 lambda _x: (ϕ0**2.)/(_x*Planck), # Plank to go from Joules to Hz 
+                 Ej, units_in, units_out )
+        
+    @staticmethod
+    def Ic_from_Lj(Lj, units_in='nH', units_out='nA'):
+        ''' 
+            Josephson Junction crit. curr from Josephson inductance. 
+                
+            $E_j = \phi_0^2 / L_J = \phi_0 I_C $
+        '''
+        return Convert._convert_num(
+                 lambda _x: ϕ0/_x, # Plank to go from Joules to Hz 
+                 Lj, units_in, units_out)
+        
+    @staticmethod
+    def Lj_from_Ic(Lj, units_in='nA', units_out='nH'):
+        ''' 
+            Josephson Junction crit. curr from Josephson inductance. 
+                
+            $E_j = \phi_0^2 / L_J = \phi_0 I_C $
+        '''
+        return Convert._convert_num(
+                 lambda _x: ϕ0/_x, # Plank to go from Joules to Hz 
+                 Lj, units_in, units_out)
             
     @staticmethod
-    def Ec_from_Cs(Cs, units_Lj='fF'):
+    def Ec_from_Cs(Cs,  units_in='fF', units_out='MHz'):
         ''' 
             Charging energy 4Ec n^2, where n=Q/2e
             Returns in MHz
                 
             $E_{C}=\frac{e^{2}}{2C}J$
         '''
-        Cs = 1.0*Cs # to float
-        if units_Lj == 'fF':
-            return (e_el**2.)/(2.*Cs*1.0E-9*Planck)
-        else:
-            raise(NotImplementedError()) 
+        return Convert._convert_num(
+                 lambda _x: Planck**-1* (e_el**2.)/(2.*_x), # Plank to go from Joules to Hz 
+                 Cs, units_in, units_out )
             
     @staticmethod
-    def C_from_Ec(Ec, units_Ec='MHz'):
+    def Cs_from_Ec(Ec,units_in='MHz', units_out='fF'):
         ''' 
             Charging energy 4Ec n^2, where n=Q/2e
             
@@ -82,11 +156,9 @@ class Convert(object):
                 
             $E_{C}=\frac{e^{2}}{2C}J$
         '''
-        Ec = 1.0*Ec # to float
-        if units_Ec == 'MHz':
-            return (e_el**2.)/(2.*Ec*1.0E6*Planck)
-        else:
-            raise(NotImplementedError()) 
+        return Convert._convert_num(
+                 lambda _x: (e_el**2.)/(2.*_x*Planck), # Plank to go from Joules to Hz 
+                 Ec, units_in, units_out )
             
     @staticmethod
     def ZPF_from_LC(L, C):
@@ -107,9 +179,12 @@ class Convert(object):
     
     @staticmethod
     def transmon_get_all_params(Ej_MHz, Ec_MHz):
-        '''Convinince func'''
+        """
+            Linear harmonic oscillator approximation of transmon.
+            Convinince func
+        """
         Ej, Ec         = Ej_MHz, Ec_MHz
-        Lj_H, Cs_F     = Convert.Ljj_from_Ejj(Ej), Convert.C_from_Ec(Ec)  # SI units 
+        Lj_H, Cs_F     = Convert.Lj_from_Ej(Ej, 'MHz', 'H'), Convert.Cs_from_Ec(Ec, 'MHz', 'F')  # SI units 
         Phi_ZPF, Q_ZPF = Convert.ZPF_from_LC(Lj_H, Cs_F)
         Omega_MHz      = sqrt(1./(Lj_H*Cs_F)) * 1E-6 # MHz
         f_MHz          = Omega_MHz / (2*pi)*1E-3
@@ -128,9 +203,13 @@ class Convert(object):
 
     @staticmethod
     def transmon_print_all_params(Lj_nH, Cs_fF):
+        """
+            Linear harmonic oscillator approximation of transmon.
+            Convinince func
+        """
         # Parameters - duplicates with transmon_get_all_params
-        Ej, Ec     = Convert.Ejj_from_Lj(Lj_nH), Convert.Ec_from_Cs(Cs_fF) # MHz
-        Lj_H, Cs_F = Convert.Ljj_from_Ejj(Ej), Convert.C_from_Ec(Ec)  # SI units 
+        Ej, Ec     = Convert.Ej_from_Lj(Lj_nH, 'nH', 'MHz'), Convert.Ec_from_Cs(Cs_fF,'fF','MHz') # MHz
+        Lj_H, Cs_F = Convert.Lj_from_Ej(Ej, 'MHz', 'H'),     Convert.Cs_from_Ec(Ec, 'MHz', 'F')     # SI units 
         Phi_ZPF, Q_ZPF = Convert.ZPF_from_LC(Lj_H, Cs_F)
         Omega_MHz  = sqrt(1./(Lj_H*Cs_F)) * 1E-6 # MHz
         
