@@ -50,21 +50,23 @@ project_info = Project_Info('c:/sims',
 			    project_name = 'two_qubit_one_cavity', # Project file name (string). "None" will get the current active one.
 			    design_name  = 'Alice_Bob'             # Design name (string). "None" will get the current active one.
 			    )
+project_info.connect_to_project() # Test connection to HFSS
 
 # 2a. Junctions. Specify junctions in HFSS model
 project_info.junctions['jAlice'] = {'Lj_variable':'LJAlice', 'rect':'qubitAlice', 'line': 'alice_line', 'length':0.0001}
 project_info.junctions['jBob']   = {'Lj_variable':'LJBob',   'rect':'qubitBob',   'line': 'bob_line',   'length':0.0001}
+project_info.validate_junction_info() # Check that valid names of variables and objects have been supplied. Please check length of junction rectangle manually for now. 
 
-# 2b. Dissipative elements.
-project_info.dissipative.dielectrics_bulk    = ['si_substrate']    # supply names here, there are more options in project_info.dissipative.
-project_info.dissipative.dielectric_surfaces = ['interface']   
+# 2b. Dissipative elements. (see more options in Project_Info.dissipative)
+project_info.dissipative.dielectrics_bulk    = ['si_substrate', 'dielectic_object2']    # supply names of hfss objects
+project_info.dissipative.dielectric_surfaces = ['interface1', 'interface2']    
 
 # 3.  Run analysis
 epr_hfss = pyEPR_HFSS(project_info)
 epr_hfss.do_EPR_analysis()
 
 # 4.  Hamiltonian analysis
-epr      = pyEPR_Analysis(epr_hfss.data_filename)
+epr = pyEPR_Analysis(epr_hfss.data_filename)
 epr.analyze_all_variations(cos_trunc = 8, fock_trunc = 7)
 epr.plot_Hresults()
 ```
