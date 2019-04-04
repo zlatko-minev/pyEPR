@@ -597,6 +597,18 @@ class pyEPR_HFSS(object):
         #self.design.Clear_Field_Clac_Stack()
         return  I
 
+    def calc_current_line_voltage(self, variation, junc_line_name, junc_L_Henries):
+        ''' Peak current I_max for prespecified mode calculating line voltage across junction.
+            variation: variation number
+            junc_line_name: name of the HFSS line spanning the junction
+            junc_L_Henries: junction inductance in henries'''
+        lv   = self.get_lv(variation)
+        v_calc_real = CalcObject([],self.setup).getQty("E").real().integrate_line_tangent(name = junc_line_name)
+        v_calc_imag = CalcObject([],self.setup).getQty("E").imag().integrate_line_tangent(name = junc_line_name)
+        V = np.sqrt(v_calc_real.evaluate(lv=lv)**2+v_calc_imag.evaluate(lv=lv)**2)
+        freq = CalcObject([('EnterOutputVar',('Freq',"Complex"))],self.setup).real().evaluate()
+        return V/(2*np.pi*freq*junc_L_Henries) # I=V/(wL)s
+
     def calc_line_current(self, variation, junc_line_name):
         lv   = self.get_lv(variation)
         calc = CalcObject([],self.setup)
@@ -662,6 +674,10 @@ class pyEPR_HFSS(object):
             if self.pinfo.options.p_mj_method is 'J_surf_mag':
                 #print(' Integrating rectangle: ' + junc['rect'])
                 I_peak = self.calc_avg_current_J_surf_mag(variation, junc['rect'], junc['line'])
+            elif self.pinfo.options.p_mj_method is 'line_voltage':
+                #print(' Integrating rectangle: ' + junc['rect'])
+                I_peak = self.calc_current_line_voltage(variation, junc['line'], Ljs[junc_nm])
+
             else:
                 raise NotImplementedError('Other calculation methods are possible but not implemented here. ')
 
@@ -1064,7 +1080,10 @@ class pyEPR_Analysis(object):
         '''
         result = OrderedDict()
         for variation in self.variations:
-            result[variation] = self.analyze_variation(variation, cos_trunc, fock_trunc, print_result)
+            result[variation] = self.analyze_variation(variation=variation,
+                                                        cos_trunc=cos_trunc,
+                                                        fock_trunc=fock_trunc,
+                                                        print_result=print_result)
         return result
     
     def get_Pmj(self, variation, _renorm_pj=None, print_=False):
@@ -1126,10 +1145,16 @@ class pyEPR_Analysis(object):
                           variation,
                           cos_trunc     = None,
                           fock_trunc    = None,
-                          print_result  = True):
+                          print_result  = True,
+                          junctions     = None,
+                          modes         = None):
 
         '''
         Can also print results neatly.
+        Args:
+            junctions: list or slice of junctions to include in the analysis. None defaults to analysing all junctions
+            modes: list or slice of modes to include in the analysis. None defaults to analysing all modes
+
 
         Returns
         ----------------------------
@@ -1140,6 +1165,10 @@ class pyEPR_Analysis(object):
             chi_O1 [MHz] : Analytic expression for the chis based on a cos trunc to 4th order, and using 1st order perturbation theory. Diag is anharmonicity, off diag is full cross-Kerr.
             chi_ND [MHz] : Numerically diagonalized chi matrix. Diag is anharmonicity, off diag is full cross-Kerr.
         '''
+        junctions = (junctions,) if type(junctions) == int else junctions # ensuring proper matrix dimensionality when slicing
+        modes = (modes,) if type(modes) == int else modes # ensuring proper matrix dimensionality when slicing
+
+
         if (fock_trunc == None) or (cos_trunc == None):
             fock_trunc = cos_trunc = None
 
@@ -1151,6 +1180,22 @@ class pyEPR_Analysis(object):
 
         # Get matrices
         PJ, SJ, Om, EJ, PHI_zpf = self.get_matrices(variation)
+        freqs_hfss = self.freqs_hfss[variation].values
+        Ljs = self.Ljs[variation].values
+
+        # reduce matrices to only include certain modes/junctions
+        if junctions is not None:
+            Ljs = Ljs[junctions,]
+            PJ = PJ[:,junctions]
+            SJ = SJ[:,junctions]
+            EJ = EJ[:,junctions][junctions,:]
+            PHI_zpf = PHI_zpf[:,junctions]
+        if modes is not None:
+            freqs_hfss = freqs_hfss[modes,]
+            PJ = PJ[modes,:]
+            SJ = SJ[modes,:]
+            Om = Om[modes,:][:,modes]
+            PHI_zpf = PHI_zpf[modes,:]
         
         # Analytic 4-th order
         CHI_O1 = 0.25* Om @ PJ @ inv(EJ) @ PJ.T @ Om * 1000. # MHz
@@ -1159,8 +1204,8 @@ class pyEPR_Analysis(object):
 
         # Numerical diag
         if cos_trunc is not None:
-            f1_ND, CHI_ND = pyEPR_ND(self.freqs_hfss[variation], 
-                                     self.Ljs[variation],
+            f1_ND, CHI_ND = pyEPR_ND(freqs_hfss, 
+                                     Ljs,
                                      PHI_zpf,
                                      cos_trunc     = cos_trunc,
                                      fock_trunc    = fock_trunc)
