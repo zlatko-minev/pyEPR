@@ -121,6 +121,7 @@ class Project_Info(object):
 
     _Forbidden = ['app', 'design', 'desktop', 'project',
                   'dissipative', 'setup', '_Forbidden', 'junctions']
+    
     def save(self, hdf):
         '''
             hdf : pd.HDFStore
@@ -179,9 +180,32 @@ class Project_Info(object):
         self.desktop.release()
         self.app.release()
         hfss.release()
-
-
-
+        
+    ### UTILITY FUNCTIONS
+    def get_all_variables_names(self):
+        """Returns array of all project and local design names."""
+        return self.project.get_variable_names() + self.design.get_variable_names()
+    
+    def get_all_object_names(self):
+        """Returns array of strings"""
+        oObjects = [] 
+        for s in ["Non Model", "Solids", "Unclassified", "Sheets", "Lines"]:
+            oObjects += self.design.modeler.get_objects_in_group(s)
+        return oObjects
+    
+    def validate_junction_info(self):
+        """ Validate that the user has put in the junction info correctly. 
+            Do no also forget to check the length of the rectangles/line of 
+            the junction if you change it. 
+        """
+        all_variables_names = self.get_all_variables_names()
+        all_object_names    = self.get_all_object_names()
+        for jjnm, jj in self.junctions.items():
+            assert jj['Lj_variable'] in all_variables_names, "pyEPR project_info user error found: Seems like for junction `%s` you specified a design or project variable for `Lj_variable` that does not exist in HFSS by the name: `%s` " %(jjnm, jj['Lj_variable'])
+            for name in ['rect', 'line']:
+                assert jj[name] in all_object_names, "pyEPR project_info user error found: Seems like for junction `%s` you specified a %s that does not exist in HFSS by the name: `%s` " %(jjnm, name, jj[name])
+        #TODO: Check the length of the rectnagle 
+    
 
 #==============================================================================
 #%% Main compuation class & interface with HFSS

@@ -317,6 +317,7 @@ class HfssProject(COMWrapper):
         return [VariableString(s) for s in self._project.GetVariables()]
 
     def get_variables(self):
+        """ Returns the project variables only, which start with $. These are global variables. """
         return {VariableString(s): self.get_variable_value(s) for s in self._project.GetVariables()}
 
     def get_variable_value(self, name):
@@ -494,12 +495,19 @@ class HfssDesign(COMWrapper):
         return VariableString(name)
 
     def get_variable_value(self, name):
+        """ Can only access the design variables, i.e., the local ones 
+            Cannot access the project (global) variables, which start with $. """
         return self._design.GetVariableValue(name)
 
     def get_variable_names(self):
+        """ Returns the local design variables. 
+            Does not return the project (global) variables, which start with $. """
         return [VariableString(s) for s in self._design.GetVariables()+self._design.GetPostProcessingVariables()]
 
     def get_variables(self):
+        """ Returns dictionary of local design variables and their values. 
+            Does not return the project (global) variables and their values, 
+            whose names start with $. """
         local_variables = self._design.GetVariables()+self._design.GetPostProcessingVariables()
         return {lv : self.get_variable_value(lv) for lv in local_variables}
 
@@ -947,6 +955,12 @@ class HfssModeler(COMWrapper):
 
     def set_units(self, units, rescale=True):
         self._modeler.SetModelUnits(["NAME:Units Parameter", "Units:=", units, "Rescale:=", rescale])
+    
+    def get_units(self):
+        """Get the model units.
+            Return Value:    A string contains current model units.
+        """
+        return str(self._modeler.GetModelUnits())
 
     def _attributes_array(self, name=None, nonmodel=False, color=None, transparency=0.9, material=None):
         arr = ["NAME:Attributes", "PartCoordinateSystem:=", "Global"]
@@ -1079,14 +1093,30 @@ class HfssModeler(COMWrapper):
 
         self._boundaries.AssignLumpedPort(params)
 
-
     def get_face_ids(self, obj):
-        return self. _modeler.GetFaceIDs(obj)
+        return self._modeler.GetFaceIDs(obj)
+
+    def get_vertex_ids(self, obj):
+        """
+            Get the vertex IDs of given an object name
+            oVertexIDs = oEditor.GetVertexIDsFromObject(“Box1”)
+        """
+        return self._modeler.GetVertexIDsFromObject(obj)
 
     def eval_expr(self, expr, units="mm"):
         if not isinstance(expr, str):
             return expr
         return self.parent.eval_expr(expr, units)
+    
+    def get_objects_in_group(self, group):
+        """
+        Use:              Returns the objects for the specified group.
+        Return Value:    The objects in the group.
+        Parameters:      <groupName>  Type: <string>        
+        One of  <materialName>, <assignmentName>, "Non Model", 
+                "Solids", "Unclassi­fied", "Sheets", "Lines" 
+        """
+        return list(self._modeler.GetObjectsInGroup(group))
 
 
 class ModelEntity(str, HfssPropertyObject):
