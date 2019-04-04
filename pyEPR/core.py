@@ -1204,16 +1204,16 @@ class pyEPR_Analysis(object):
         print(self.SM[variation])
 
     def print_result(self, result):
-        pritm = lambda x: print_matrix(x, frmt = "{:9.2g}",) #TODO: actually make into dataframe with mode labela and junction labels
+        pritm = lambda x, frmt="{:9.2g}": print_matrix(x, frmt = frmt) #TODO: actually make into dataframe with mode labela and junction labels
         
         print( '*** P (participation matrix, normalized.)'  )
         pritm(result['Pm_normed'])
 
         print( '\n*** Chi matrix O1 PT (MHz)\n    Diag is anharmonicity, off diag is full cross-Kerr.'  )
-        pritm(result['chi_O1'])
+        pritm(result['chi_O1'], "{:9.3g}")
 
         print( '\n*** Chi matrix ND (MHz) '  )
-        pritm(result['chi_ND'])
+        pritm(result['chi_ND'], "{:9.3g}")
 
         print( '\n*** Frequencies O1 PT (MHz)'  )
         print(result['f_1'])
