@@ -22,6 +22,7 @@ import time
 import pandas as pd
 
 from sympy.parsing import sympy_parser
+from pathlib import Path
 ### A few usually troublesome packages
 try:
     import pythoncom
@@ -466,6 +467,24 @@ class HfssDesign(COMWrapper):
     def delete_setup(self, name):
         if name in self.get_setup_names():
             self._setup_module.DeleteSetups(name)
+            
+    def delete_full_variation(self, DesignVariationKey="All", del_linked_data=False):
+        """
+        DeleteFullVariation
+        Use:                   Use to selectively make deletions or delete all solution data.
+        Command:         HFSS>Results>Clean Up Solutions...        
+        Syntax:              DeleteFullVariation Array(<parameters>), boolean
+        Parameters:      All | <DataSpecifierArray>
+                        If, All, all data of existing variations is deleted. 
+                        Array(<DesignVariationKey>, )        
+                        <DesignVariationKey>        
+                            Type: <string>
+                            Design variation string.
+                        <Boolean>        
+                        Type: boolean
+                        Whether to also delete linked data.
+        """
+        self._design.DeleteFullVariation("All", False)
 
     def get_nominal_variation(self):
         return self._design.GetNominalVariation()
@@ -1447,36 +1466,41 @@ def get_report_arrays(name):
     return r.get_arrays()
 
 def load_HFSS_project(proj_name, project_path, extension = '.aedt'):  # aedt is for 2016 version
-    ''' proj_name == None => get active.
+    ''' 
+        proj_name : None  --> get active.
         (make sure 2 run as admin)
     '''
-
+    project_path = Path(project_path) # convert slashes correctly for system 
+    
     # Checks
-    assert os.path.isdir(project_path),   "ERROR! project_path is not a valid directory. Check the path, and especially \\ charecters."
+    assert project_path.is_dir(),   "ERROR! project_path is not a valid directory. Check the path, and especially \\ charecters."
 
-    project_path +=  proj_name + extension
+    project_path /=  project_path / Path(proj_name + extension)
 
-    if os.path.isfile(project_path):
+    if (project_path).is_file():
         print('\tFile path to HFSS project found.')
     else:
         raise Exception("ERROR! Valid directory, but invalid project filename. Not found! Please check your filename.\n%s\n" % project_path )
 
-    if os.path.isfile(project_path+'.lock'):
+    if (project_path/'.lock').is_file():
         print('\t\tFile is locked. If connection fails, delete the .lock file.'    )
 
-    app     = HfssApp()
-    print("\tOpened HfssApp.")
+    app = HfssApp()
+    print("\tOpened HFSS-App.")
+    
     desktop = app.get_app_desktop()
-    print( "\tOpened Hfss desktop.")
+    print( "\tOpened HFSS desktop.")
+    
     if proj_name is not None:
         if proj_name in desktop.get_project_names():
             desktop.set_active_project(proj_name)
             project = desktop.get_active_project()
         else:
-            project = desktop.open_project(project_path)
+            project = desktop.open_project(str(project_path))
     else:
         project = desktop.get_active_project()
     print("\tOpened link to HFSS user project.")
+    
     return app, desktop, project
 
 
