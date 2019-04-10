@@ -36,6 +36,7 @@ if 1: # Hamiltonian analysis
     epr.plot_Hresults()
 
     if 1:
+        from pyEPR.toolbox_plotting import cmap_discrete
         f0 = epr.results.get_frequencies_HFSS()
         f1 = epr.results.get_frequencies_O1()
         chi = epr.results.get_chi_O1()

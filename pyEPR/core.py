@@ -19,6 +19,7 @@ from stat         import S_ISREG, ST_CTIME, ST_MODE
 from pandas       import HDFStore, Series, DataFrame
 from pint         import UnitRegistry
 from collections  import OrderedDict
+from pathlib      import Path
 
 # pyEPR custom imports
 from . import hfss
@@ -83,7 +84,7 @@ class Project_Info(object):
             self.p_mj_method      = 'J_surf_mag'
             self.save_mesh_stats  = True
 
-    def __init__(self, project_path, project_name=None,design_name=None):
+    def __init__(self, project_path, project_name=None, design_name=None):
         '''
         HFSS app connection settings
         -----------------------
@@ -98,7 +99,7 @@ class Project_Info(object):
             * Lj_variable -Name of junction inductance variables in HFSS. DO NOT USE Global names that start with $.
             * length - of Junciton rect. length, measured in meters.
         '''
-        self.project_path  = project_path
+        self.project_path  = str(Path(project_path)) # format path correctly to system convention
         self.project_name  = project_name
         self.design_name   = design_name
         self.setup_name    = None
@@ -328,17 +329,17 @@ class pyEPR_HFSS(object):
         '''
             Setups up the folder path
         '''
-        data_dir = config.root_dir + '/' + self.project.name + '/' + self.design.name
+        data_dir = 	Path(config.root_dir)/Path(self.project.name)/Path(self.design.name)
 
         #if self.verbose:
         #    print("\nResults will be saved to:\n" +'-  '*20+'\n\t'+ str(data_dir)+'\n'+'-  '*20+'\n')
         if len(self.design.name) > 50:
             print_color('WARNING!   DESING FILENAME MAY BE TOO LONG! ')
 
-        if not os.path.isdir(data_dir):
-            os.makedirs(data_dir)
-        self.data_dir = data_dir
-        self.data_filename = self.data_dir + '/' + self.design.name + '_' + time.strftime('%Y%m%d_%H%M%S', time.localtime()) + '.hdf5'
+        if not data_dir.is_dir():
+            data_dir.mkdir()
+        self.data_dir = str(data_dir)
+        self.data_filename = str(data_dir / ( time.strftime('%Y-%m-%d %H-%M-%S', time.localtime()) + '.hdf5' ))
 
     """
     @deprecated
