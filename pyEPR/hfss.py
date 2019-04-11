@@ -1062,6 +1062,43 @@ class HfssModeler(COMWrapper):
         edge_pos = copy(pos)
         edge_pos[axis_idx] = var(pos[axis_idx]) - var(height)/2
         return self.draw_cylinder(edge_pos, radius, height, axis, **kwargs)
+    
+    def draw_region(self, Padding, PaddingType="Percentage Offset", name='Region',
+                    material="\"vacuum\"")
+        """
+            PaddingType : 'Absolute Offset', "Percentage Offset"
+        """
+        #TODO: Add option to modify these
+        RegionAttributes = [
+                            "NAME:Attributes",
+                            "Name:="		, name,
+                            "Flags:="		, "Wireframe#",
+                            "Color:="		, "(255 0 0)",
+                            "Transparency:="	, 1,
+                            "PartCoordinateSystem:=", "Global",
+                            "UDMId:="		, "",
+                            "IsAlwaysHiden:="	, False,
+                            "MaterialValue:="	, material,
+                            "SolveInside:="		, True
+                          ]
+        
+        self._modeler.CreateRegion(
+            [
+                "NAME:RegionParameters",
+                "+XPaddingType:="	, PaddingType,
+                "+XPadding:="		, Padding[0][0],
+                "-XPaddingType:="	, PaddingType,
+                "-XPadding:="		, Padding[0][1],
+                "+YPaddingType:="	, PaddingType,
+                "+YPadding:="		, Padding[1][0],
+                "-YPaddingType:="	, PaddingType,
+                "-YPadding:="		, Padding[1][1],
+                "+ZPaddingType:="	, PaddingType,
+                "+ZPadding:="		, Padding[2][0],
+                "-ZPaddingType:="	, PaddingType,
+                "-ZPadding:="		, Padding[2][1]
+            ], 
+            RegionAttributes)
 
     def unite(self, names, keep_originals=False):
         self._modeler.Unite(
