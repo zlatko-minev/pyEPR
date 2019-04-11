@@ -1064,7 +1064,7 @@ class HfssModeler(COMWrapper):
         return self.draw_cylinder(edge_pos, radius, height, axis, **kwargs)
     
     def draw_region(self, Padding, PaddingType="Percentage Offset", name='Region',
-                    material="\"vacuum\"")
+                    material="\"vacuum\""):
         """
             PaddingType : 'Absolute Offset', "Percentage Offset"
         """
