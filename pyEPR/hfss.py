@@ -979,10 +979,11 @@ class HfssModeler(COMWrapper):
         """Get the model units.
             Return Value:    A string contains current model units.
         """
-        return str(self._modeler.GetModelUnits())
+        return str(self._modeler.GetModelUnits())    
 
-    def _attributes_array(self, name=None, nonmodel=False, color=None, transparency=0.9, material=None):
-        arr = ["NAME:Attributes", "PartCoordinateSystem:=", "Global"]
+    def _attributes_array(self, name=None, nonmodel=False, color=None, transparency=0.9, 
+                          material=None, coordinate_system = "Global"):
+        arr = ["NAME:Attributes", "PartCoordinateSystem:=", coordinate_system]
         if name is not None:
             arr.extend(["Name:=", name])
         if nonmodel:
@@ -999,24 +1000,24 @@ class HfssModeler(COMWrapper):
     def _selections_array(self, *names):
         return ["NAME:Selections", "Selections:=", ",".join(names)]
 
-    def draw_box_corner(self, pos, size, **kwargs):
+    def draw_box_corner(self, pos, size, units_append='', **kwargs):
         name = self._modeler.CreateBox(
             ["NAME:BoxParameters",
-             "XPosition:=", pos[0],
-             "YPosition:=", pos[1],
-             "ZPosition:=", pos[2],
-             "XSize:=", size[0],
-             "YSize:=", size[1],
-             "ZSize:=", size[2]],
+             "XPosition:=", str(pos[0])+units_append,
+             "YPosition:=", str(pos[1])+units_append,
+             "ZPosition:=", str(pos[2])+units_append,
+             "XSize:=", str(size[0])+units_append,
+             "YSize:=", str(size[1])+units_append,
+             "ZSize:=", str(size[2])+units_append],
             self._attributes_array(**kwargs)
         )
         return Box(name, self, pos, size)
 
-    def draw_box_center(self, pos, size, **kwargs):
+    def draw_box_center(self, pos, size, units_append='', **kwargs):
         corner_pos = [var(p) - var(s)/2 for p, s in zip(pos, size)]
-        return self.draw_box_corner(corner_pos, size, **kwargs)
+        return self.draw_box_corner(corner_pos, size, units_append=units_append, **kwargs)
 
-    def draw_rect_corner(self, pos, x_size=0, y_size=0, z_size=0, **kwargs):
+    def draw_rect_corner(self, pos, x_size=0, y_size=0, z_size=0, units_append='', **kwargs):
         size = [x_size, y_size, z_size]
         assert 0 in size
         axis = "XYZ"[size.index(0)]
@@ -1028,19 +1029,19 @@ class HfssModeler(COMWrapper):
 
         name = self._modeler.CreateRectangle(
             ["NAME:RectangleParameters",
-             "XStart:=", pos[0],
-             "YStart:=", pos[1],
-             "ZStart:=", pos[2],
-             "Width:=", size[w_idx],
-             "Height:=", size[h_idx],
+             "XStart:=", str(pos[0])+units_append,
+             "YStart:=", str(pos[1])+units_append,
+             "ZStart:=", str(pos[2])+units_append,
+             "Width:=",  str(size[w_idx])+units_append,
+             "Height:=", str(size[h_idx])+units_append,
              "WhichAxis:=", axis],
             self._attributes_array(**kwargs)
         )
         return Rect(name, self, pos, size)
 
-    def draw_rect_center(self, pos, x_size=0, y_size=0, z_size=0, **kwargs):
-        corner_pos = [var(p) - var(s)/2 for p, s in zip(pos, [x_size, y_size, z_size])]
-        return self.draw_rect_corner(corner_pos, x_size, y_size, z_size, **kwargs)
+    def draw_rect_center(self, pos, x_size=0, y_size=0, z_size=0, units_append='', **kwargs):
+        corner_pos = [var(p) - var(s)/2. for p, s in zip(pos, [x_size, y_size, z_size])]
+        return self.draw_rect_corner(corner_pos, x_size, y_size, z_size, units_append=units_append, **kwargs)
 
 
     def draw_cylinder(self, pos, radius, height, axis, **kwargs):
@@ -1136,6 +1137,55 @@ class HfssModeler(COMWrapper):
                 "Solids", "Unclassi­fied", "Sheets", "Lines" 
         """
         return list(self._modeler.GetObjectsInGroup(group))
+    
+    def set_working_coordinate_system(self, cs_name="Global"):
+        """
+        Use:                   Sets the working coordinate system.
+        Command:         Modeler>Coordinate System>Set Working CS
+        """
+        self._modeler.SetWCS(
+            [
+                "NAME:SetWCS Parameter",
+                "Working Coordinate System:=", cs_name,
+                "RegionDepCSOk:="	, False # this one is prob not needed, but comes with the record tool
+            ])
+        
+    def create_relative_coorinate_system_both(self, cs_name,
+                                              origin=["0um","0um","0um"],
+                                              XAxisVec=["1um","0um","0um"],
+                                              YAxisVec=["0um","1um","0um"]):
+        """
+        Use:     Creates a relative coordinate system. Only the    Name attribute of the <AttributesArray> parameter is supported.
+        Command: Modeler>Coordinate System>Create>Relative CS->Offset
+        Modeler>Coordinate System>Create>Relative CS->Rotated
+        Modeler>Coordinate System>Create>Relative CS->Both
+        
+        Current cooridnate system is set right after this. 
+
+        cs_name : name of coord. sys
+            If the name already exists, then a new coordinate system with _1 is created. 
+
+        origin, XAxisVec, YAxisVec: 3-vectors 
+            You can also pass in params such as origin = [0,1,0] rather than ["0um","1um","0um"], but these will be interpreted in default units, so it is safer to be explicit. Explicit over implicit. 
+        """
+        self._modeler.CreateRelativeCS(
+                [
+                    "NAME:RelativeCSParameters",
+                    "Mode:="		, "Axis/Position",
+                    "OriginX:="		, origin[0],
+                    "OriginY:="		, origin[1],
+                    "OriginZ:="		, origin[2],
+                    "XAxisXvec:="		, XAxisVec[0],
+                    "XAxisYvec:="		, XAxisVec[1],
+                    "XAxisZvec:="		, XAxisVec[2],
+                    "YAxisXvec:="		, YAxisVec[0],
+                    "YAxisYvec:="		, YAxisVec[1],
+                    "YAxisZvec:="		, YAxisVec[1]
+                ], 
+                [
+                    "NAME:Attributes",
+                    "Name:="		, cs_name
+                ])
 
 
 class ModelEntity(str, HfssPropertyObject):
