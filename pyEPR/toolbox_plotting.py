@@ -5,15 +5,14 @@ Created on Fri Aug 25 19:30:12 2017
 @author: Zlatko
 """
 
-from __future__ import division, print_function, absolute_import   # Python 2.7 and 3 compatibility
+from __future__ import division, print_function, absolute_import  
 
 import numpy as np
-#import matplotlib as mpl
 import matplotlib.pyplot as plt
 
+from .config import Plotting_Options
 from matplotlib.colors import rgb2hex
 
-from .config import Plotting_Options
 
 
 

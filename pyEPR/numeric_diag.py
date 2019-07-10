@@ -5,26 +5,29 @@
     This file is tricky, use caution to modify.
 '''
 
-from __future__ import print_function    # Python 2.7 and 3 compatibility
-import logging
-logger = logging.getLogger('pyEPR')
-from .config import __STD_END_MSG
+from __future__ import print_function
 
+import logging
+import numpy as np
+
+from functools import reduce
+from .toolbox import pi, fluxQ, fact, hbar,  \
+                     elementary_charge as e, \
+                     Plank as h
 
 try:
     import qutip
     from qutip import basis, tensor
 except ImportError:
-    logger.error('IMPORT ERRROR:\n   Could not load qutip package. Is it installed? Must be missing. Try: >> conda install -c conda-forge qutip\n'+__STD_END_MSG)
-
-import numpy as np
-from functools import  reduce
-
-from .toolbox import fluxQ, fact
-from scipy.constants import pi, hbar, e, h
+    pass 
 
 
 __all__ = ['bbq_hmt', 'make_dispersive', 'bbq_nq']
+logger  = logging.getLogger('pyEPR')
+
+
+###############################################################################
+### Module 
 
 def dot(ais, bis):
     return sum(ai*bi for ai, bi in zip(ais, bis))

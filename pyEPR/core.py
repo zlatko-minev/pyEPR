@@ -17,7 +17,6 @@ from numpy        import pi, sqrt
 from numpy.linalg import inv
 from stat         import S_ISREG, ST_CTIME, ST_MODE
 from pandas       import HDFStore, Series, DataFrame
-from pint         import UnitRegistry
 from collections  import OrderedDict
 from pathlib      import Path
 
@@ -32,7 +31,10 @@ from .toolbox_plotting import cmap_discrete, legend_translucent
 from .numeric_diag import bbq_hmt, make_dispersive
 
 ### Definitions
-ureg  = UnitRegistry(system='mks')
+try:
+    from pint import UnitRegistry
+    ureg  = UnitRegistry(system='mks')
+    
 
 
 class Project_Info(object):

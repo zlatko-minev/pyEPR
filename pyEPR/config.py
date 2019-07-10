@@ -34,7 +34,6 @@ class Dissipation_params:
 
 
 import matplotlib.pyplot as plt
-
 class Plotting_Options:
     default_color_map = plt.cm.viridis
 
