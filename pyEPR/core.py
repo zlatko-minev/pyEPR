@@ -34,7 +34,8 @@ from .numeric_diag import bbq_hmt, make_dispersive
 try:
     from pint import UnitRegistry
     ureg  = UnitRegistry(system='mks')
-    
+except ImportError: 
+    pass
 
 
 class Project_Info(object):
@@ -63,9 +64,19 @@ class Project_Info(object):
             Note, DO NOT USE Global names that start with $.
         junc_lens     = None
             Junciton rect. length, measured in meters.
+            
+    Args: 
+        junctions     : OrderedDict
+        The key of this dict give the junction nickname in pyEPR.
+        Each junction is given the following 4 parameters:
+        * rect - Name of junction rectangles in HFSS
+        * line - Name of lines in HFSS used to define the current orientation for each junction. Used to define sign of ZPF.
+        * Lj_variable -Name of junction inductance variables in HFSS. DO NOT USE Global names that start with $.
+        * length - of Junciton rect. length, measured in meters.
     """
 
     class _Dissipative:
+        
         def __init__(self):
             self.dielectrics_bulk    = None
             self.dielectric_surfaces = None
@@ -85,31 +96,19 @@ class Project_Info(object):
             self.Pj_from_current  = True
             self.p_mj_method      = 'J_surf_mag'
             self.save_mesh_stats  = True
+            
 
     def __init__(self, project_path, project_name=None, design_name=None):
-        '''
-        HFSS app connection settings
-        -----------------------
-        project_path  : str
-            Directory path to the hfss project file. Should be the directory, not the file.
-
-        junctions     : OrderedDict
-            The key of this dict give the junction nickname in pyEPR.
-            Each junction is given the following 4 parameters:
-            * rect - Name of junction rectangles in HFSS
-            * line - Name of lines in HFSS used to define the current orientation for each junction. Used to define sign of ZPF.
-            * Lj_variable -Name of junction inductance variables in HFSS. DO NOT USE Global names that start with $.
-            * length - of Junciton rect. length, measured in meters.
-        '''
-        self.project_path  = str(Path(project_path)) # format path correctly to system convention
+        
+        self.project_path  = str(Path(project_path)) # Path: format path correctly to system convention
         self.project_name  = project_name
         self.design_name   = design_name
         self.setup_name    = None
 
         ## HFSS desgin: describe junction parameters
+        # TODO: introduce modal labels
         self.junctions     = OrderedDict()
         self.ports         = OrderedDict()
-        # TODO: introduce modal labels
 
         ## Dissipative HFSS volumes and surfaces
         self.dissipative   = self._Dissipative()
@@ -121,6 +120,7 @@ class Project_Info(object):
         self.project       = None
         self.design        = None
         self.setup         = None
+        
 
     _Forbidden = ['app', 'design', 'desktop', 'project',
                   'dissipative', 'setup', '_Forbidden', 'junctions']
@@ -146,25 +146,41 @@ class Project_Info(object):
         assert self.project_path is not None
 
         self.app, self.desktop, self.project = hfss.load_HFSS_project(self.project_name, self.project_path)
+        
+        # Design 
         try:
             self.design  = self.project.get_design(self.design_name) if self.design_name != None else self.project.get_active_design()
         except Exception as e:
             tb = sys.exc_info()[2]
             print("\n\nOriginal error:\n", e)
             raise(Exception(' Did you provide the correct design name? Failed to pull up design.').with_traceback(tb))
+        
+        if not ('Eigenmode' == self.design.solution_type):
+            print('\tWarning: The design tpye is not Eigenmode. Are you sure you dont want eigenmode?', file=sys.stderr)
+            
+        # Setup 
         try:
-            self.setup   = self.design.get_setup(name=self.setup_name)
+            if len(self.design.get_setup_names()) == 0:
+                print('\tNo eigen setup detected. Creating a default one.', file=sys.stderr)
+                assert  ('Eigenmode' == self.design.solution_type)
+                self.design.create_em_setup()
+                self.setup_name = 'Setup'
+                
+            self.setup = self.design.get_setup(name=self.setup_name)    
         except Exception as e:
             tb = sys.exc_info()[2]
             print("\n\nOriginal error:\n", e)
             raise(Exception(' Did you provide the correct setup name? Failed to pull up setup.').with_traceback(tb))
 
+        # Finalize
         self.project_name = self.project.name
         self.design_name  = self.design.name
         self.setup_name   = self.setup.name
-
+        
+        oDesign, oModeler = self.get_dm()
         print('\tConnected successfully.\n\t :)\t :)\t :)\t\n')
-        return self.app, self.desktop, self.project, self.design, self.setup
+    
+        return self.design, oModeler, self.app, self.desktop, self.project, self.setup
 
     def check_connected(self):
         return\
@@ -185,6 +201,19 @@ class Project_Info(object):
         hfss.release()
         
     ### UTILITY FUNCTIONS
+    
+    def get_dm(self):
+        ''' 
+        Get the design and modeler 
+        
+        .. code-block:: python
+            oDesign, oModeler = projec.get_dm()
+            
+        '''
+        oDesign  = self.design 
+        oModeler = oDesign.modeler
+        return oDesign, oModeler
+    
     def get_all_variables_names(self):
         """Returns array of all project and local design names."""
         return self.project.get_variable_names() + self.design.get_variable_names()
