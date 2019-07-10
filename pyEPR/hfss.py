@@ -17,12 +17,16 @@ import os
 import tempfile
 import types
 import numpy
+import numpy as np
 import signal
 import time
 import pandas as pd
 
-from sympy.parsing import sympy_parser
 from pathlib import Path
+from numbers import Number
+from collections.abc import Iterable
+from sympy.parsing import sympy_parser
+
 ### A few usually troublesome packages
 try:
     import pythoncom
@@ -61,6 +65,10 @@ BASIS_ORDER = {"Zero Order": 0,
                "Second Order": 2,
                "Mixed Order": -1}
 
+LENGTH_UNIT = 'meter'
+LENGTH_UNIT_ASSUMED = 'mm'  # if a user inputs a blank number with no units in `parse_fix`,
+                            # we can assume the following using 
+
 def simplify_arith_expr(expr):
     try:
         out = repr(sympy_parser.parse_expr(str(expr)))
@@ -84,7 +92,85 @@ def extract_value_unit(expr, units):
     :type units: str
     :return: float
     """
-    return Q(expr).to(units).magnitude
+    try:
+        return Q(expr).to(units).magnitude
+    except Exception:
+        try:
+            return float(expr)
+        except Exception:
+            return expr
+        
+def extract_value_dim(expr):
+    """
+    type expr: str
+    """
+    return str(Q(expr).dimensionality)
+
+
+def parse_entry(entry, convert_to_unit = LENGTH_UNIT):
+    '''
+        should take a list of tuple of list... of int, float or str...
+        For iterables, returns lists
+    '''
+    if not isinstance(entry, list) and not isinstance(entry, tuple):
+        return extract_value_unit(entry, convert_to_unit)
+    else:
+        entries = entry
+        _entry = []
+        for entry in entries:
+            _entry.append(parse_entry(entry, convert_to_unit=convert_to_unit))
+        return _entry
+    
+
+def fix_units(x, unit_assumed=None):
+    ''' 
+        Convert all numbers to string and append the assumed units if needed. 
+        For an itterable, returns a list
+    '''
+    unit_assumed = LENGTH_UNIT_ASSUMED if unit_assumed is None else unit_assumed
+    if isinstance(x, str):
+        ## Check if there are already units defined, assume of form 2.46mm  or 2.0 or 4. 
+        if x[-1].isdigit() or x[-1]=='.': # number
+            return x + unit_assumed
+        else: # units are already appleid
+            return x
+    elif isinstance(x, Number):
+        return fix_units(str(x)+unit_assumed, unit_assumed=unit_assumed)
+    elif isinstance(x, Iterable): #hasattr(x, '__iter__'):
+        return [fix_units(y, unit_assumed=unit_assumed) for y in x]
+    else:
+        return x
+    
+def parse_units(x):
+    '''
+        Convert number, string, and lists/arrays/tuples to numbers scaled 
+        in HFSS units.
+        
+        Converts to                  LENGTH_UNIT = meters  [HFSS UNITS]
+        Assumes input units  LENGTH_UNIT_ASSUMED = mm      [USER UNITS]
+        
+        [USER UNITS] ----> [HFSS UNITS]
+    '''
+    return parse_entry(fix_units(x))
+
+def unparse_units(x):
+    '''
+        Undo effect of parse_unit. 
+        
+        Converts to     LENGTH_UNIT_ASSUMED = mm     [USER UNITS]
+        Assumes input units     LENGTH_UNIT = meters [HFSS UNITS]
+         
+        [HFSS UNITS] ----> [USER UNITS]
+    '''
+    return parse_entry(fix_units(x, unit_assumed=LENGTH_UNIT), LENGTH_UNIT_ASSUMED)
+
+def parse_units_user(x):
+    '''
+        Convert from user assuemd units to user assumed units
+        [USER UNITS] ----> [USER UNITS]
+    '''
+    return parse_entry(fix_units(x, LENGTH_UNIT_ASSUMED),LENGTH_UNIT_ASSUMED)
+
 
 class VariableString(str):
     def __add__(self, other):
@@ -977,17 +1063,37 @@ class HfssModeler(COMWrapper):
     
     def get_units(self):
         """Get the model units.
-            Return Value:    A string contains current model units.
-        """
-        return str(self._modeler.GetModelUnits())    
+            Return Value:    A string contains current model units. """
+        return str(self._modeler.GetModelUnits())   
 
-    def _attributes_array(self, name=None, nonmodel=False, color=None, transparency=0.9, 
-                          material=None, coordinate_system = "Global"):
+    def get_all_properties(self, obj_name, PropTab='Geometry3DAttributeTab'):
+        '''
+            Get all properties for modeler PropTab, PropServer
+        '''
+        PropServer = obj_name
+        properties = {}
+        for key in self._modeler.GetProperties(PropTab, PropServer):
+            properties[key] = self._modeler.GetPropertyValue(PropTab, PropServer, key)
+        return properties 
+
+    def _attributes_array(self, 
+                          name=None, 
+                          nonmodel=False, 
+                          wireframe=False,
+                          color=None, 
+                          transparency=0.9, 
+                          material=None, 
+                          coordinate_system = "Global"):
         arr = ["NAME:Attributes", "PartCoordinateSystem:=", coordinate_system]
         if name is not None:
             arr.extend(["Name:=", name])
-        if nonmodel:
-            arr.extend(["Flags:=", "NonModel"])
+            
+        if nonmodel or wireframe:
+            flags = 'NonModel' if nonmodel else '' # can be done smarter
+            if wireframe:
+                flags += '#' if len(flags)>0 else ''
+                flags += 'Wireframe'
+            arr.extend(["Flags:=", flags])
 
         if color is not None:
             arr.extend(["Color:=", "(%d %d %d)" % color])
@@ -999,25 +1105,62 @@ class HfssModeler(COMWrapper):
 
     def _selections_array(self, *names):
         return ["NAME:Selections", "Selections:=", ",".join(names)]
-
-    def draw_box_corner(self, pos, size, units_append='', **kwargs):
+    
+    def draw_box_corner(self, pos, size, **kwargs):
         name = self._modeler.CreateBox(
             ["NAME:BoxParameters",
-             "XPosition:=", str(pos[0])+units_append,
-             "YPosition:=", str(pos[1])+units_append,
-             "ZPosition:=", str(pos[2])+units_append,
-             "XSize:=", str(size[0])+units_append,
-             "YSize:=", str(size[1])+units_append,
-             "ZSize:=", str(size[2])+units_append],
+             "XPosition:=", str(pos[0]),
+             "YPosition:=", str(pos[1]),
+             "ZPosition:=", str(pos[2]),
+             "XSize:=", str(size[0]),
+             "YSize:=", str(size[1]),
+             "ZSize:=", str(size[2])],
             self._attributes_array(**kwargs)
         )
         return Box(name, self, pos, size)
 
-    def draw_box_center(self, pos, size, units_append='', **kwargs):
+    def draw_box_center(self, pos, size, **kwargs):
         corner_pos = [var(p) - var(s)/2 for p, s in zip(pos, size)]
-        return self.draw_box_corner(corner_pos, size, units_append=units_append, **kwargs)
+        return self.draw_box_corner(corner_pos, size, **kwargs)
+    
+    def draw_polyline(self, points, closed=True, **kwargs):
+        """
+            Draws a closed or open polyline. 
+            If closed = True, then will make into a sheet. 
+            points : need to be in the correct units
+        """
+        pointsStr = ["NAME:PolylinePoints"]
+        indexsStr = ["NAME:PolylineSegments"]
+        for ii, point in enumerate(points):
+            pointsStr.append(["NAME:PLPoint", 
+                              "X:=", str(point[0]),
+                              "Y:=", str(point[1]),
+                              "Z:=", str(point[2])])
+            indexsStr.append(["NAME:PLSegment", "SegmentType:=", "Line", "StartIndex:=", ii, "NoOfPoints:=", 2])
+        if closed:
+            pointsStr.append(["NAME:PLPoint", 
+                              "X:=", str(points[0][0]),
+                              "Y:=", str(points[0][1]), 
+                              "Z:=", str(points[0][2])])
+            params_closed = ["IsPolylineCovered:=", True, "IsPolylineClosed:=", True]
+        else:
+            indexsStr = indexsStr[:-1]
+            params_closed = ["IsPolylineCovered:=", True, "IsPolylineClosed:=", False]
 
-    def draw_rect_corner(self, pos, x_size=0, y_size=0, z_size=0, units_append='', **kwargs):
+        name = self._modeler.CreatePolyline(
+            ["NAME:PolylineParameters",
+            *params_closed,
+            pointsStr,
+            indexsStr],
+            self._attributes_array(**kwargs)
+        )
+
+        if closed:
+            return Polyline(name, self, points)
+        else:
+            return OpenPolyline(name, self, points)
+
+    def draw_rect_corner(self, pos, x_size=0, y_size=0, z_size=0, **kwargs):
         size = [x_size, y_size, z_size]
         assert 0 in size
         axis = "XYZ"[size.index(0)]
@@ -1029,19 +1172,19 @@ class HfssModeler(COMWrapper):
 
         name = self._modeler.CreateRectangle(
             ["NAME:RectangleParameters",
-             "XStart:=", str(pos[0])+units_append,
-             "YStart:=", str(pos[1])+units_append,
-             "ZStart:=", str(pos[2])+units_append,
-             "Width:=",  str(size[w_idx])+units_append,
-             "Height:=", str(size[h_idx])+units_append,
+             "XStart:=", str(pos[0]),
+             "YStart:=", str(pos[1]),
+             "ZStart:=", str(pos[2]),
+             "Width:=",  str(size[w_idx]),
+             "Height:=", str(size[h_idx]),
              "WhichAxis:=", axis],
             self._attributes_array(**kwargs)
         )
         return Rect(name, self, pos, size)
 
-    def draw_rect_center(self, pos, x_size=0, y_size=0, z_size=0, units_append='', **kwargs):
+    def draw_rect_center(self, pos, x_size=0, y_size=0, z_size=0, **kwargs):
         corner_pos = [var(p) - var(s)/2. for p, s in zip(pos, [x_size, y_size, z_size])]
-        return self.draw_rect_corner(corner_pos, x_size, y_size, z_size, units_append=units_append, **kwargs)
+        return self.draw_rect_corner(corner_pos, x_size, y_size, z_size,  **kwargs)
 
 
     def draw_cylinder(self, pos, radius, height, axis, **kwargs):
@@ -1062,6 +1205,41 @@ class HfssModeler(COMWrapper):
         edge_pos = copy(pos)
         edge_pos[axis_idx] = var(pos[axis_idx]) - var(height)/2
         return self.draw_cylinder(edge_pos, radius, height, axis, **kwargs)
+    
+    def draw_wirebond(self, pos, ori, width, height='0.1mm', z=0,
+                      **kwargs): 
+        '''
+            Args:
+                pos: 2D positon vector  
+                ori: should be normed
+                z: z postion
+            
+            # TODO create Wirebond class
+        '''
+        #pos, ori, width, heigth = parse_entry((pos, ori, width, height))
+        xpad = pos[0]-width/2.*ori[0]
+        ypad = pos[1]+width/2.*ori[1]
+        xdir = ori[0]
+        ydir = ori[1]
+        name = self._modeler.CreateBondwire(["NAME:BondwireParameters",
+                                            "WireType:=", "Low",
+                                            "WireDiameter:=", "0.02mm",
+                                            "NumSides:=", 6,
+                                            "XPadPos:=", xpad,
+                                            "YPadPos:=", ypad,
+                                            "ZPadPos:=", z,
+                                            "XDir:=", xdir,
+                                            "YDir:=", ydir,
+                                            "ZDir:=", 0,
+                                            "Distance:=", width,
+                                            "h1:=", height,
+                                            "h2:=", "0mm",
+                                            "alpha:=", "80deg",
+                                            "beta:=", "80deg",
+                                            "WhichAxis:=", "Z"],
+                                            self._attributes_array(**kwargs))
+
+        return name 
     
     def draw_region(self, Padding, PaddingType="Percentage Offset", name='Region',
                     material="\"vacuum\""):
@@ -1122,16 +1300,52 @@ class HfssModeler(COMWrapper):
              "TranslateVectorY:=", vector[1],
              "TranslateVectorZ:=", vector[2]]
         )
-
-    def make_perfect_E(self, *objects):
-        name = increment_name("PerfE", self._boundaries.GetBoundaries())
-        self._boundaries.AssignPerfectE(["NAME:"+name, "Objects:=", objects, "InfGroundPlane:=", False])
+    
+    def get_boundary_assignment(self, boundary_name : str):
+        objects = self._boundaries.GetBoundaryAssignment(boundary_name)          # Gets a list of face IDs associated with the given boundary or excitation assignment.
+        objects = [self._modeler.GetObjectNameByFaceID(k) for k in objects] # Gets an object name corresponding to the input face id. Returns the name of the corresponding object name.
+        return objects
+    
+    def append_PerfE_assignment(self, boundary_name : str, object_names : list):
+        '''
+            This will create a new boundary if need, and will 
+            otherwise append given names to an exisiting boundary 
+        '''
+        # enforce
+        boundary_name = str(boundary_name)
+        if isinstance(object_names, str):
+            object_names = [object_names]
+        object_names = list(object_names) # enforce list
+        
+        # do actual work
+        if boundary_name not in self._boundaries.GetBoundaries():  # GetBoundariesOfType("Perfect E")
+            # need to make a new boundary 
+            self.assign_perfect_E(object_names, name=boundary_name)
+        else:
+            # need to append
+            objects = list(self.get_boundary_assignment(boundary_name))
+            self._boundaries.ReassignBoundary(["NAME:" + boundary_name, 
+                                                   "Objects:=", list(set(objects + object_names))])
+        
+    def assign_perfect_E(self, obj, name='PerfE'):
+        '''
+            Takes a name of an object or a list of object names.
+            If `name` is not specified `PerfE` is appended to object name for the name. 
+        '''
+        if not isinstance(obj, list):
+            obj = [obj]
+            if name == 'PerfE':
+                name = str(obj)+'_'+name
+        name = increment_name(name, self._boundaries.GetBoundaries())
+        self._boundaries.AssignPerfectE(["NAME:"+name, "Objects:=", obj, "InfGroundPlane:=", False])
 
     def _make_lumped_rlc(self, r, l, c, start, end, obj_arr, name="LumpLRC"):
         name = increment_name(name, self._boundaries.GetBoundaries())
         params = ["NAME:"+name]
         params += obj_arr
-        params.append(["NAME:CurrentLine", "Start:=", start, "End:=", end])
+        params.append(["NAME:CurrentLine", 
+                       "Start:=", fix_units(start, unit_assumed=LENGTH_UNIT),  # for some reason here it seems to swtich to use thje model units, rather than meters
+                       "End:=",   fix_units(end  , unit_assumed=LENGTH_UNIT)])
         params += ["UseResist:=", r != 0, "Resistance:=", r,
                    "UseInduct:=", l != 0, "Inductance:=", l,
                    "UseCap:=", c != 0, "Capacitance:=", c]
@@ -1142,9 +1356,15 @@ class HfssModeler(COMWrapper):
         params = ["NAME:"+name]
         params += obj_arr
         params += ["RenormalizeAllTerminals:=", True, "DoDeembed:=", False,
-                   ["NAME:Modes", ["NAME:Mode1", "ModeNum:=", 1, "UseIntLine:=", True,
-                                   ["NAME:IntLine", "Start:=", start, "End:=", end],
-                                   "CharImp:=", "Zpi", "AlignmentGroup:=", 0, "RenormImp:=", "50ohm"]],
+                   ["NAME:Modes", ["NAME:Mode1", 
+                                   "ModeNum:=", 1, 
+                                   "UseIntLine:=", True,
+                                  ["NAME:IntLine", 
+                                    "Start:=", fix_units(start, unit_assumed=LENGTH_UNIT), 
+                                    "End:=",   fix_units(start, unit_assumed=LENGTH_UNIT)],
+                                   "CharImp:=", "Zpi", 
+                                   "AlignmentGroup:=", 0, 
+                                   "RenormImp:=", "50ohm"]],
                    "ShowReporterFilter:=", False, "ReporterFilter:=", [True],
                    "FullResistance:=", "50ohm", "FullReactance:=", "0ohm"]
 
@@ -1152,6 +1372,10 @@ class HfssModeler(COMWrapper):
 
     def get_face_ids(self, obj):
         return self._modeler.GetFaceIDs(obj)
+    
+    def get_object_name_by_face_id(self, ID:str):
+        ''' Gets an object name corresponding to the input face id. '''
+        return self._modeler.GetObjectNameByFaceID(ID)    
 
     def get_vertex_ids(self, obj):
         """
@@ -1223,6 +1447,90 @@ class HfssModeler(COMWrapper):
                     "NAME:Attributes",
                     "Name:="		, cs_name
                 ])
+        
+    def subtract(self, blank_name, tool_names, keep_originals=False):
+        selection_array= ["NAME:Selections",
+                          "Blank Parts:=", blank_name,
+                          "Tool Parts:=", ",".join(tool_names)]
+        self._modeler.Subtract(
+            selection_array,
+            ["NAME:UniteParameters", "KeepOriginals:=", keep_originals]
+        )
+        return blank_name
+    
+    def _fillet(self, radius, vertex_index, obj):
+        vertices = self._modeler.GetVertexIDsFromObject(obj)
+        if isinstance(vertex_index, list):
+            to_fillet = [int(vertices[v]) for v in vertex_index]
+        else:
+            to_fillet = [int(vertices[vertex_index])]
+#        print(vertices)
+#        print(radius)
+        self._modeler.Fillet(["NAME:Selections", "Selections:=", obj],
+                              ["NAME:Parameters",
+                               ["NAME:FilletParameters",
+                                "Edges:=", [],
+                                "Vertices:=", to_fillet,
+                                "Radius:=", radius,
+                                "Setback:=", "0mm"]])
+            
+     
+    def _fillet_edges(self, radius, edge_index, obj):
+        edges = self._modeler.GetEdgeIDsFromObject(obj)
+        if isinstance(edge_index, list):
+            to_fillet = [int(edges[e]) for e in edge_index]
+        else:
+            to_fillet = [int(edges[edge_index])]
+            
+        self._modeler.Fillet(["NAME:Selections", "Selections:=", obj],
+                              ["NAME:Parameters",
+                               ["NAME:FilletParameters",
+                                "Edges:=", to_fillet,
+                                "Vertices:=", [],
+                                "Radius:=", radius,
+                                "Setback:=", "0mm"]])   
+            
+
+    def _fillets(self, radius, vertices, obj):
+        self._modeler.Fillet(["NAME:Selections", "Selections:=", obj],
+                              ["NAME:Parameters",
+                               ["NAME:FilletParameters",
+                                "Edges:=", [],
+                                "Vertices:=", vertices,
+                                "Radius:=", radius,
+                                "Setback:=", "0mm"]])
+            
+    def _sweep_along_path(self, to_sweep, path_obj):
+        self.rename_obj(path_obj, str(path_obj)+'_path')
+        new_name = self.rename_obj(to_sweep, path_obj)
+        names = [path_obj, str(path_obj)+'_path']
+        self._modeler.SweepAlongPath(self._selections_array(*names),
+                                     ["NAME:PathSweepParameters",
+                                		"DraftAngle:="		, "0deg",
+                                		"DraftType:="		, "Round",
+                                		"CheckFaceFaceIntersection:=", False,
+                                		"TwistAngle:="		, "0deg"])
+        return Polyline(new_name, self)
+    
+    
+    def sweep_along_vector(self, names, vector):
+        self._modeler.SweepAlongVector(self._selections_array(*names), 
+                                        	["NAME:VectorSweepParameters",
+                                        		"DraftAngle:="		, "0deg",
+                                        		"DraftType:="		, "Round",
+                                        		"CheckFaceFaceIntersection:=", False,
+                                        		"SweepVectorX:="	, vector[0],
+                                        		"SweepVectorY:="	, vector[1],
+                                        		"SweepVectorZ:="	, vector[2]
+                                        	])
+            
+    def rename_obj(self, obj, name):
+        self._modeler.ChangeProperty(["NAME:AllTabs",
+                                    		["NAME:Geometry3DAttributeTab",
+                                    			["NAME:PropServers", str(obj)],
+                                    			["NAME:ChangedProps",["NAME:Name","Value:=", str(name)]]]])
+        return name
+                                        
 
 
 class ModelEntity(str, HfssPropertyObject):
@@ -1278,6 +1586,8 @@ class Rect(ModelEntity):
         self.center = [c + s/2 if s else c for c, s in zip(corner, size)]
 
     def make_center_line(self, axis):
+        '''Returns `start` and `end` list of 3 coordinates
+        '''
         axis_idx = ["x", "y", "z"].index(axis.lower())
         start = [c for c in self.center]
         start[axis_idx] -= self.size[axis_idx]/2
@@ -1295,6 +1605,134 @@ class Rect(ModelEntity):
         start, end = self.make_center_line(axis)
         self.modeler._make_lumped_port(start, end, ["Objects:=", [self]], z0=z0, name=name)
 
+class Polyline(ModelEntity): 
+    ''' 
+        Assume closed polyline, which creates a polygon.
+    '''
+    
+    model_command = "CreatePolyline"
+    
+    def __init__(self, name, modeler, points=None):
+        super(Polyline, self).__init__(name, modeler)
+        self.prop_holder = modeler._modeler
+        if points is not None:
+            self.points = points
+            self.n_points=len(points)
+        else:
+            pass
+            # TODO: points = collection of points
+#        axis = find_orth_axis()
+
+# TODO: find the plane of the polyline for now, assume Z
+#    def find_orth_axis():
+#        X, Y, Z = (True, True, True)
+#        for point in points:
+#            X =
+    
+    def unite(self, list_other):
+        union = self.modeler.unite(self + list_other)
+        return Polyline(union, self.modeler)
+
+    def make_center_line(self, axis): # Expects to act on a rectangle...
+        #first : find center and size
+        center=[0,0,0]
+
+        for point in self.points:
+            center = [center[0]+point[0]/self.n_points,
+                      center[1]+point[1]/self.n_points,
+                      center[2]+point[2]/self.n_points]
+        size = [2*(center[0]-self.points[0][0]),
+                2*(center[1]-self.points[0][1]),
+                2*(center[1]-self.points[0][2])]
+        axis_idx = ["x", "y", "z"].index(axis.lower())
+        start = [c for c in center]
+        start[axis_idx] -= size[axis_idx]/2
+        start = [self.modeler.eval_var_str(s, unit=LENGTH_UNIT) for s in start] #TODO
+        end = [c for c in center]
+        end[axis_idx] += size[axis_idx]/2
+        end = [self.modeler.eval_var_str(s, unit=LENGTH_UNIT) for s in end]
+        return start, end
+
+    def make_rlc_boundary(self, axis, r=0, l=0, c=0, name="LumpRLC"):
+        name = str(self)+'_'+name
+        start, end = self.make_center_line(axis)
+        self.modeler._make_lumped_rlc(r, l, c, start, end, ["Objects:=", [self]], name=name)
+
+    def fillet(self, radius, vertex_index):
+        self.modeler._fillet(radius, vertex_index, self)
+
+    def vertices(self):
+        return self.modeler.get_vertex_ids(self)
+
+    def rename(self, new_name):
+        '''
+            Warning: The  increment_name only works if the sheet has not been stracted or used as a tool elsewher.
+            These names are not checked - They require modifying get_objects_in_group
+            
+        '''
+        new_name = increment_name(new_name, self.modeler.get_objects_in_group("Sheets")) # this is for a clsoed polyline
+        
+        # check to get the actual new name in case there was a suibtracted ibjet with that namae
+        face_ids = self.modeler.get_face_ids(str(self))
+        self.modeler.rename_obj(self, new_name) # now rename 
+        if len(face_ids) > 0:
+            new_name = self.modeler.get_object_name_by_face_id(face_ids[0])
+        return Polyline(str(new_name), self.modeler)
+
+class OpenPolyline(ModelEntity): # Assume closed polyline
+    model_command = "CreatePolyline"
+    show_direction = make_prop('Show Direction', prop_tab="Geometry3DAttributeTab", prop_server=lambda self: self)
+    def __init__(self, name, modeler, points=None):
+        super(OpenPolyline, self).__init__(name, modeler)
+        self.prop_holder = modeler._modeler
+        if points is not None:
+            self.points = points
+            self.n_points=len(points)
+        else:
+            pass
+#        axis = find_orth_axis()
+
+# TODO: find the plane of the polyline for now, assume Z
+#    def find_orth_axis():
+#        X, Y, Z = (True, True, True)
+#        for point in points:
+#            X =
+    def vertices(self): 
+        return self.modeler.get_vertex_ids(self)
+
+    def fillet(self, radius, vertex_index):
+        self.modeler._fillet(radius, vertex_index, self)
+
+    def fillets(self, radius, do_not_fillet=[]):
+        '''
+            do_not_fillet : Index list of verteces to not fillete 
+        '''
+        raw_list_vertices = self.modeler.get_vertex_ids(self)
+        list_vertices = []
+        for vertex in raw_list_vertices[1:-1]: # ignore the start and finish
+            list_vertices.append(int(vertex))
+        list_vertices = list(map(int, np.delete(list_vertices, 
+                                     np.array(do_not_fillet, dtype=int)-1)))
+        #print(list_vertices, type(list_vertices[0]))
+        if len(list_vertices)!=0:
+            self.modeler._fillets(radius, list_vertices, self)
+        else:
+            pass
+
+    def sweep_along_path(self, to_sweep):
+        return self.modeler._sweep_along_path(to_sweep, self)
+
+    def rename(self, new_name):        
+        '''
+            Warning: The  increment_name only works if the sheet has not been stracted or used as a tool elsewher.
+            These names are not checked - They require modifying get_objects_in_group
+        '''
+        new_name = increment_name(new_name, self.modeler.get_objects_in_group("Lines"))
+        return OpenPolyline(self.modeler.rename_obj(self, new_name), self.modeler)#, self.points)
+
+    def copy(self, new_name):
+        new_obj = OpenPolyline(self.modeler.copy(self), self.modeler)
+        return new_obj.rename(new_name)
 
 class HfssFieldsCalc(COMWrapper):
     def __init__(self, setup):
