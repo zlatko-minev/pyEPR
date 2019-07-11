@@ -14,7 +14,8 @@ import pandas as pd
 #from collections import OrderedDict
 
 from numpy import sqrt
-from .toolbox import ϕ0, fluxQ, Planck, hbar, e_el, pi, ħ, elementary_charge, π
+from .toolbox import ϕ0, fluxQ, Planck, hbar, e_el, pi, ħ, elementary_charge, π,\
+                     divide_diagonal_by_2
 #from scipy.constants import hbar, Planck, e as e_el, epsilon_0, pi
 
 class Convert(object):
@@ -172,8 +173,8 @@ class Convert(object):
         return ( sqrt(hbar*Z/2.), sqrt(hbar/(2.*Z)) )  # Phi , Q 
     
     @staticmethod
-    def ZPF_from_EPR(hfss_freqs, hfss_epr, hfss_signs, hfss_Ljs,
-            Lj_units_in = 'H'):
+    def ZPF_from_EPR(hfss_freqs, hfss_epr_, hfss_signs, hfss_Ljs,
+            Lj_units_in = 'H', to_df=False):
         """
         Parameters:
             Can be either Pandas or numpy arrays.
@@ -188,15 +189,24 @@ class Convert(object):
         Returns:
             M x J matrix of reduced ZPF; i.e., scaled by reduced flux quantum. 
             type: np.array 
+            and a tuple of matricies.
+            
+        Example use:
+            ϕzpf, (Ωm, Ej, Pmj, Smj) = Convert.ZPF_from_EPR(hfss_freqs, hfss_epr, hfss_signs, hfss_Ljs, to_df=True)
         """
         
-        hfss_freqs, hfss_epr, hfss_signs, hfss_Ljs = map(np.array, (hfss_freqs, hfss_epr, hfss_signs, hfss_Ljs))
+        hfss_freqs, hfss_epr, hfss_signs, hfss_Ljs = map(np.array, (hfss_freqs, hfss_epr_, hfss_signs, hfss_Ljs))
         
         Ωd = np.diagflat(hfss_freqs)
         Ej = Convert.Ej_from_Lj(hfss_Ljs, units_in=Lj_units_in, units_out='GHz')
         Ej = np.diagflat(Ej)
         
-        return epr_to_zpf(hfss_epr, hfss_signs, Ωd, Ej)
+        ϕzpfs = Calcs_basic.epr_to_zpf(hfss_epr, hfss_signs, Ωd, Ej)
+        
+        if to_df:
+            ϕzpfs = pd.DataFrame(ϕzpfs, columns='ϕ'+hfss_epr_.columns.values, index=hfss_epr_.index)
+        
+        return ϕzpfs, (Ωd, Ej, hfss_epr, hfss_signs)
 
     @staticmethod
     def Omega_from_LC(L, C):
@@ -205,6 +215,71 @@ class Convert(object):
         '''
         return sqrt(1./(L*C))
     
+    
+    
+class Calcs_basic(object):
+    
+    @staticmethod
+    def dispersiveH_params_PT_O1(Pmj, Ωm, Ej):
+        """
+        First order PT on the 4th power of the JJ cosine. 
+        
+        Pmj : Matrix MxJ
+        Ωm : GHz Matrix MxM
+        Ej : GHz Matrix JxJ
+        
+        returns f_O1, χ_O1
+        χ_O1 has diagonal divided by 2 so as to give true anharmonicity. 
+        
+        Example use: 
+        ..codeblock python
+            f_O1, χ_O1 = Calc_basic.dispersiveH_params_PT_O1(Pmj, Ωm, Ej) # PT_01: Calculate 1st order PT results
+        """
+        from numpy.linalg import inv
+
+        Pmj, Ωm, Ej = map(np.array, (Pmj, Ωm, Ej))        
+        
+        assert Ωm.shape[0] == Ωm.shape[1]
+        assert Ej.shape[0] == Ej.shape[1]
+        assert Ωm.shape[1] == Pmj.shape[0]
+        assert Pmj.shape[1] == Ej.shape[0]
+                 
+        f_0  = np.diag(Ωm)
+
+        χ_O1 = 0.25* Ωm @ Pmj @ inv(Ej) @ Pmj.T @ Ωm * 1000. # GHz to MHz
+
+        f_O1 = f_0 - 0.5*np.ndarray.flatten(np.array(χ_O1.sum(1))) / 1000.  # 1st order PT expect freq to be dressed down by alpha
+
+        χ_O1 = divide_diagonal_by_2(χ_O1)                    # Make the diagonals alpha
+        
+        return f_O1, χ_O1
+    
+    def epr_to_zpf(Pmj, SJ, Ω, EJ):
+        '''
+        INPUTS:
+            All as matrices (numpy arrays)
+            :Pnj: MxJ energy-participatuion-ratio matrix, p_mj
+            :SJ: MxJ sign matrix, s_mj
+            :Ω: MxM diagonal matrix of frequencies (GHz, not radians, diagonal) 
+            :EJ: JxJ diagonal matrix matrix of Josephson energies (in same units as Om)
+            
+        RETURNS: 
+            reduced zpf  (in units of $\phi_0$)
+        '''
+        (Pmj, SJ, Ω, EJ) = map(np.array, (Pmj, SJ, Ω, EJ))
+        
+        assert (Pmj>0).any(), "ND -- p_{mj} are not all > 0; \n %s" % (Pmj)
+      
+        ''' technically, there the equation is hbar omega / 2J, but here we assume 
+        that the hbar is absrobed in the units of omega, and omega and Ej have the same units. 
+        PHI=np.zeros((3,3))
+        for m in range(3):
+            for j in range(3):
+                PHI[m,j] = SJ[m,j]*sqrt(PJ[m,j]*Om[m,m]/(2.*EJ[j,j]))
+        '''
+        return SJ * sqrt(0.5* Ω @ Pmj @ np.linalg.inv(EJ))
+
+        
     @staticmethod
     def transmon_get_all_params(Ej_MHz, Ec_MHz):
         """
@@ -257,32 +332,3 @@ class Convert(object):
         display(Math(text))
 
         return text
-
-
-#%%==============================================================================
-### ANALYSIS FUNCTIONS
-        
-def _epr_to_zpf(Pmj, SJ, Ω, EJ):
-    '''
-        INPUTS:
-            All as matrices (numpy arrays)
-            :PM: Participatuion matrix, p_mj
-            :SIGN: Sign matrix, s_mj
-            :Om: Omega_mm matrix (in hertz of GHz) (\hbar = 1)
-            :EJ: E_jj matrix of Josephson energies (in same units as hbar omega matrix)
-            
-        RETURNS: 
-            reduced zpf  (in units of $\phi_0$)
-    '''
-    (Pmj, SJ, Ω, EJ) = map(np.array, (Pmj, SJ, Ω, EJ))
-    
-    assert (Pmj>0).any(), "ND -- p_{mj} are not all > 0; \n %s" % (Pmj)
-  
-    ''' technically, there the equation is hbar omega / 2J, but here we assume 
-    that the hbar is absrobed in the units of omega, and omega and Ej have the same units. 
-    PHI=np.zeros((3,3))
-    for m in range(3):
-        for j in range(3):
-            PHI[m,j] = SJ[m,j]*sqrt(PJ[m,j]*Om[m,m]/(2.*EJ[j,j]))
-    '''
-    return SJ * sqrt(0.5* Ω @ Pmj @ np.linalg.inv(EJ))

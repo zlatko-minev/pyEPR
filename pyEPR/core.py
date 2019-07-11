@@ -27,7 +27,7 @@ from .hfss        import ureg, CalcObject, ConstantVecCalcObject
 from .toolbox     import print_NoNewLine, print_color, deprecated, fact, epsilon_0, hbar, Planck, fluxQ, nck, \
                          divide_diagonal_by_2, print_matrix, DataFrame_col_diff, get_instance_vars,\
                          sort_df_col, sort_Series_idx
-from .toolbox_circuits import _epr_to_zpf
+from .toolbox_circuits import Calcs_basic
 from .toolbox_plotting import cmap_discrete, legend_translucent
 from .numeric_diag import bbq_hmt, make_dispersive
 
@@ -902,27 +902,30 @@ class pyEPR_HFSS(object):
 ### ANALYSIS FUNCTIONS
 #==============================================================================
 
-def pyEPR_ND(freqs, LJs, fzpfs,
+def pyEPR_ND(freqs, Ljs, ϕzpf,
              cos_trunc     = 8,
              fock_trunc    = 9,
-             use_1st_order = False):
+             use_1st_order = False,
+             return_H      = False):
     '''
     Numerical diagonalizaiton for pyEPR.
     
-    INPUT:
-        :freqs: in GHz (not radians)
-    RETURNS:
-        Dressed frequencies, chis 
+    :param fs: (GHz, not radians) Linearized model, H_lin, normal mode frequencies in Hz, length M
+    :param ljs: (Henries) junction linerized inductances in Henries, length J
+    :param fzpfs: (reduced) Reduced Zero-point fluctutation of the junction fluxes for each mode across each junction, shape MxJ
+
+    :return: Hamiltonian mode freq and dispersive shifts. Shifts are in MHz. Shifts have flipped sign so that down shift is positive.
     '''
     
+    freqs, Ljs, ϕzpf = map(np.array, (freqs, Ljs, ϕzpf))
     assert(all(freqs<1E6)), "Please input the frequencies in GHz"
-    assert(all(LJs  <1E-3)),"Please input the inductances in Henries"
+    assert(all(Ljs  <1E-3)),"Please input the inductances in Henries"
     
-    Hs = bbq_hmt(freqs*10**9, LJs.astype(np.float), fluxQ*fzpfs, cos_trunc, fock_trunc, individual = use_1st_order)
-    f1s, CHI_ND, fzpfs, f0s = make_dispersive(Hs, fock_trunc, fzpfs, freqs, use_1st_order = use_1st_order)
-    CHI_ND = -1*CHI_ND *1E-6
+    Hs = bbq_hmt(freqs * 1E9, Ljs.astype(np.float), fluxQ*ϕzpf, cos_trunc, fock_trunc, individual = use_1st_order)
+    f_ND, χ_ND, _, _ = make_dispersive(Hs, fock_trunc, ϕzpf, freqs, use_1st_order = use_1st_order)
+    χ_ND = -χ_ND * 1E-6 # convert to MHz, and flip sign so that down shift is positive
 
-    return f1s, CHI_ND
+    return (f_ND, χ_ND, Hs) if return_H else (f_ND, χ_ND)
 
 #==============================================================================
 # ANALYSIS BBQ
@@ -1138,7 +1141,8 @@ class pyEPR_Analysis(object):
             if print_:
                 print("Pm_norm = %s " % str(Pm_norm)) 
             Pm = Pm.mul(Pm_norm, axis=0)
-        else:
+            
+        else:            
             Pm_norm     = 1
             if print_:
                 print('NO renorm!')
@@ -1162,6 +1166,7 @@ class pyEPR_Analysis(object):
             Return all as *np.array*
                 PM, SIGN, Om, EJ, Phi_ZPF
         '''
+        #TODO: superseed by Convert.ZPF_from_EPR
             
         PJ = self.get_Pmj(variation, _renorm_pj=_renorm_pj, print_=print_)
         PJ = np.array(PJ['PJ'])
@@ -1169,7 +1174,7 @@ class pyEPR_Analysis(object):
         Om = np.diagflat(self.OM[variation].values)      # GHz. Frequencies of HFSS linear modes. Input in dataframe but of one line. Output nd array 
         EJ = np.diagflat(self.get_Ejs(variation).values) # GHz
         
-        PHI_zpf = _epr_to_zpf(PJ, SJ, Om, EJ)
+        PHI_zpf = Calcs_basic.epr_to_zpf(PJ, SJ, Om, EJ)
         
         return PJ, SJ, Om, EJ, PHI_zpf                   # All as np.array
             

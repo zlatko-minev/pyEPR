@@ -205,10 +205,10 @@ def DataFrame_col_diff(PS, indx=0):
     else:
         return np.logical_not(np.logical_and.reduce(R))
     
-    
+
 def DataFrame_display_side_by_side(*args):
     '''
-    from pyEPR.toolbox import DataFrame_display_side_by_side as display_dfs
+    from pyEPR.toolbox import display_dfs
     https://stackoverflow.com/questions/38783027/jupyter-notebook-display-two-pandas-tables-side-by-side
     '''
     from IPython.display import display_html
@@ -216,6 +216,8 @@ def DataFrame_display_side_by_side(*args):
     for df in args:
         html_str+=df.to_html()
     display_html(html_str.replace('table','table style="display:inline"'),raw=True)
+
+display_dfs = DataFrame_display_side_by_side
 
 def xarray_unravel_levels(arr, names, my_convert = lambda x: x):
     ''' Takes in nested dict of dict of dataframes
