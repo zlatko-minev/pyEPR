@@ -13,7 +13,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Standard imports
-from numpy        import pi, sqrt
+from numpy        import pi
 from numpy.linalg import inv
 from stat         import S_ISREG, ST_CTIME, ST_MODE
 from pandas       import HDFStore, Series, DataFrame
@@ -27,6 +27,7 @@ from .hfss        import ureg, CalcObject, ConstantVecCalcObject
 from .toolbox     import print_NoNewLine, print_color, deprecated, fact, epsilon_0, hbar, Planck, fluxQ, nck, \
                          divide_diagonal_by_2, print_matrix, DataFrame_col_diff, get_instance_vars,\
                          sort_df_col, sort_Series_idx
+from .toolbox_circuits import _epr_to_zpf
 from .toolbox_plotting import cmap_discrete, legend_translucent
 from .numeric_diag import bbq_hmt, make_dispersive
 
@@ -901,30 +902,6 @@ class pyEPR_HFSS(object):
 ### ANALYSIS FUNCTIONS
 #==============================================================================
 
-def epr_to_zpf(PJ, SJ, OM, EJ):
-    '''
-        INPUTS:
-            All as matrices
-            :PM: Participatuion matrix, p_mj
-            :SIGN: Sign matrix, s_mj
-            :Om: Omega_mm matrix (in hertz of GHz) (\hbar = 1)
-            :EJ: E_jj matrix of Josephson energies (in same units as hbar omega matrix)
-            
-        RETURNS: 
-            reduced zpf  (in units of $\phi_0$)
-    '''
-    assert (PJ>0).any(), "ND -- p_{mj} are not all > 0; \n %s" % (PJ)
-  
-    ''' technically, there the equation is hbar omega / 2J, but here we assume 
-    that the hbar is absrobed in the units of omega, and omega and Ej have the same units. 
-    PHI=np.zeros((3,3))
-    for m in range(3):
-        for j in range(3):
-            PHI[m,j] = SJ[m,j]*sqrt(PJ[m,j]*Om[m,m]/(2.*EJ[j,j]))
-    '''
-    return SJ * sqrt(0.5* OM @ PJ @ inv(EJ))
-
-#%%
 def pyEPR_ND(freqs, LJs, fzpfs,
              cos_trunc     = 8,
              fock_trunc    = 9,
@@ -1192,7 +1169,7 @@ class pyEPR_Analysis(object):
         Om = np.diagflat(self.OM[variation].values)      # GHz. Frequencies of HFSS linear modes. Input in dataframe but of one line. Output nd array 
         EJ = np.diagflat(self.get_Ejs(variation).values) # GHz
         
-        PHI_zpf = epr_to_zpf(PJ, SJ, Om, EJ)
+        PHI_zpf = _epr_to_zpf(PJ, SJ, Om, EJ)
         
         return PJ, SJ, Om, EJ, PHI_zpf                   # All as np.array
             
@@ -1415,198 +1392,3 @@ class pyEPR_Analysis(object):
         ax.set_ylabel('Max $\\Delta f$')
         ax.set_title('$f_\\mathrm{lin}$ convergence vs. pass number')
         legend_translucent(ax)
-
-
-
-    '''
-    @deprecated
-    def get_swept_variables(self):
-        #TODO: needs to be updated to new standard; currently borken
-        swept_variables_names = []
-        swept_variables_values = []
-        for name in self.h5data[self.variations[0]].keys():
-            if '_'==name[0]: # design variables all start with _
-                variables = []
-                for variation in self.variations:
-                    variables.append(self.h5data[variation][name].value)
-                if len(set(variables))>1:
-                    swept_variables_names.append(name)
-                    swept_variables_values.append(list(set(variables)))
-            else:
-                pass
-        return swept_variables_names, swept_variables_values
-
-    @deprecated
-    def get_variable_variations(self, variablename):
-        variables = []
-        for variation in self.variations:
-            variables.append(self.h5data[variation][variablename].value)
-        return np.asarray(variables)
-
-    @deprecated
-    def get_float_units(self, variable_name, variation='0'):
-        variable_value = self.h5data[variation][variable_name].value
-        n = 1
-        try:
-            float(variable_value)
-            return float(variable_value), ''
-        except ValueError:
-            while True:
-                try:
-                    float(variable_value[:-n])
-                    return float(variable_value[:-n]), variable_value[len(variable_value)-n:]
-                except:
-                    n+=1
-    @deprecated
-    def print_Hparams(self, variation=None, modes=None):
-        #TODO: needs to be updated to new standard; currently borken
-        if modes==None:
-            modes = range(self.nmodes)
-        else:
-            pass
-        if variation == None:
-            variation = self.variations[-1]
-        else:
-            pass
-        swept_variables_names, swept_variables_values = self.get_swept_variables()
-
-        for vname in swept_variables_names:
-            print( vname + ' = ' + self.h5data[variation][vname].value)
-        for ii, m in enumerate(modes):
-            freq_m = 'freq_'+str(m)
-            Kerr_m = 'alpha_'+str(m)
-            Q_m = 'Q_'+str(m)
-            if freq_m not in self.h5data[variation].keys():
-                freq_m = 'freq_bare_'+str(m)
-            else:
-                pass
-            if Kerr_m in self.h5data[variation].keys():
-                print( Kerr_m + ' = ' +str(self.h5data[variation][Kerr_m].value/2/pi/1e6) + ' MHz')
-            else:
-                pass
-
-            print( freq_m +' = ' + str(self.h5data[variation][freq_m].value/1e9) + ' GHz'   )
-            if Q_m in self.h5data[variation].keys():
-                print( Q_m  + ' = ' + str(self.h5data[variation][Q_m].value))
-            else:
-                pass
-
-            for n in modes[0:ii]:
-                chi_m_n = 'chi_'+str(m)+'_'+str(n)
-                if chi_m_n in self.h5data[variation].keys():
-                    print( chi_m_n + ' = ' + str(self.h5data[variation][chi_m_n].value/2/pi/1e6) + ' MHz')
-
-    @deprecated
-    def plot_Hparams(self, variable_name=None, modes=None):
-        #TODO: needs to be updated to new standard; currently borken
-        fig, ax = plt.subplots(2,2, figsize=(24,10))
-
-        if variable_name == None:
-            xaxis = self.variations
-        else:
-            xaxis = []
-            for variation in self.variations:
-                xaxis.append(self.get_float_units(variable_name, variation)[0])
-
-        if modes==None:
-            modes = range(self.nmodes)
-        else:
-            pass
-
-        for ii, m in enumerate(modes):
-            freq_m = 'freq_'+str(m)
-            Kerr_m = 'alpha_'+str(m)
-            Q_m = 'Q_'+str(m)
-            Qsurf_m = 'Qsurf_'+str(m)
-
-            if freq_m not in self.h5data[self.variations[0]].keys():
-                freq_m = 'freq_bare_'+str(m)
-            else:
-                pass
-            if Kerr_m in self.h5data[self.variations[0]].keys():
-                ax[0][1].plot(xaxis, self.get_variable_variations(Kerr_m)/2/pi/1e6, 'o', label = str(m))
-            else:
-                pass
-
-            ax[0][0].plot(xaxis, self.get_variable_variations(freq_m)/1e9, 'o', label=str(m))
-
-            if Q_m in self.h5data[self.variations[0]].keys():
-                ax[1][1].plot(xaxis, self.get_variable_variations(Q_m), 'o', label = Q_m)
-            else:
-                pass
-
-            if Qsurf_m in self.h5data[self.variations[0]].keys():
-                ax[1][1].plot(xaxis, self.get_variable_variations(Qsurf_m), 'o', label = Qsurf_m)
-            else:
-                pass
-
-            if 'seams' in self.h5data[self.variations[0]].keys():
-                for seam in self.h5data[self.variations[0]]['seams'].value:
-                    Qseam_m = 'Qseam_'+seam+'_'+str(m)
-                    if Qseam_m in self.h5data[self.variations[0]].keys():
-                        ax[1][1].plot(xaxis, self.get_variable_variations(Qseam_m), 'o', label = Qseam_m)
-                    else:
-                        pass
-
-            if 'dielectrics' in self.h5data[self.variations[0]].keys():
-                for dielectric in self.h5data[self.variations[0]]['dielectrics'].value:
-                    Qdielectric_m = 'Qdielectric_'+dielectric+'_'+str(m)
-                    if Qdielectric_m in self.h5data[self.variations[0]].keys():
-                        ax[1][1].plot(xaxis, self.get_variable_variations(Qdielectric_m), 'o', label = Qdielectric_m)
-                    else:
-                        pass
-
-            for n in modes[0:ii]:
-                chi_m_n = 'chi_'+str(m)+'_'+str(n)
-                if chi_m_n in self.h5data[self.variations[0]].keys():
-                    ax[1][0].plot(xaxis, self.get_variable_variations(chi_m_n)/2/pi/1e6, 'o', label=str(m)+','+str(n))
-
-        ax[0][0].legend()
-        ax[0][0].set_ylabel('freq (GHz)')
-
-        ax[0][1].legend()
-        ax[0][1].set_ylabel('Kerr/2pi (MHz)')
-        ax[0][1].set_yscale('log')
-
-        ax[1][0].legend()
-        ax[1][0].set_ylabel('Chi/2pi (MHz)')
-        ax[1][0].set_yscale('log')
-
-        ax[1][1].legend()
-        ax[1][1].set_ylabel('Q')
-        ax[1][1].set_yscale('log')
-
-        if variable_name == None:
-            swept_variables_names, swept_variables_values = self.get_swept_variables()
-            xticks = []
-            for variation in xaxis:
-                xtick = ''
-                for name in swept_variables_names:
-                    xtick += name[1:] + ' = ' + self.h5data[variation][name].value + '\n'
-                xticks.append(str(xtick))
-            ax[1][0].set_xticks([int(v) for v in xaxis])
-            ax[1][0].set_xticklabels(xticks, rotation='vertical')
-            ax[1][1].set_xticks([int(v) for v in xaxis])
-            ax[1][1].set_xticklabels(xticks, rotation='vertical')
-
-            ax[0][0].set_xticklabels([])
-            ax[0][1].set_xticklabels([])
-        else:
-            xlabel = variable_name + ' (' + self.get_float_units(variable_name, self.variations[0])[1] + ')'
-            ax[1][0].set_xlabel(xlabel)
-            ax[1][1].set_xlabel(xlabel)
-
-        fig.subplots_adjust(bottom=0.3)
-        fig.suptitle(self.data_filename)
-        fig.savefig(self.data_filename[:-5]+'.jpg')
-
-        return fig, ax
-
-
-
-#        for variable in swept_variables_names:
-#            fig1 = plt.subplots()
-#            ax1 = fig1.add_subplot(221)
-#            ax.scatter()
-#        return
-    '''

@@ -172,6 +172,33 @@ class Convert(object):
         return ( sqrt(hbar*Z/2.), sqrt(hbar/(2.*Z)) )  # Phi , Q 
     
     @staticmethod
+    def ZPF_from_EPR(hfss_freqs, hfss_epr, hfss_signs, hfss_Ljs,
+            Lj_units_in = 'H'):
+        """
+        Parameters:
+            Can be either Pandas or numpy arrays.
+            
+            hfss_freqs : HFSS Freqs. (standard units: GHz, but these will cancel with Ejs) (list/Series)
+            hfss_epr : EPR ratio matrix, dim = M x J (2D array/DataFrame)
+            hfss_signs : Sign matrix, dim = M x J  (2D array/DataFrame)
+            hfss_Ljs : Assumed in Henries (see Lj_units_in). (list/Series)
+            
+            Lj_units_in : Default 'H' for Henries. Can change here.
+        
+        Returns:
+            M x J matrix of reduced ZPF; i.e., scaled by reduced flux quantum. 
+            type: np.array 
+        """
+        
+        hfss_freqs, hfss_epr, hfss_signs, hfss_Ljs = map(np.array, (hfss_freqs, hfss_epr, hfss_signs, hfss_Ljs))
+        
+        Ωd = np.diagflat(hfss_freqs)
+        Ej = Convert.Ej_from_Lj(hfss_Ljs, units_in=Lj_units_in, units_out='GHz')
+        Ej = np.diagflat(Ej)
+        
+        return epr_to_zpf(hfss_epr, hfss_signs, Ωd, Ej)
+
+    @staticmethod
     def Omega_from_LC(L, C):
         '''
             Calculate the resonant *angular* frequency
@@ -232,4 +259,30 @@ class Convert(object):
         return text
 
 
-
+#%%==============================================================================
+### ANALYSIS FUNCTIONS
+        
+def _epr_to_zpf(Pmj, SJ, Ω, EJ):
+    '''
+        INPUTS:
+            All as matrices (numpy arrays)
+            :PM: Participatuion matrix, p_mj
+            :SIGN: Sign matrix, s_mj
+            :Om: Omega_mm matrix (in hertz of GHz) (\hbar = 1)
+            :EJ: E_jj matrix of Josephson energies (in same units as hbar omega matrix)
+            
+        RETURNS: 
+            reduced zpf  (in units of $\phi_0$)
+    '''
+    (Pmj, SJ, Ω, EJ) = map(np.array, (Pmj, SJ, Ω, EJ))
+    
+    assert (Pmj>0).any(), "ND -- p_{mj} are not all > 0; \n %s" % (Pmj)
+  
+    ''' technically, there the equation is hbar omega / 2J, but here we assume 
+    that the hbar is absrobed in the units of omega, and omega and Ej have the same units. 
+    PHI=np.zeros((3,3))
+    for m in range(3):
+        for j in range(3):
+            PHI[m,j] = SJ[m,j]*sqrt(PJ[m,j]*Om[m,m]/(2.*EJ[j,j]))
+    '''
+    return SJ * sqrt(0.5* Ω @ Pmj @ np.linalg.inv(EJ))

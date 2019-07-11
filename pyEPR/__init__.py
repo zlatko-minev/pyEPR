@@ -142,10 +142,18 @@ config.__STD_END_MSG = __STD_END_MSG
     
 
 ### Convenience variable and function imports
-from collections import OrderedDict
-from .toolbox import *
-from .toolbox_plotting import *
+from . import hfss
+from . import core
+from . import numeric_diag
+from . import toolbox
+from . import toolbox_circuits
+from . import toolbox_plotting
+
 from .hfss import load_HFSS_project, get_active_design, get_active_project,\
                   HfssProject
 from .hfss import release as hfss_release
 from .core import Project_Info, pyEPR_HFSS, pyEPR_Analysis
+
+from collections import OrderedDict
+#from .toolbox import *
+#from .toolbox_plotting import *

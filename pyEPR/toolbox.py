@@ -126,7 +126,9 @@ def print_NoNewLine(text):
     print((text), end='')
 
 def print_color(text, style = 0, fg=24, bg = 43, newline = True):
-    '''style 0..8;   fg  30..38;  bg  40..48'''
+    '''For newer, see pc (or Print_colors)
+       style 0..8;   fg  30..38;  bg  40..48
+     '''
     format = ';'.join([str(style), str(fg), str(bg)])
     s = '\x1b[%sm %s \x1b[0m' % (format, text)
     if newline:
@@ -134,6 +136,56 @@ def print_color(text, style = 0, fg=24, bg = 43, newline = True):
     else:
         print(s, end='')
 
+class Print_colors: 
+    '''Colors class:reset all colors with colors.reset; two 
+    sub classes fg for foreground 
+    and bg for background; use as colors.subclass.colorname. 
+    i.e. colors.fg.red or colors.bg.greenalso, the generic bold, disable, 
+    underline, reverse, strike through, 
+    and invisible work with the main class i.e. colors.bold
+    https://www.geeksforgeeks.org/print-colors-python-terminal/
+    
+    Example use:
+    ..codeblock python
+        print(colors.bg.green, "adgd", colors.fg.red, "dsgdsg") 
+        print(colors.bg.lightgrey, "dsgsd", colors.fg.red, "sdgsd") 
+    '''
+    reset='\033[0m'
+    bold='\033[01m'
+    disable='\033[02m'
+    underline='\033[04m'
+    reverse='\033[07m'
+    strikethrough='\033[09m'
+    invisible='\033[08m'
+    
+    class fg: 
+        black='\033[30m'
+        red='\033[31m'
+        green='\033[32m'
+        orange='\033[33m'
+        blue='\033[34m'
+        purple='\033[35m'
+        cyan='\033[36m'
+        lightgrey='\033[37m'
+        darkgrey='\033[90m'
+        lightred='\033[91m'
+        lightgreen='\033[92m'
+        yellow='\033[93m'
+        lightblue='\033[94m'
+        pink='\033[95m'
+        lightcyan='\033[96m'
+        
+    class bg: 
+        black='\033[40m'
+        red='\033[41m'
+        green='\033[42m'
+        orange='\033[43m'
+        blue='\033[44m'
+        purple='\033[45m'
+        cyan='\033[46m'
+        lightgrey='\033[47m'
+
+pc = Print_colors
 
 #==============================================================================
 #%%         Dataframe
@@ -152,7 +204,18 @@ def DataFrame_col_diff(PS, indx=0):
         return np.logical_not(R[0])
     else:
         return np.logical_not(np.logical_and.reduce(R))
-
+    
+    
+def DataFrame_display_side_by_side(*args):
+    '''
+    from pyEPR.toolbox import DataFrame_display_side_by_side as display_dfs
+    https://stackoverflow.com/questions/38783027/jupyter-notebook-display-two-pandas-tables-side-by-side
+    '''
+    from IPython.display import display_html
+    html_str=''
+    for df in args:
+        html_str+=df.to_html()
+    display_html(html_str.replace('table','table style="display:inline"'),raw=True)
 
 def xarray_unravel_levels(arr, names, my_convert = lambda x: x):
     ''' Takes in nested dict of dict of dataframes
