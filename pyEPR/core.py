@@ -23,7 +23,7 @@ from pathlib      import Path
 # pyEPR custom imports
 from . import hfss
 from . import config
-from .hfss        import CalcObject, ConstantVecCalcObject
+from .hfss        import ureg, CalcObject, ConstantVecCalcObject
 from .toolbox     import print_NoNewLine, print_color, deprecated, fact, epsilon_0, hbar, Planck, fluxQ, nck, \
                          divide_diagonal_by_2, print_matrix, DataFrame_col_diff, get_instance_vars,\
                          sort_df_col, sort_Series_idx
@@ -31,11 +31,11 @@ from .toolbox_plotting import cmap_discrete, legend_translucent
 from .numeric_diag import bbq_hmt, make_dispersive
 
 ### Definitions
-try:
-    from pint import UnitRegistry
-    ureg  = UnitRegistry(system='mks')
-except ImportError: 
-    pass
+#try:
+#    from pint import UnitRegistry
+#    ureg  = UnitRegistry(system='mks')
+#except (ImportError, ModuleNotFoundError):
+#    pass
 
 
 class Project_Info(object):

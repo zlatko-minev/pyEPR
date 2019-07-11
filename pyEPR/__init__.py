@@ -65,10 +65,10 @@ __STD_END_MSG = """\n   If you need a part of pyEPR that uses this package,
 try:
     import matplotlib as mpl
 except (ImportError, ModuleNotFoundError):
-    if __imports_warn :
-        logger.warning("""IMPORT WARNING:
+    logger.warning("""IMPORT WARNING:
    Could not find package `matplotlib`. 
    Default plotting will not work unless you install it. """ + __STD_END_MSG)
+    raise(ImportError("Please install python package `matplotlib`"))
     
     
 try:

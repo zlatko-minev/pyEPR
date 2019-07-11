@@ -10,7 +10,7 @@ import pandas as pd
 
 
 ### Constants
-from collections import OrderedDict
+from collections     import OrderedDict
 from scipy.constants import Planck, elementary_charge, epsilon_0, pi
 
 # Convinience  

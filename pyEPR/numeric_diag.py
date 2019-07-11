@@ -13,12 +13,12 @@ import numpy as np
 from functools import reduce
 from .toolbox import pi, fluxQ, fact, hbar,  \
                      elementary_charge as e, \
-                     Plank as h
+                     Planck as h
 
 try:
     import qutip
     from qutip import basis, tensor
-except ImportError:
+except (ImportError, ModuleNotFoundError):
     pass 
 
 

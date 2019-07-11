@@ -26,7 +26,6 @@ import pandas      as pd
 import tempfile
 
 from copy          import copy
-from pint          import UnitRegistry
 from pathlib       import Path
 from numbers       import Number
 from sympy.parsing import sympy_parser
@@ -42,13 +41,17 @@ try:
     from win32com.client import Dispatch, CDispatch
 except (ImportError, ModuleNotFoundError):
     pass
+
+try:
+    from pint          import UnitRegistry
+    ureg = UnitRegistry()
+    Q    = ureg.Quantity
+except(ImportError, ModuleNotFoundError):
+    ureg = "Pint module not installed. Please install."
     
 
 ##############################################################################
 ###
-    
-ureg = UnitRegistry()
-Q    = ureg.Quantity
 
 BASIS_ORDER = {"Zero Order": 0,
                "First Order": 1,
