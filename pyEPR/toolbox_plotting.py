@@ -90,3 +90,16 @@ def xarr_heatmap(fg, title = None, kwheat = {}, fmt = ('%.3f', '%.2f'), fig = No
 
 
 __all__  = [ 'legend_translucent', 'cmap_discrete', 'get_color_cycle', 'xarr_heatmap']
+
+"""
+Jupyter widgets:
+--------------------------
+Not seeing widgets: https://github.com/tqdm/tqdm/issues/451
+
+    conda update tqdm
+    # This might aleady work, will require a lot of updates, if not then do:
+    conda install nodejs
+    jupyter labextension install @jupyter-widgets/jupyterlab-manager
+    jupyter nbextension enable --py widgetsnbextension
+
+"""

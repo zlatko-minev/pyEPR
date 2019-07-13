@@ -332,3 +332,10 @@ class Calcs_basic(object):
         display(Math(text))
 
         return text
+
+class Matrix_Operations(object):
+    
+    @staticmethod
+    def to_cos(op_cos_arg):
+        return 0.5*( (1j*op_cos_arg).expm() + (-1j*op_cos_arg).expm() )
+
