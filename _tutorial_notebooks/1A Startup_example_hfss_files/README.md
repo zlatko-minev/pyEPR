@@ -1,8 +1,10 @@
 Example simulation files 
 ===================
 
+In construction, please check back...
+
 In this folder, one can find example script files to quickly start using pyEPR.
-Also, take a look at the scripts folder. 
+Also, take a look at the scripts folder and the tutorial folder. 
 We plan to add hfss files along with the script files here. 
 
 ##### startup_example_script.py
