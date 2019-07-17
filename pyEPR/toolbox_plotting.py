@@ -8,6 +8,7 @@ Created on Fri Aug 25 19:30:12 2017
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 from .config import Plotting_Options
@@ -17,6 +18,10 @@ from matplotlib.colors import rgb2hex
 # ==============================================================================
 # Plotting
 # ==============================================================================
+
+def mpl_dpi(dpi=200):
+    mpl.rcParams['figure.dpi'] = dpi
+    mpl.rcParams['savefig.dpi'] = dpi
 
 def legend_translucent(ax, values=[], loc=0, alpha=0.5, leg_kw={}):
     '''

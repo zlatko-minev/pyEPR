@@ -130,7 +130,11 @@ class Project_Info(object):
         hdf['project_info_junctions'] = pd.DataFrame(self.junctions)
         hdf['project_info_ports']     = pd.DataFrame(self.ports)
 
+    @deprecated
     def connect_to_project(self):
+        self.connect()
+        
+    def connect(self):
         '''
         Connect to HFSS design.
         '''
@@ -401,10 +405,12 @@ class pyEPR_HFSS(object):
         return pjs
     """
 
-    def get_p_j(self, mode):
+    def calc_p_junction_single(self, mode):
         '''
         This function is used in the case of a single junction only.
-        For multipl junctions, see `calculate_p_mj`.
+        For multiple junctions, see `calc_p_junction`.
+
+        Assumes no lumped capacitive elements. 
         '''
         pj = OrderedDict()
         pj_val = (self.U_E-self.U_H)/self.U_E
@@ -763,7 +769,7 @@ class pyEPR_HFSS(object):
         print('p_surf'+'_'+str(mode)+' = ' + str(p_surf))
         return Series(Qsurf)
 
-    def calculate_Q_mp(self, variation, freq_GHz, U_E):
+    def calc_Q_external(self, variation, freq_GHz, U_E):
         '''
         Calculate the coupling Q of mode m with each port p 
         Expected that you have specified the mode before calling this
@@ -780,16 +786,21 @@ class pyEPR_HFSS(object):
             kappa = p * freq
             Q = 2 * np.pi * freq / kappa
             Qp['Q_' + port_nm] = Q
+
         return Qp
 
-    def calculate_p_mj(self, variation, U_H, U_E, Ljs):
-        ''' Expected that you have specified the mode before calling this
+    def calc_p_junction(self, variation, U_H, U_E, Ljs):
+        ''' 
+            Expected that you have specified the mode before calling this, self.set_mode(num)`
 
             Expected to precalc U_H and U_E for mode, will retunr pandas series object
                 junc_rect = ['junc_rect1', 'junc_rect2'] name of junc rectangles to integrate H over
                 junc_len  = [0.0001]   specify in SI units; i.e., meters
                 LJs       = [8e-09, 8e-09] SI units
                 calc_sign = ['junc_line1', 'junc_line2']
+
+
+            This function assumes there are no lumped capacitors in model. 
 
             Potential errors:  If you dont have a line or rect by the right name you will prob get an erorr o the type:
                 com_error: (-2147352567, 'Exception occurred.', (0, None, None, None, 0, -2147024365), None)
@@ -799,6 +810,8 @@ class pyEPR_HFSS(object):
         Sj = pd.Series({})
 
         for junc_nm, junc in self.pinfo.junctions.items():
+            
+            logger.debug(f'Calculating participation for {(junc_nm, junc)}')
 
             if self.pinfo.options.p_mj_method is 'J_surf_mag':
                 #print(' Integrating rectangle: ' + junc['rect'])
@@ -940,7 +953,7 @@ class pyEPR_HFSS(object):
                     "U_L/U_E=  {:>9.2E}" .format((self.U_E - self.U_H)/self.U_E))
                 sol = Series({'U_H': self.U_H, 'U_E': self.U_E})
                 # calcualte for each of the junctions
-                Pm[mode], Sm[mode] = self.calculate_p_mj(
+                Pm[mode], Sm[mode] = self.calc_p_junction(
                     variation, self.U_H, self.U_E, Ljs)
                 _Om = pd.Series({})
                 _Om['freq_GHz'] = freqs_bare_GHz[mode]  # freq
@@ -952,7 +965,7 @@ class pyEPR_HFSS(object):
                 # TODO: this should really be passed as argument  to the functions rather than a property of the calss I would say
                 self.omega = 2*np.pi*freqs_bare_GHz[mode]
 
-                Qm_coupling[mode] = self.calculate_Q_mp(variation,
+                Qm_coupling[mode] = self.calc_Q_external(variation,
                                                         freqs_bare_GHz[mode],
                                                         self.U_E)
 
@@ -1330,6 +1343,8 @@ class pyEPR_Analysis(object):
         Om = np.diagflat(self.OM[variation].values)      # GHz. Frequencies of HFSS linear modes. Input in dataframe but of one line. Output nd array 
         EJ = np.diagflat(self.get_Ejs(variation).values) # GHz
         
+        print(PJ, SJ, Om, EJ)
+
         PHI_zpf = Calcs_basic.epr_to_zpf(PJ, SJ, Om, EJ)
         
         return PJ, SJ, Om, EJ, PHI_zpf                   # All as np.array
