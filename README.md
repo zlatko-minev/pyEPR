@@ -41,9 +41,9 @@ Superconducting circuits incorporating non-linear devices, such as Josephson jun
 
 #### Start-up example 
 
-* See [jupyter notebook example!](/_tutorial_notebooks/1A&#32;Startup&#32;Example.ipynb)
-
 The following code illustrates how to perform a complete analysis of a simple two-qubit, one-cavity device in just a few lines of code with `pyEPR`.  In the HFSS file, before running the script, first specify the non-linear junction rectangles and variables (see Sec. pyEPR Project Setup in HFSS). All operations in the eigen analysis and Hamiltonian computation are fully automated. The results are saved, printed, and succinctly plotted. 
+
+* See [jupyter notebook example!](/_tutorial_notebooks/1A&#32;Startup&#32;example.ipynb)
 
 ```python
 from pyEPR import *
