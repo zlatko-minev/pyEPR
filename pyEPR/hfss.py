@@ -12,10 +12,7 @@ Authors:
 '''
 
 from __future__ import division, print_function    # Python 2.7 and 3 compatibility
-import logging
-logger = logging.getLogger('pyEPR')
-    
-    
+  
 import os
 import time
 import types
@@ -25,11 +22,13 @@ import signal
 import pandas      as pd
 import tempfile
 
+from .             import logger
 from copy          import copy
 from pathlib       import Path
 from numbers       import Number
 from sympy.parsing import sympy_parser
 from collections.abc import Iterable
+
 
 ### A few usually troublesome packages
 try:
@@ -940,22 +939,33 @@ class HfssDesignSolutions(COMWrapper):
         self.parent = setup
         self._solutions = solutions
 
+    def get_valid_solution_list(self):
+        '''
+         Gets all available solution names that exist in a design.
+         Return example:
+            ('Setup1 : AdaptivePass', 'Setup1 : LastAdaptive')
+        '''
+        return self._solutions.GetValidISolutionList()
 
 class HfssEMDesignSolutions(HfssDesignSolutions):
+
     def eigenmodes(self, lv=""):
+        '''
+        Returns the eigenmode data of freq and kappa/2p
+        '''
         fn = tempfile.mktemp()
         self._solutions.ExportEigenmodes(self.parent.solution_name, lv, fn)
-        data = numpy.genfromtxt(fn, dtype='str')
+        data = np.genfromtxt(fn, dtype='str')
         # Update to Py 3:
         # np.loadtxt and np.genfromtxt operate in byte mode, which is the default string type in Python 2.
         # But Python 3 uses unicode, and marks bytestrings with this b.
         # getting around the very annoying fact that
-        if numpy.size(numpy.shape(data)) == 1:
+        if np.size(np.shape(data)) == 1:
             # in Python a 1D array does not have shape (N,1)
-            data = numpy.array([data])
+            data = np.array([data])
         else:                                  # but rather (N,) ....
             pass
-        if numpy.size(data[0, :]) == 6:  # checking if values for Q were saved
+        if np.size(data[0, :]) == 6:  # checking if values for Q were saved
             # eigvalue=(omega-i*kappa/2)/2pi
             kappa_over_2pis = [2*float(ii) for ii in data[:, 3]]
             # so kappa/2pi = 2*Im(eigvalue)
@@ -966,8 +976,30 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
         freqs = [float(ii) for ii in data[:, 1]]
         return freqs, kappa_over_2pis
 
-    def set_mode(self, n, phase):
+    def set_mode(self, n, phase=0):
+        '''
+        Indicates which source excitations should be used for fields post processing.
+        HFSS>Fields>Edit Sources
+
+        Mode count starts at 1
+
+        Amplitude is set to 1
+
+        No error is thorwn if a number exceeding number of modes is set
+        '''
         n_modes = int(self.parent.n_modes)
+        
+        if n < 1:
+            err = f'ERROR: You tried to set a mode < 1. {n}/{n_modes}'
+            logger.error(err)
+            raise Exception(err)
+
+        if n > n_modes:
+            err = f'ERROR: You tried to set a mode > number of modes {n}/{n_modes}'
+            logger.error(err)
+            raise Exception(err)
+
+
         self._solutions.EditSources(
             "EigenStoredEnergy",
             ["NAME:SourceNames", "EigenMode"],
@@ -979,6 +1011,18 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
             ["NAME:Terminated"],
             ["NAME:Impedances"]
         )
+
+    def has_fields(self, variation=None):
+        '''
+        Determine if fields exist for a particular solution.
+
+        variation : str | None
+        If None, gets the nominal variation
+        '''
+        if variation is None:
+            variation = self.parent.parent.get_nominal_variation()
+
+        return bool(self._solutions.HasFields(self.parent.solution_name, variation))
 
 
 class HfssDMDesignSolutions(HfssDesignSolutions):
@@ -1032,7 +1076,7 @@ class HfssFrequencySweep(COMWrapper):
                 with open(fn) as f:
                     f.readline()
                     colnames = f.readline().split()
-                array = numpy.loadtxt(fn, skiprows=2)
+                array = np.loadtxt(fn, skiprows=2)
                 # WARNING for python 3 probably need to use genfromtxt
                 if freq is None:
                     freq = array[:, 0]
@@ -1081,7 +1125,7 @@ class HfssReport(COMWrapper):
     def get_arrays(self):
         fn = tempfile.mktemp(suffix=".csv")
         self.export_to_file(fn)
-        return numpy.loadtxt(fn, skiprows=1, delimiter=',').transpose()
+        return np.loadtxt(fn, skiprows=1, delimiter=',').transpose()
         # warning for python 3 probably need to use genfromtxt
 
 
@@ -1904,6 +1948,9 @@ class CalcObject(COMWrapper):
     def mag(self):
         return self._unary_op("Mag")
 
+    def smooth(self):
+        return self._unary_op("Smooth")
+
     def conj(self):
         return self._unary_op("Conj")  # make this right
 
@@ -1975,7 +2022,7 @@ class CalcObject(COMWrapper):
 
     def write_stack(self):
         for fn, arg in self.stack:
-            if numpy.size(arg) > 1 and fn not in ['EnterVector']:
+            if np.size(arg) > 1 and fn not in ['EnterVector']:
                 getattr(self.calc_module, fn)(*arg)
             else:
                 getattr(self.calc_module, fn)(arg)

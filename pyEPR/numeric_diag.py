@@ -7,10 +7,10 @@
 
 from __future__ import print_function
 
-import logging
 import numpy as np
 
 from functools import reduce
+from . import logger
 from .toolbox import pi, fluxQ, fact, hbar,  \
     elementary_charge as e, \
     Planck as h
@@ -23,7 +23,6 @@ except (ImportError, ModuleNotFoundError):
 
 
 __all__ = ['bbq_hmt', 'make_dispersive', 'bbq_nq']
-logger = logging.getLogger('pyEPR')
 
 
 ###############################################################################

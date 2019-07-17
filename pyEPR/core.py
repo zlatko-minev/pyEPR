@@ -22,6 +22,7 @@ from pathlib      import Path
 
 # pyEPR custom imports
 from . import hfss
+from . import logger
 from . import config
 from .hfss        import ureg, CalcObject, ConstantVecCalcObject
 from .toolbox     import print_NoNewLine, print_color, deprecated, fact, epsilon_0, hbar, Planck, fluxQ, nck, \
@@ -30,13 +31,6 @@ from .toolbox     import print_NoNewLine, print_color, deprecated, fact, epsilon
 from .toolbox_circuits import Calcs_basic
 from .toolbox_plotting import cmap_discrete, legend_translucent
 from .numeric_diag import bbq_hmt, make_dispersive
-
-### Definitions
-#try:
-#    from pint import UnitRegistry
-#    ureg  = UnitRegistry(system='mks')
-#except (ImportError, ModuleNotFoundError):
-#    pass
 
 
 class Project_Info(object):
@@ -257,6 +251,58 @@ class pyEPR_HFSS(object):
     Further, it allows one to calcualte dissipation, etc
     """
 
+    def __init__(self, project_info, verbose=True, append_analysis=False):
+        '''
+        Parameters:
+        -------------------
+            project_info    : Project_Info
+                Suplpy the project info
+            append_analysis : True / False
+                Wheather to sppend or overwrite the save filed data.
+                This feature is still in the works.
+
+        Example use:
+        -------------------
+        '''
+        #TODO: change verbose to logger. remove verbose flags
+
+        # Input
+        self.pinfo = project_info
+        if self.pinfo.check_connected() is False:
+            self.pinfo.connect_to_project()
+
+        self.verbose          = verbose
+        self.append_analysis  = append_analysis
+
+        # hfss connect module
+        self.fields           = self.setup.get_fields()
+        self.solutions        = self.setup.get_solutions()
+
+        # Variations - the following get updated in update_variation_information
+        self.nmodes           = int(1)
+        self.listvariations   = ("",)
+        self.nominalvariation = '0'
+        self.nvariations      = 0
+        self.update_variation_information()
+
+        self.hfss_variables   = OrderedDict()  # container for eBBQ list of varibles
+
+
+        if self.verbose:
+            print('Design \"%s\" info:'%self.design.name)
+            print('\t%-15s %d\n\t%-15s %d' %('# eigenmodes', self.nmodes, '# variations', self.nvariations))
+
+        # Setup data saving
+        self.setup_data()
+        self.latest_h5_path = None # #self.get_latest_h5()
+        '''         #TODO: to be implemented to use old files
+        if self.latest_h5_path is not None and self.append_analysis:
+            latest_bbq_analysis = pyEPR_Analysis(self.latest_h5_path)
+            if self.verbose:
+                print( 'Varied variables and values : ', latest_bbq_analysis.get_swept_variables(), \
+                       'Variations : ', latest_bbq_analysis.variations)
+            '''
+
     @property
     def setup(self):
         return self.pinfo.setup
@@ -283,58 +329,7 @@ class pyEPR_HFSS(object):
 
     @property
     def ports(self):
-        return self.pinfo.ports
-
-    def __init__(self, project_info, verbose=True, append_analysis=False):
-        '''
-        Parameters:
-        -------------------
-            project_info    : Project_Info
-                Suplpy the project info
-            append_analysis : True / False
-                Wheather to sppend or overwrite the save filed data.
-                This feature is still in the works.
-
-        Example use:
-        -------------------
-        '''
-        # Input
-        self.pinfo   = project_info
-        if self.pinfo.check_connected() is False:
-            self.pinfo.connect_to_project()
-        self.verbose          = verbose
-        self.append_analysis  = append_analysis
-
-        # hfss connect module
-        self.fields           = self.setup.get_fields()
-        self.solutions        = self.setup.get_solutions()
-
-        # Solutions
-        self.update_variation_information()
-        self.hfss_variables   = OrderedDict()                             # container for eBBQ list of varibles
-
-        if self.verbose:
-            print('Design \"%s\" info:'%self.design.name)
-            print('\t%-15s %d\n\t%-15s %d' %('# eigenmodes', self.nmodes, '# variations', self.nvariations))
-
-        # Setup data saving
-        self.setup_data()
-        self.latest_h5_path = None # #self.get_latest_h5()
-        '''         #TODO: to be implemented to use old files
-        if self.latest_h5_path is not None and self.append_analysis:
-            latest_bbq_analysis = pyEPR_Analysis(self.latest_h5_path)
-            if self.verbose:
-                print( 'Varied variables and values : ', latest_bbq_analysis.get_swept_variables(), \
-                       'Variations : ', latest_bbq_analysis.variations)
-            '''
-
-    def update_variation_information(self):
-        # Variations
-        self.nmodes           = int(self.setup.n_modes)
-        self.listvariations   = self.design._solutions.ListVariations(str(self.setup.solution_name))
-        self.nominalvariation = self.design.get_nominal_variation()
-        self.nvariations      = np.size(self.listvariations)
-        
+        return self.pinfo.ports      
 
     def get_latest_h5(self):
         '''
@@ -408,7 +403,8 @@ class pyEPR_HFSS(object):
 
     def get_p_j(self, mode):
         '''
-            This is only for a single junction!
+        This function is used in the case of a single junction only.
+        For multipl junctions, see `calculate_p_mj`.
         '''
         pj = OrderedDict()
         pj_val = (self.U_E-self.U_H)/self.U_E
@@ -446,15 +442,22 @@ class pyEPR_HFSS(object):
         Qs    = freqs / pd.Series(kappa_over_2pis, index=range(len(freqs)))
         return freqs, Qs
 
+    def get_lv(self, variation=None):
+        ''' 
+        List of variation variables. 
+        Returns list of var names and var values.
+        Such as ['Lj1:=','13nH', 'QubitGap:=','100um']
+        
+        Parameters
+        -----------
+            variation :  string number such as '0' or '1' or ...
+        '''
 
-    def get_lv(self, variation):
-        ''' variation is a string #; e.g., '0'
-            returns array of var names and var values '''
         if variation is None:
             lv = self.nominalvariation
             lv = self.parse_listvariations(lv)
         else:
-            lv = self.listvariations[ ureg(variation) ]
+            lv = self.listvariations[ureg(variation)]
             lv = self.parse_listvariations(lv)
         return lv
 
@@ -463,23 +466,23 @@ class pyEPR_HFSS(object):
             lv = self.nominalvariation
             #lv = self.parse_listvariations_EM(lv)
         else:
-            lv = self.listvariations[ ureg(variation) ]
+            lv = self.listvariations[ureg(variation)]
             #lv = self.parse_listvariations_EM(lv)
         return str(lv)
 
-    def parse_listvariations_EM(self,lv):
+    def parse_listvariations_EM(self, lv):
         lv = str(lv)
-        lv = lv.replace("=",":=,")
-        lv = lv.replace(' ',',')
-        lv = lv.replace("'","")
+        lv = lv.replace("=", ":=,")
+        lv = lv.replace(' ', ',')
+        lv = lv.replace("'", "")
         lv = lv.split(",")
         return lv
 
-    def parse_listvariations(self,lv):
+    def parse_listvariations(self, lv):
         lv = str(lv)
-        lv = lv.replace("=",":=,")
-        lv = lv.replace(' ',',')
-        lv = lv.replace("'","")
+        lv = lv.replace("=", ":=,")
+        lv = lv.replace(' ', ',')
+        lv = lv.replace("'", "")
         lv = lv.split(",")
         return lv
 
@@ -552,7 +555,7 @@ class pyEPR_HFSS(object):
         print('Calculating Qdielectric_' + dielectric + ' for mode ' +
               str(mode) + ' (' + str(mode) + '/' + str(self.nmodes-1) + ')')
 
-        U_dielectric = self.calc_U_E(variation, volume=dielectric)
+        U_dielectric = self.calc_energy_electric(variation, volume=dielectric)
         p_dielectric = U_dielectric/self.U_E
         #TODO: Update make p saved sep. and get Q for diff materials, indep. specify in pinfo
         Qdielectric['Qdielectric_'+dielectric+'_' +
@@ -619,35 +622,52 @@ class pyEPR_HFSS(object):
 
         return Hparams
 
-    def calc_U_E(self, variation, volume=None):
-        ''' This is 2 * the peak electric energy.(since we do not divide by 2, and use the peak phasors) '''
-        lv = self.get_lv(variation)
-        if volume is None:
-            volume = 'AllObjects'
-        else:
-            pass
+    def calc_energy_electric(self, 
+                             variation=None,
+                             volume='AllObjects',
+                             smooth=False):
+        ''' 
+        Calculates 2* the peak electric energy, since we do not divide by 2,
+        and use the peak phasors.
+        
+        volume : string | 'AllObjects'
+        smooth : bool | False 
+            Smooth the electric field or not when performing calculation
+
+        TODO: Should we use the smoothed version?
+        '''
+
         calcobject = CalcObject([], self.setup)
+
         vecE = calcobject.getQty("E")
+        if smooth:
+            vecE = vecE.smooth()
         A = vecE.times_eps()
         B = vecE.conj()
         A = A.dot(B)
         A = A.real()
         A = A.integrate_vol(name=volume)
+
+        lv = self.get_lv(variation)
         return A.evaluate(lv=lv)
 
-    def calc_U_H(self, variation, volume=None):
-        lv = self.get_lv(variation)
-        if volume is None:
-            volume = 'AllObjects'
-        else:
-            pass
+    def calc_U_H(self,
+                 variation=None,
+                 volume='AllObjects',
+                 smooth=True):
+
         calcobject = CalcObject([], self.setup)
+
         vecH = calcobject.getQty("H")
+        if smooth:
+            vecH = vecH.smooth()
         A = vecH.times_mu()
         B = vecH.conj()
         A = A.dot(B)
         A = A.real()
         A = A.integrate_vol(name=volume)
+        
+        lv = self.get_lv(variation)
         return A.evaluate(lv=lv)
 
     def calc_current(self, fields, line):
@@ -702,10 +722,13 @@ class pyEPR_HFSS(object):
         return calc.evaluate(lv=lv)
 
     def get_junc_len_dir(self, variation, junc_line):
-        '''return the length and direction of a junction defined by a line 
-        inputs: variation: simulation variation
+        '''
+        Return the length and direction of a junction defined by a line 
+        
+        Inputs: variation: simulation variation
                 junc_line: polyline object
-        outputs: jl (float) junction length
+        
+        Outputs: jl (float) junction length
                  uj (list of 3 floats) x,y,z coordinates of the unit vector
                  tangent to the junction line
         '''
@@ -722,8 +745,10 @@ class pyEPR_HFSS(object):
         return jl, uj
 
     def calculate_Q_mp(self, variation, freq_GHz, U_E):
-        ''' calculate the coupling Q of mode m with each port p 
-        Expected that you have specified the mode before calling this'''
+        '''
+        Calculate the coupling Q of mode m with each port p 
+        Expected that you have specified the mode before calling this
+        '''
 
         Qp = pd.Series({})
 
@@ -789,9 +814,13 @@ class pyEPR_HFSS(object):
         """
         Optional Parameters:
         ------------------------
-            variations : list | none
+            variations : list | None
                 Example list of variations is ['0', '1']
                 A variation is a combination of project/design variables in an optimetric sweep
+            
+            modes : list | None
+                Modes to analyze 
+                for example  modes = [0, 2, 3]
 
         HFSS Notes:
         ------------------------
@@ -804,11 +833,13 @@ class pyEPR_HFSS(object):
         self._run_time = time.strftime('%Y%m%d_%H%M%S', time.localtime())
 
         self.update_variation_information()
+
+        if modes is None:
+            modes = range(self.nmodes)
+
         if variations is None:
             variations = (['-1'] if self.listvariations == (u'',)
                           else [str(i) for i in range(self.nvariations)])
-        if modes is None:
-            modes = range(self.nmodes)
 
         # Setup save and save pinfo
         #TODO:  The pd.HDFStore  is used to store the pandas sereis and dataframe, but is otherwise cumbersome.
@@ -820,21 +851,32 @@ class pyEPR_HFSS(object):
 
         ###  Main loop - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         for ii, variation in enumerate(variations):
-            # Get variation, see if analyzed previously
-            print('\nVariation:  ' + variation + ' / ' + str(len(variations)))
+            
+            print(f'\nVariation {variation}  [{ii}/{len(variations)}]')
+            
+            # Previously analyzed?
             if (variation+'/hfss_variables') in hdf.keys() and self.append_analysis:
                 print_NoNewLine('  previously analyzed ...\n')
                 continue
 
             self.lv = self.get_lv(variation)
             time.sleep(0.4)
+
+            if self.has_fields() == False:
+                logger.error(f" Error: HFSS does not have field solution for mode={mode}.\
+                                Skipping this mode in the analysis")
+                continue
+
             freqs_bare_GHz, Qs_bare = self.get_freqs_bare_pd(variation)
+
             self.hfss_variables[variation] = pd.Series(
                 self.get_variables(variation=variation))
+
             Ljs = pd.Series({})
             for junc_name, val in self.junctions.items():  # junction nickname
                 Ljs[junc_name] = ureg.Quantity(
                     self.hfss_variables[variation]['_'+val['Lj_variable']]).to_base_units().magnitude
+
             # TODO: add this as pass and then set an attribute that specifies which pass is the last pass.
             # so we can save vs pass
             hdf['v'+variation+'/freqs_bare_GHz'] = freqs_bare_GHz
@@ -851,23 +893,26 @@ class pyEPR_HFSS(object):
             Qm_coupling = OrderedDict()  # Quality factor matrix
             SOL = OrderedDict()  # other results
 
-            for mode in modes:
+            for mode in modes:  # integer of mode number [0,1,2,3,..]
+
                 # Mode setup & load fields
                 print('  Mode ' + str(mode) + ' / ' + str(self.nmodes-1))
-                self.solutions.set_mode(mode+1, 0)
-                self.fields = self.setup.get_fields()
+                self.set_mode(mode)
 
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                 # EPR calculations
+
                 print_NoNewLine('\tU_H')
                 try:
                     self.U_H = self.calc_U_H(variation)
                 except Exception as e:
                     tb = sys.exc_info()[2]
                     print("\n\nError:\n", e)
-                    raise(Exception(' Did you save the field solutions?   Failed during calculation of the total magnetic energy. This is the first calculation step, and is indicative that there are no field solutions saved. ').with_traceback(tb))
+                    raise(Exception(' Did you save the field solutions?\n  Failed during calculation of the total magnetic energy. This is the first calculation step, and is indicative that there are no field solutions saved. ').with_traceback(tb))
+
                 print_NoNewLine(', U_E \n')
-                self.U_E = self.calc_U_E(variation)
+
+                self.U_E = self.calc_energy_electric(variation)
                 print("U_E=  {:>9.2E}" .format(self.U_E))
                 print("U_H=  {:>9.2E}" .format(self.U_H))
                 print("U_E+U_H=  {:>9.2E}" .format(self.U_E + self.U_H))
@@ -943,6 +988,49 @@ class pyEPR_HFSS(object):
             self.listvariations[ureg(variation)])  # returns dataframe
         if conv is not None:
             hdf['v'+variation+'/convergence'] = conv
+
+    def set_mode(self, mode_num, phase=0):
+        '''
+        Set source excitations should be used for fields post processing.
+        Counting modes from 0 onward
+        '''
+        if mode_num < 0:
+            logger.error('Too small a mode number')
+
+        self.solutions.set_mode(mode_num + 1, phase)
+
+        if self.has_fields() == False:
+            logger.warning(f" Error: HFSS does not have field solution for mode={mode}.\
+                                    Skipping this mode in the analysis")
+
+        self.fields = self.setup.get_fields()
+
+    def get_variation_nominal(self):
+        return self.design.get_nominal_variation()
+    
+    def get_variations_all(self):
+        self.update_variation_information()
+        return self.listvariations
+
+    def update_variation_information(self):
+        ''''
+        Updates all information about the variations.
+        nmodes, listvariations, nominalvariation, nvariations
+        '''
+        self.nmodes           = int(self.setup.n_modes)
+        self.listvariations   = self.design._solutions.ListVariations(str(self.setup.solution_name))
+        self.nominalvariation = self.design.get_nominal_variation()
+        self.nvariations      = np.size(self.listvariations)
+
+    def has_fields(self, variation=None):
+        '''
+        Determine if fields exist for a particular solution.
+
+        variation : str | None
+        If None, gets the nominal variation
+        '''
+        return self.solutions.has_fields(variation)
+
 
 
 #%%==============================================================================
