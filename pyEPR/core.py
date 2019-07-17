@@ -134,7 +134,7 @@ class Project_Info(object):
 
     @deprecated
     def connect_to_project(self):
-        self.connect()
+        return self.connect()
         
     def connect(self):
         '''
@@ -185,7 +185,8 @@ class Project_Info(object):
         oDesign, oModeler = self.get_dm()
         print('\tConnected successfully.\n\t :)\t :)\t :)\t\n')
     
-        return self.design, oModeler, self.app, self.desktop, self.project, self.setup
+        #self.design, oModeler, self.app, self.desktop, self.project, self.setup
+        return self
 
     def check_connected(self):
         return\
@@ -200,7 +201,7 @@ class Project_Info(object):
         Disconnect from existing HFSS design.
         '''
         assert self.check_connected(
-        ) is True, "it does not appear that you have connected to HFSS yet. use connect_to_project()"
+        ) is True, "it does not appear that you have connected to HFSS yet. use connect()"
         self.project.release()
         self.desktop.release()
         self.app.release()
@@ -275,7 +276,7 @@ class pyEPR_HFSS(object):
         # Input
         self.pinfo = project_info
         if self.pinfo.check_connected() is False:
-            self.pinfo.connect_to_project()
+            self.pinfo.connect()
 
         self.verbose          = verbose
         self.append_analysis  = append_analysis
