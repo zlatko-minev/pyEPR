@@ -79,17 +79,19 @@ class Project_Info(object):
             self.seams               = None
 
     class _pyEPR_Options:
+        #TODO: Turn into a dictionary
         '''
         Pj_from_current:
             Multi-junction calculation of energy participation ratio matrix based on <I_J>. Current is integrated average of J_surf by default: (zkm 3/29/16)
             Will calculate the Pj matrix for the selected modes for the given junctions junc_rect array & length of juuncs
 
-        pJ_method  : 'J_surf_mag'
-            takes the avg. Jsurf over the rect. Make sure you have seeded lots of tets here. i recommend starting with 4 across smallest dimension.
+        pJ_method  : 'J_surf_mag' or 'line_voltage'
+            'J_surf_mag'   : takes the avg. Jsurf over the rect. Make sure you have seeded lots of tets here. i recommend starting with 4 across smallest dimension.
+            'line_voltage' : Uses the line voltage integral
         '''
         def __init__(self):
             self.Pj_from_current  = True
-            self.p_mj_method      = 'J_surf_mag'
+            self.p_mj_method      = 'line_voltage' # 'line_voltage' or 'J_surf_mag'
             self.save_mesh_stats  = True
             
 
@@ -685,10 +687,13 @@ class pyEPR_HFSS(object):
         int_j_2 = j_2_norm.integrate_line(seam)
         int_j_2_val = int_j_2.evaluate(lv=lv, phase=90)
         yseam = int_j_2_val/self.U_H/self.omega
+        
         Qseam['Qseam_'+seam+'_' +
               str(mode)] = config.Dissipation_params.gseam/yseam
+        
         print('Qseam_' + seam + '_' + str(mode) + str(' = ') +
               str(config.Dissipation_params.gseam/config.Dissipation_params.yseam))
+
         return Series(Qseam)
 
     def get_Qseam_sweep(self, seam, mode, variation, variable, values, unit, pltresult=True):
@@ -791,7 +796,7 @@ class pyEPR_HFSS(object):
 
     def calc_p_junction(self, variation, U_H, U_E, Ljs):
         ''' 
-            Expected that you have specified the mode before calling this, self.set_mode(num)`
+            Expected that you have specified the mode before calling this, `self.set_mode(num)`
 
             Expected to precalc U_H and U_E for mode, will retunr pandas series object
                 junc_rect = ['junc_rect1', 'junc_rect2'] name of junc rectangles to integrate H over
@@ -813,6 +818,7 @@ class pyEPR_HFSS(object):
             
             logger.debug(f'Calculating participation for {(junc_nm, junc)}')
 
+            # Get peak current though junction I_peak
             if self.pinfo.options.p_mj_method is 'J_surf_mag':
                 #print(' Integrating rectangle: ' + junc['rect'])
                 I_peak = self.calc_avg_current_J_surf_mag(
@@ -821,22 +827,25 @@ class pyEPR_HFSS(object):
                 #print(' Integrating rectangle: ' + junc['rect'])
                 I_peak = self.calc_current_line_voltage(
                     variation, junc['line'], Ljs[junc_nm])
-
             else:
                 raise NotImplementedError(
-                    'Other calculation methods are possible but not implemented here. ')
+                    'Other calculation methods (self.pinfo.options.p_mj_method) are possible but not implemented here. ')
 
             Pj['p_' + junc_nm] = Ljs[junc_nm] * \
-                I_peak**2 / U_E  # participation normed to 1
-            # sign bit
+                I_peak**2 / U_E  
+            #  divie by U_E: participation normed to be between 0 and 1 by the total capacitive energy
+            #  which should be the total inductive energy 
+            
+            # Sign bit
             Sj['s_' + junc_nm] = + \
                 1 if (self.calc_line_current(
                     variation, junc['line'])) > 0 else -1
 
             if self.verbose:
-                _str = '(+)' if Sj['s_' + junc_nm] > 0 else '(-)'
-                print('\t{:<15} {:>9.2E} '.format(
-                    junc_nm, Pj['p_' + junc_nm]) + _str)
+                print('\t{:<15} {:>8.6g} {:>5s}'.format(
+                    junc_nm, 
+                    Pj['p_' + junc_nm], 
+                    '+' if Sj['s_' + junc_nm] > 0 else '-'))
 
         return Pj, Sj
 
@@ -884,7 +893,7 @@ class pyEPR_HFSS(object):
         ###  Main loop - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         for ii, variation in enumerate(variations):
             
-            print(f'\nVariation {variation}  [{ii}/{len(variations)}]')
+            print(f'\nVariation {variation}  [{ii+1}/{len(variations)}]')
             
             # Previously analyzed?
             if (variation+'/hfss_variables') in hdf.keys() and self.append_analysis:
@@ -928,39 +937,41 @@ class pyEPR_HFSS(object):
             for mode in modes:  # integer of mode number [0,1,2,3,..]
 
                 # Mode setup & load fields
-                print('  Mode ' + str(mode) + ' / ' + str(self.nmodes-1))
+                print(f'  Mode {mode} [{mode+1}/{self.nmodes}]')
                 self.set_mode(mode)
 
-                # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-                # EPR calculations
-
-                print_NoNewLine('\tU_H')
-                try:
-                    self.U_H = self.calc_energy_magnetic(variation)
-                except Exception as e:
-                    tb = sys.exc_info()[2]
-                    print("\n\nError:\n", e)
-                    raise(Exception(' Did you save the field solutions?\n  Failed during calculation of the total magnetic energy. This is the first calculation step, and is indicative that there are no field solutions saved. ').with_traceback(tb))
-
-                print_NoNewLine(', U_E \n')
-
-                self.U_E = self.calc_energy_electric(variation)
-                print("U_E=  {:>9.2E}" .format(self.U_E))
-                print("U_H=  {:>9.2E}" .format(self.U_H))
-                print("U_E+U_H=  {:>9.2E}" .format(self.U_E + self.U_H))
-                print("U_L=U_E-U_H=  {:>9.2E}" .format(self.U_E - self.U_H))
-                print(
-                    "U_L/U_E=  {:>9.2E}" .format((self.U_E - self.U_H)/self.U_E))
-                sol = Series({'U_H': self.U_H, 'U_E': self.U_E})
-                # calcualte for each of the junctions
-                Pm[mode], Sm[mode] = self.calc_p_junction(
-                    variation, self.U_H, self.U_E, Ljs)
+                #  Get hfss solved frequencie
                 _Om = pd.Series({})
                 _Om['freq_GHz'] = freqs_bare_GHz[mode]  # freq
                 Om[mode] = _Om
 
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-                # Dissipative EPR calculations
+                # EPR Hamiltonian calculations
+
+                # Calculation global energies  and report 
+                print('    Calculating ℰ_electric', end=',')
+                try:
+                    self.U_E = self.calc_energy_electric(variation)
+                except Exception as e:
+                    tb = sys.exc_info()[2]
+                    print("\n\nError:\n", e)
+                    raise(Exception(' Did you save the field solutions?\n  Failed during calculation of the total magnetic energy. This is the first calculation step, and is indicative that there are no field solutions saved. ').with_traceback(tb))
+
+                print(' ℰ_magnetic')
+                self.U_H = self.calc_energy_magnetic(variation)
+                sol = Series({'U_H': self.U_H, 'U_E': self.U_E})
+
+                print(f"""     {'(ℰ_E-ℰ_H)/ℰ_E':>15s} {'ℰ_E':>9s} {'ℰ_H':>9s} 
+    {100*(self.U_E - self.U_H)/self.U_E:>15.1f}%  {self.U_E:>9.4g} {self.U_H:>9.4g}\n""")
+
+                # Calcualte EPR for each of the junctions
+                print(f'    Calculating junction EPR [method={self.pinfo.options.p_mj_method}]')
+                print(f"\t{'junction':<15s} EPR p_{mode}j   sign s_{mode}j")
+                Pm[mode], Sm[mode] = self.calc_p_junction(
+                    variation, self.U_H, self.U_E, Ljs)
+
+                # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                # EPR Dissipative calculations
 
                 # TODO: this should really be passed as argument  to the functions rather than a property of the calss I would say
                 self.omega = 2*np.pi*freqs_bare_GHz[mode]
