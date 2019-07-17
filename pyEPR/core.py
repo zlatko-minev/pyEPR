@@ -494,147 +494,30 @@ class pyEPR_HFSS(object):
         self.variables = variables
         return variables
 
-    def get_Qseam(self, seam, mode, variation):
-        '''
-        caculate the contribution to Q of a seam, by integrating the current in
-        the seam with finite conductance: set in the config file
-        ref: http://arxiv.org/pdf/1509.01119.pdf
-        '''
-        lv = self.get_lv(variation)
-        Qseam = OrderedDict()
-        print('Calculating Qseam_' + seam + ' for mode ' + str(mode) +
-              ' (' + str(mode) + '/' + str(self.nmodes-1) + ')')
-        # overestimating the loss by taking norm2 of j, rather than jperp**2
-        j_2_norm = self.fields.Vector_Jsurf.norm_2()
-        int_j_2 = j_2_norm.integrate_line(seam)
-        int_j_2_val = int_j_2.evaluate(lv=lv, phase=90)
-        yseam = int_j_2_val/self.U_H/self.omega
-        Qseam['Qseam_'+seam+'_' +
-              str(mode)] = config.Dissipation_params.gseam/yseam
-        print('Qseam_' + seam + '_' + str(mode) + str(' = ') +
-              str(config.Dissipation_params.gseam/config.Dissipation_params.yseam))
-        return Series(Qseam)
-
-    def get_Qseam_sweep(self, seam, mode, variation, variable, values, unit, pltresult=True):
-        # values = ['5mm','6mm','7mm']
-        # ref: http://arxiv.org/pdf/1509.01119.pdf
-
-        self.solutions.set_mode(mode+1, 0)
-        self.fields = self.setup.get_fields()
-        freqs_bare_dict, freqs_bare_vals = self.get_freqs_bare(variation)
-        self.omega = 2*np.pi*freqs_bare_vals[mode]
-        print(variation)
-        print(type(variation))
-        print(ureg(variation))
-        self.U_H = self.calc_U_H(variation)
-        lv = self.get_lv(variation)
-        Qseamsweep = []
-        print('Calculating Qseam_' + seam + ' for mode ' + str(mode) +
-              ' (' + str(mode) + '/' + str(self.nmodes-1) + ')')
-        for value in values:
-            self.design.set_variable(variable, str(value)+unit)
-
-            # overestimating the loss by taking norm2 of j, rather than jperp**2
-            j_2_norm = self.fields.Vector_Jsurf.norm_2()
-            int_j_2 = j_2_norm.integrate_line(seam)
-            int_j_2_val = int_j_2.evaluate(lv=lv, phase=90)
-            yseam = int_j_2_val/self.U_H/self.omega
-            Qseamsweep.append(config.Dissipation_params.gseam/yseam)
-#        Qseamsweep['Qseam_sweep_'+seam+'_'+str(mode)] = gseam/yseam
-            #Cprint 'Qseam_' + seam + '_' + str(mode) + str(' = ') + str(gseam/yseam)
-        if pltresult:
-            fig, ax = plt.subplots()
-            ax.plot(values, Qseamsweep)
-            ax.set_yscale('log')
-            ax.set_xlabel(variable+' ('+unit+')')
-            ax.set_ylabel('Q'+'_'+seam)
-        return Qseamsweep
-
-    def get_Qdielectric(self, dielectric, mode, variation):
-        Qdielectric = OrderedDict()
-        print('Calculating Qdielectric_' + dielectric + ' for mode ' +
-              str(mode) + ' (' + str(mode) + '/' + str(self.nmodes-1) + ')')
-
-        U_dielectric = self.calc_energy_electric(variation, volume=dielectric)
-        p_dielectric = U_dielectric/self.U_E
-        #TODO: Update make p saved sep. and get Q for diff materials, indep. specify in pinfo
-        Qdielectric['Qdielectric_'+dielectric+'_' +
-                    str(mode)] = 1/(p_dielectric*config.Dissipation_params.tan_delta_sapp)
-        print('p_dielectric'+'_'+dielectric+'_' +
-              str(mode)+' = ' + str(p_dielectric))
-        return Series(Qdielectric)
-
-    def get_Qsurface_all(self, mode, variation):
-        '''
-        caculate the contribution to Q of a dieletric layer of dirt on all surfaces
-        set the dirt thickness and loss tangent in the config file
-        ref: http://arxiv.org/pdf/1509.01854.pdf
-        '''
-        lv = self.get_lv(variation)
-        Qsurf = OrderedDict()
-        print('Calculating Qsurface for mode ' + str(mode) +
-              ' (' + str(mode) + '/' + str(self.nmodes-1) + ')')
-#        A = self.fields.Mag_E**2
-#        A = A.integrate_vol(name='AllObjects')
-#        U_surf = A.evaluate(lv=lv)
-        calcobject = CalcObject([], self.setup)
-        vecE = calcobject.getQty("E")
-        A = vecE
-        B = vecE.conj()
-        A = A.dot(B)
-        A = A.real()
-        A = A.integrate_surf(name='AllObjects')
-        U_surf = A.evaluate(lv=lv)
-        U_surf *= config.Dissipation_params.th*epsilon_0*config.Dissipation_params.eps_r
-        p_surf = U_surf/self.U_E
-        Qsurf['Qsurf_'+str(mode)] = 1 / \
-            (p_surf*config.Dissipation_params.tan_delta_surf)
-        print('p_surf'+'_'+str(mode)+' = ' + str(p_surf))
-        return Series(Qsurf)
-
-    @deprecated
-    def get_Hparams(self, freqs, pjs, lj):
-        '''
-            Outdated.
-            This is for 1 junction,  and for N=4th first-order  PT on EPR
-        '''
-        Hparams = OrderedDict()
-        fzpfs = []
-
-        # calculate Kerr and fzpf
-        for m in self.modes:
-            omega = 2*pi*freqs[m]
-            ej = fluxQ**2/lj
-            pj = pjs['pj_'+str(m)]
-            fzpf = np.sqrt(pj*hbar*omega/ej)
-            fzpfs.append(fzpf)
-            Hparams['fzpf_'+str(m)] = fzpf
-            alpha = 2*ej/fact(4)*nck(4, 2)*(fzpf**4)/hbar
-            Hparams['alpha_'+str(m)] = alpha
-            Hparams['freq_'+str(m)] = (omega-alpha)/2/pi
-
-        # calculate chi
-        for m in self.modes:
-            for n in self.modes:  # will fail
-                if n < m:
-                    chi_mn = ej/hbar*(fzpfs[m]*fzpfs[n])**2
-                    Hparams['chi_'+str(m)+'_'+str(n)] = chi_mn
-
-        return Hparams
 
     def calc_energy_electric(self, 
                              variation=None,
                              volume='AllObjects',
                              smooth=False):
-        ''' 
-        Calculates 2* the peak electric energy, since we do not divide by 2,
-        and use the peak phasors.
+        r''' 
+        Calculates two times the peak electric energy, or 4 times the RMS, :math:`4*\mathcal{E}_{\mathrm{elec}}`
+        (since we do not divide by 2 and use the peak phasors).
         
+        .. math::
+            \mathcal{E}_{\mathrm{elec}}=\frac{1}{4}\mathrm{Re}\int_{V}\mathrm{d}v\vec{E}_{\text{max}}^{*}\overleftrightarrow{\epsilon}\vec{E}_{\text{max}}
+
+
         volume : string | 'AllObjects'
         smooth : bool | False 
             Smooth the electric field or not when performing calculation
 
-        TODO: Should we use the smoothed version?
+        Example use to calcualte the energy participation of a substrate
+        
+        .. code-block python
+            ℰ_total  = epr_hfss.calc_energy_electric(volume='AllObjects')
+            ℰ_substr = epr_hfss.calc_energy_electric(volume='Box1')
+            print(f'Energy in substrate = {100*ℰ_substr/ℰ_total:.1f}%')
+
         '''
 
         calcobject = CalcObject([], self.setup)
@@ -651,10 +534,13 @@ class pyEPR_HFSS(object):
         lv = self.get_lv(variation)
         return A.evaluate(lv=lv)
 
-    def calc_U_H(self,
+    def calc_energy_magnetic(self,
                  variation=None,
                  volume='AllObjects',
                  smooth=True):
+        '''
+        See calc_energy_electric
+        '''
 
         calcobject = CalcObject([], self.setup)
 
@@ -670,9 +556,42 @@ class pyEPR_HFSS(object):
         lv = self.get_lv(variation)
         return A.evaluate(lv=lv)
 
+    def calc_p_electric_volume(self, 
+                    name_dielectric3D,
+                    relative_to='AllObjects',
+                    E_total=None
+                   ):
+        r'''
+        Calculate the dielectric energy-participatio ratio 
+        of a 3D object (one that has volume) relative to the dielectric energy of
+        a list of object objects.
+        
+        This is as a function relative to another object or all objects.
+        
+        When all objects are specified, this does not include any energy 
+        that might be stored in any lumped elements or lumped capacitors. 
+        
+        Returns:
+        ---------
+            ℰ_object/ℰ_total, (ℰ_object, _total)
+        '''
+        
+        if E_total is None:
+            logger.debug('Calculating ℰ_total')
+            ℰ_total  = self.calc_energy_electric(volume=relative_to)
+        else:
+            ℰ_total = E_total
+        
+        logger.debug('Calculating ℰ_object')
+        ℰ_object = self.calc_energy_electric(volume=name_dielectric3D)
+        
+        return ℰ_object/ℰ_total, (ℰ_object, ℰ_total)
+        
+
     def calc_current(self, fields, line):
-        '''Function to calculate Current based on line. Not in use
-            line = integration line between plates - name
+        '''
+        Function to calculate Current based on line. Not in use
+        line : integration line between plates - name
         '''
         self.design.Clear_Field_Clac_Stack()
         comp = fields.Vector_H
@@ -743,6 +662,106 @@ class pyEPR_HFSS(object):
         jl = float(np.sqrt(u[0]**2+u[1]**2+u[2]**2))
         uj = [float(u[0]/jl), float(u[1]/jl), float(u[2]/jl)]
         return jl, uj
+
+    def get_Qseam(self, seam, mode, variation):
+        r'''
+        Caculate the contribution to Q of a seam, by integrating the current in
+        the seam with finite conductance: set in the config file
+        ref: http://arxiv.org/pdf/1509.01119.pdf
+        '''
+
+        lv = self.get_lv(variation)
+        Qseam = OrderedDict()
+        print('Calculating Qseam_' + seam + ' for mode ' + str(mode) +
+              ' (' + str(mode) + '/' + str(self.nmodes-1) + ')')
+        # overestimating the loss by taking norm2 of j, rather than jperp**2
+        j_2_norm = self.fields.Vector_Jsurf.norm_2()
+        int_j_2 = j_2_norm.integrate_line(seam)
+        int_j_2_val = int_j_2.evaluate(lv=lv, phase=90)
+        yseam = int_j_2_val/self.U_H/self.omega
+        Qseam['Qseam_'+seam+'_' +
+              str(mode)] = config.Dissipation_params.gseam/yseam
+        print('Qseam_' + seam + '_' + str(mode) + str(' = ') +
+              str(config.Dissipation_params.gseam/config.Dissipation_params.yseam))
+        return Series(Qseam)
+
+    def get_Qseam_sweep(self, seam, mode, variation, variable, values, unit, pltresult=True):
+        # values = ['5mm','6mm','7mm']
+        # ref: http://arxiv.org/pdf/1509.01119.pdf
+
+        self.solutions.set_mode(mode+1, 0)
+        self.fields = self.setup.get_fields()
+        freqs_bare_dict, freqs_bare_vals = self.get_freqs_bare(variation)
+        self.omega = 2*np.pi*freqs_bare_vals[mode]
+        print(variation)
+        print(type(variation))
+        print(ureg(variation))
+        self.U_H = self.calc_energy_magnetic(variation)
+
+        lv = self.get_lv(variation)
+        Qseamsweep = []
+        print('Calculating Qseam_' + seam + ' for mode ' + str(mode) +
+              ' (' + str(mode) + '/' + str(self.nmodes-1) + ')')
+        for value in values:
+            self.design.set_variable(variable, str(value)+unit)
+
+            # overestimating the loss by taking norm2 of j, rather than jperp**2
+            j_2_norm = self.fields.Vector_Jsurf.norm_2()
+            int_j_2 = j_2_norm.integrate_line(seam)
+            int_j_2_val = int_j_2.evaluate(lv=lv, phase=90)
+            yseam = int_j_2_val/self.U_H/self.omega
+            Qseamsweep.append(config.Dissipation_params.gseam/yseam)
+#        Qseamsweep['Qseam_sweep_'+seam+'_'+str(mode)] = gseam/yseam
+            #Cprint 'Qseam_' + seam + '_' + str(mode) + str(' = ') + str(gseam/yseam)
+        if pltresult:
+            fig, ax = plt.subplots()
+            ax.plot(values, Qseamsweep)
+            ax.set_yscale('log')
+            ax.set_xlabel(variable+' ('+unit+')')
+            ax.set_ylabel('Q'+'_'+seam)
+        return Qseamsweep
+
+    def get_Qdielectric(self, dielectric, mode, variation):
+        Qdielectric = OrderedDict()
+        print('Calculating Qdielectric_' + dielectric + ' for mode ' +
+              str(mode) + ' (' + str(mode) + '/' + str(self.nmodes-1) + ')')
+
+        U_dielectric = self.calc_energy_electric(variation, volume=dielectric)
+        p_dielectric = U_dielectric/self.U_E
+        #TODO: Update make p saved sep. and get Q for diff materials, indep. specify in pinfo
+        Qdielectric['Qdielectric_'+dielectric+'_' +
+                    str(mode)] = 1/(p_dielectric*config.Dissipation_params.tan_delta_sapp)
+        print('p_dielectric'+'_'+dielectric+'_' +
+              str(mode)+' = ' + str(p_dielectric))
+        return Series(Qdielectric)
+
+    def get_Qsurface_all(self, mode, variation):
+        '''
+        caculate the contribution to Q of a dieletric layer of dirt on all surfaces
+        set the dirt thickness and loss tangent in the config file
+        ref: http://arxiv.org/pdf/1509.01854.pdf
+        '''
+        lv = self.get_lv(variation)
+        Qsurf = OrderedDict()
+        print('Calculating Qsurface for mode ' + str(mode) +
+              ' (' + str(mode) + '/' + str(self.nmodes-1) + ')')
+#        A = self.fields.Mag_E**2
+#        A = A.integrate_vol(name='AllObjects')
+#        U_surf = A.evaluate(lv=lv)
+        calcobject = CalcObject([], self.setup)
+        vecE = calcobject.getQty("E")
+        A = vecE
+        B = vecE.conj()
+        A = A.dot(B)
+        A = A.real()
+        A = A.integrate_surf(name='AllObjects')
+        U_surf = A.evaluate(lv=lv)
+        U_surf *= config.Dissipation_params.th*epsilon_0*config.Dissipation_params.eps_r
+        p_surf = U_surf/self.U_E
+        Qsurf['Qsurf_'+str(mode)] = 1 / \
+            (p_surf*config.Dissipation_params.tan_delta_surf)
+        print('p_surf'+'_'+str(mode)+' = ' + str(p_surf))
+        return Series(Qsurf)
 
     def calculate_Q_mp(self, variation, freq_GHz, U_E):
         '''
@@ -904,7 +923,7 @@ class pyEPR_HFSS(object):
 
                 print_NoNewLine('\tU_H')
                 try:
-                    self.U_H = self.calc_U_H(variation)
+                    self.U_H = self.calc_energy_magnetic(variation)
                 except Exception as e:
                     tb = sys.exc_info()[2]
                     print("\n\nError:\n", e)
