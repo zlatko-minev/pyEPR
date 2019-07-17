@@ -40,29 +40,34 @@ Superconducting circuits incorporating non-linear devices, such as Josephson jun
 4. **Cite us** :clap: and enjoy :birthday:! [arXiv:1902.10355](https://arxiv.org/abs/1902.10355) 
 
 #### Start-up example 
+
+* See [jupyter notebook example!](/_tutorial_notebooks/1A&#32;Startup&#32;Example.ipynb)
+
 The following code illustrates how to perform a complete analysis of a simple two-qubit, one-cavity device in just a few lines of code with `pyEPR`.  In the HFSS file, before running the script, first specify the non-linear junction rectangles and variables (see Sec. pyEPR Project Setup in HFSS). All operations in the eigen analysis and Hamiltonian computation are fully automated. The results are saved, printed, and succinctly plotted. 
 
 ```python
 from pyEPR import *
 
 # 1.  Project and design. Open link to HFSS controls.
-project_info = Project_Info('c:/sims', 
-			    project_name = 'two_qubit_one_cavity', # Project file name (string). "None" will get the current active one.
-			    design_name  = 'Alice_Bob'             # Design name (string). "None" will get the current active one.
+pinfo = Project_Info(r'C:/path-to-sims', 
+			    project_name = 'two_qubit_one_cavity', # Project file name (string). 
+			    									   # "None" will get the current active one.
+			    design_name  = 'Alice_Bob'             # Design name (string). 
+			     									   # "None" will get the current active one.
 			    )
-project_info.connect_to_project() # Test connection to HFSS
+pinfo.connect_to_project() # Test connection to HFSS
 
 # 2a. Junctions. Specify junctions in HFSS model
-project_info.junctions['jAlice'] = {'Lj_variable':'LJAlice', 'rect':'qubitAlice', 'line': 'alice_line', 'length':0.0001}
-project_info.junctions['jBob']   = {'Lj_variable':'LJBob',   'rect':'qubitBob',   'line': 'bob_line',   'length':0.0001}
-project_info.validate_junction_info() # Check that valid names of variables and objects have been supplied. Please check length of junction rectangle manually for now. 
+pinfo.junctions['jAlice'] = {'Lj_variable':'LJAlice', 'rect':'qubitAlice', 'line': 'alice_line', 'length':1E-4}
+pinfo.junctions['jBob']   = {'Lj_variable':'LJBob',   'rect':'qubitBob',   'line': 'bob_line',   'length':1E-4}
+pinfo.validate_junction_info() # Check that valid names of variables and objects have been supplied. Please check length of junction rectangle manually for now. 
 
 # 2b. Dissipative elements. (see more options in Project_Info.dissipative)
-project_info.dissipative.dielectrics_bulk    = ['si_substrate', 'dielectic_object2']    # supply names of hfss objects
-project_info.dissipative.dielectric_surfaces = ['interface1', 'interface2']    
+pinfo.dissipative.dielectrics_bulk    = ['si_substrate', 'dielectic_object2']    # supply names of hfss objects
+pinfo.dissipative.dielectric_surfaces = ['interface1', 'interface2']    
 
 # 3.  Run analysis
-epr_hfss = pyEPR_HFSS(project_info)
+epr_hfss = pyEPR_HFSS(pinfo)
 epr_hfss.do_EPR_analysis()
 
 # 4.  Hamiltonian analysis
@@ -70,6 +75,7 @@ epr = pyEPR_Analysis(epr_hfss.data_filename)
 epr.analyze_all_variations(cos_trunc = 8, fock_trunc = 7)
 epr.plot_Hresults()
 ```
+
 # `pyEPR` Video Tutorials <img src="https://developers.google.com/site-assets/logo-youtube.svg" height=30>
 <div style="overflow:auto;">
 <table style="">
