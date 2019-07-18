@@ -34,16 +34,18 @@ Superconducting circuits incorporating non-linear devices, such as Josephson jun
 
 # Start here: Using `pyEPR`
 
-1. **Fork**  :fork_and_knife: the [``pyEPR top-level repository`` ](https://github.com/zlatko-minev/pyEPR) on GitHub. ([How to fork a GitHub repo?](https://help.github.com/en/articles/fork-a-repo)). Nice to **star** :star: the pyEPR master repository too.
+1. **Fork**  :fork_and_knife: the [``pyEPR top-level repository`` ](https://github.com/zlatko-minev/pyEPR) on GitHub. ([How to fork a GitHub repo?](https://help.github.com/en/articles/fork-a-repo)). Share some love by **staring** :star: [pyEPR](https://github.com/zlatko-minev/pyEPR/).
 2. **Clone** :point_down: your forked repository locally. ([How to clone a GitHub repo?](https://help.github.com/en/articles/cloning-a-repository)). Setup the `pyEPR` python code by following [Installation and Python Setup](#installation-of-pyepr).
 3. **Run** the `pyEPR` script and interface to analyze and optimize your quantum circuits. Make sure to git add the master remote branch  `git remote add MASTER_MINEV git://github.com/zlatko-minev/pyEPR.git` [(help?)](https://stackoverflow.com/questions/11266478/git-add-remote-branch). Examples provided below, more to come soon. 
-4. **Cite us** :clap: and enjoy :birthday:! [arXiv:1902.10355](https://arxiv.org/abs/1902.10355) 
+4. **Startup tutorials**  Learn how to use using the [jupyter notebook tutorials]((https://github.com/zlatko-minev/pyEPR/tree/master/_tutorial_notebooks)
+5. **Cite us** :clap: and enjoy :birthday:! [arXiv:1902.10355](https://arxiv.org/abs/1902.10355) 
 
 #### Start-up example 
 
+[Jupyter notebook tutorials](https://github.com/zlatko-minev/pyEPR/tree/master/_tutorial_notebooks)
+
 The following code illustrates how to perform a complete analysis of a simple two-qubit, one-cavity device in just a few lines of code with `pyEPR`.  In the HFSS file, before running the script, first specify the non-linear junction rectangles and variables (see Sec. pyEPR Project Setup in HFSS). All operations in the eigen analysis and Hamiltonian computation are fully automated. The results are saved, printed, and succinctly plotted. 
 
-* See [jupyter notebook example!](/_tutorial_notebooks/1A&#32;Startup&#32;example.ipynb)
 
 ```python
 from pyEPR import *
@@ -106,10 +108,12 @@ epr.plot_Hresults()
 <!--
  [![pyEPR Tutorial 1 - Overview](https://img.youtube.com/vi/fSRYvD-ITnQ/0.jpg)](https://www.youtube.com/watch?v=fSRYvD-ITnQ&list=PLnak_fVcHp17tydgFosNtetDNjKbEaXtv&index=1) -->
 
+[Jupyter notebook tutorials](https://github.com/zlatko-minev/pyEPR/tree/master/_tutorial_notebooks)
+
 # Installation and setup of `pyEPR`
 -------------
 Use `pyEPR` directly from the source, and pull updates from the master git repo, since we often update it. The following steps explain how to set up Python 3, fork the `pyEPR` repo and use it. 
-Please keep up to date with `pyEPR` by using git. We like to make it simple using a git-gui manager, [SourceTree](sourcetree.com).
+Please keep up to date with `pyEPR` by using git. We like to make it simple using a git-gui manager, [SourceTree](sourcetree.com) or [GitHub Desktop](https://desktop.github.com/).
 
 **Recommended procedure.**   <br />
 
