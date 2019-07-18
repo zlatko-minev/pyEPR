@@ -2,7 +2,7 @@
 """
 Created on Sat Feb 04 09:32:46 2017
 
-@author: Minev
+@author: Zlatko K. Minev, pyEPR ream
 """
 from __future__ import division, print_function, absolute_import   # Python 2.7 and 3 compatibility
 import numpy as np
@@ -30,19 +30,6 @@ def combinekw(kw1, kw2):
     kw.update(kw2)
     return kw
 
-
-def fact(n):
-    ''' Factorial '''
-    if n <= 1:
-        return 1
-    return n * fact(n-1)
-
-
-def nck(n, k):
-    ''' choose '''
-    return fact(n)/(fact(k)*fact(n-k))
-
-
 def isint(value):
   try:
     int(value)
@@ -63,6 +50,16 @@ def floor_10(x):
     ''' round to nearest lower power of 10 c'''
     return 10.**(np.floor(np.log10(x)))
 
+def fact(n):
+    ''' Factorial '''
+    if n <= 1:
+        return 1
+    return n * fact(n-1)
+
+
+def nck(n, k):
+    ''' choose '''
+    return fact(n)/(fact(k)*fact(n-k))
 
 def get_above_diagonal(M):
     ''' extract the values that are above the diagonal.

@@ -5,7 +5,7 @@ pyEPR.hfss
 Purpose: 
     Handles HFSS interaction and control. 
     
-Authors: 
+@authors:
     Originally contributed by Phil Reinhold.
     Developed further by Zlatko Minev, Zaki Leghtas, and the pyEPR team. 
     For the base version of hfss.py, see https://github.com/PhilReinhold/pyHFSS
@@ -213,11 +213,15 @@ def _add_release_fn(fn):
 
 
 def release():
+    '''
+    Release COM connection to HFSS. 
+    '''
     global _release_fns
     for fn in _release_fns:
         fn()
     time.sleep(0.1)
-    refcount = pythoncom._GetInterfaceCount()
+
+    refcount = pythoncom._GetInterfaceCount() # _GetInterfaceCount is a memeber
     if refcount > 0:
         print("Warning! %d COM references still alive" % (refcount))
         print("HFSS will likely refuse to shut down")

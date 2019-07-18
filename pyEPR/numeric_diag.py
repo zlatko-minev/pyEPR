@@ -1,8 +1,12 @@
 '''
-    Original code by Phil Reinhold
-    Revised and updated by Zlatko Minev & Lysander Christakis
+Numerical diagonalization of quantum Hamiltonian and parameter
+extraction. 
 
-    This file is tricky, use caution to modify.
+@author: Phil Reinhold, Zlatko Minev, Lysander Christakis
+
+Original code by Phil Reinhold
+Revised and updated by Zlatko Minev & Lysander Christakis
+This file is tricky, use caution to modify.
 '''
 
 from __future__ import print_function

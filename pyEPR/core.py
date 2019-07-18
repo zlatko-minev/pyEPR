@@ -24,6 +24,7 @@ from pathlib      import Path
 from . import hfss
 from . import logger
 from . import config
+from . import AttrDict
 from .hfss        import ureg, CalcObject, ConstantVecCalcObject
 from .toolbox     import print_NoNewLine, print_color, deprecated, fact, epsilon_0, hbar, Planck, fluxQ, nck, \
                          divide_diagonal_by_2, print_matrix, DataFrame_col_diff, get_instance_vars,\
@@ -35,7 +36,40 @@ from .numeric_diag import bbq_hmt, make_dispersive
 
 class Project_Info(object):
     """
-    Container for HFSS project info.
+    Class containing options and information about the manipulation and analysis in HFSS.
+
+    Junction info:
+    -----------------------
+        self.junctions : OrderedDict()
+        
+        A Josephson tunnel junction has to have its parameters specified here for the analysis.
+        Each junction is given a name and is specified by a dictionary.
+        It has the following properties:
+
+            1. `Lj_variable` : Name of HFSS variable that specifies junction inductance Lj defined on the boundary condition in HFSS. DO NOT USE Global names that start with $.
+            2. `rect`        : Name of HFSS rectangle on which lumped boundary condition is specified.
+            3. `line`        : Name of HFSS polyline which spans the length of the recntalge. Used to define the voltage across the junction.  Used to define the current orientation for each junction. Used to define sign of ZPF.
+            4. `length`      : Length in HFSS of the junction rectangle and line (specified in meters).
+
+        Example definition:
+
+        ..code-block python 
+
+            # Define a single junction
+            pinfo = Project_Info('')
+            pinfo.junctions['j1'] = {'Lj_variable' : 'Lj1', 
+                         'rect'        : 'JJrect1', 
+                         'line'        : 'JJline1', 
+                         'length'      : parse_units('50um')} # Length is in meters 
+            
+            # Specify multiple junctions in HFSS model
+            n_junctions = 5
+            for i in range(1, 1+n_junctions):
+                pinfo.junctions[f'j{i}'] = {'Lj_variable' : f'Lj{i}',
+                                            'rect'        : f'JJrect{i}',
+                                            'line'        : f'JJline{i}',
+                                            'length'      : parse_units('50um')}
+
     HFSS app connection settings
     -----------------------
         project_path  : str
@@ -46,6 +80,7 @@ class Project_Info(object):
             Name of the design within the project. "None" will get the current active one.
         setup_name    : str,  None
             Name of the setup within the design. "None" will get the current active one.
+
 
     HFSS desgin settings
     -----------------------
@@ -60,40 +95,16 @@ class Project_Info(object):
         junc_lens     = None
             Junciton rect. length, measured in meters.
             
-    Args: 
-        junctions     : OrderedDict
-        The key of this dict give the junction nickname in pyEPR.
-        Each junction is given the following 4 parameters:
-        * rect - Name of junction rectangles in HFSS
-        * line - Name of lines in HFSS used to define the current orientation for each junction. Used to define sign of ZPF.
-        * Lj_variable -Name of junction inductance variables in HFSS. DO NOT USE Global names that start with $.
-        * length - of Junciton rect. length, measured in meters.
     """
 
     class _Dissipative:
+        #TODO: remove and turn to dict
         
         def __init__(self):
             self.dielectrics_bulk    = None
             self.dielectric_surfaces = None
             self.resistive_surfaces  = None
-            self.seams               = None
-
-    class _pyEPR_Options:
-        #TODO: Turn into a dictionary
-        '''
-        Pj_from_current:
-            Multi-junction calculation of energy participation ratio matrix based on <I_J>. Current is integrated average of J_surf by default: (zkm 3/29/16)
-            Will calculate the Pj matrix for the selected modes for the given junctions junc_rect array & length of juuncs
-
-        pJ_method  : 'J_surf_mag' or 'line_voltage'
-            'J_surf_mag'   : takes the avg. Jsurf over the rect. Make sure you have seeded lots of tets here. i recommend starting with 4 across smallest dimension.
-            'line_voltage' : Uses the line voltage integral
-        '''
-        def __init__(self):
-            self.Pj_from_current  = True
-            self.p_mj_method      = 'line_voltage' # 'line_voltage' or 'J_surf_mag'
-            self.save_mesh_stats  = True
-            
+            self.seams               = None            
 
     def __init__(self, project_path, project_name=None, design_name=None):
         
@@ -104,12 +115,12 @@ class Project_Info(object):
 
         ## HFSS desgin: describe junction parameters
         # TODO: introduce modal labels
-        self.junctions     = OrderedDict()
+        self.junctions     = OrderedDict() # See above for help
         self.ports         = OrderedDict()
 
         ## Dissipative HFSS volumes and surfaces
         self.dissipative   = self._Dissipative()
-        self.options       = self._pyEPR_Options()
+        self.options       = config.options_hfss
 
         # Conected to HFSS variable
         self.app           = None
@@ -338,6 +349,10 @@ class pyEPR_HFSS(object):
     def ports(self):
         return self.pinfo.ports      
 
+    @property
+    def options(self):
+        return self.pinfo.options    
+
     def get_latest_h5(self):
         '''
             No longer used. Could be added back in. 
@@ -368,7 +383,7 @@ class pyEPR_HFSS(object):
 
     def setup_data(self):
         '''
-            Setups up the folder path
+        Set up folder paths for saving data to.
         '''
         data_dir = Path(config.root_dir) / \
             Path(self.project.name)/Path(self.design.name)
@@ -379,7 +394,7 @@ class pyEPR_HFSS(object):
             print_color('WARNING!   DESING FILENAME MAY BE TOO LONG! ')
 
         if not data_dir.is_dir():
-            data_dir.mkdir()
+            data_dir.mkdir(parents=True, exist_ok=True)
         self.data_dir = str(data_dir)
         self.data_filename = str(
             data_dir / (time.strftime('%Y-%m-%d %H-%M-%S', time.localtime()) + '.hdf5'))
@@ -626,10 +641,17 @@ class pyEPR_HFSS(object):
         return I
 
     def calc_current_line_voltage(self, variation, junc_line_name, junc_L_Henries):
-        ''' Peak current I_max for prespecified mode calculating line voltage across junction.
+        ''' 
+        Peak current I_max for prespecified mode calculating line voltage across junction.
+
+        Parameters:
+        ------------------------------------------------
             variation: variation number
             junc_line_name: name of the HFSS line spanning the junction
-            junc_L_Henries: junction inductance in henries'''
+            junc_L_Henries: junction inductance in henries
+
+            TODO: Smooth?
+        '''
         lv = self.get_lv(variation)
         v_calc_real = CalcObject([], self.setup).getQty(
             "E").real().integrate_line_tangent(name=junc_line_name)
@@ -820,17 +842,17 @@ class pyEPR_HFSS(object):
             logger.debug(f'Calculating participation for {(junc_nm, junc)}')
 
             # Get peak current though junction I_peak
-            if self.pinfo.options.p_mj_method is 'J_surf_mag':
-                #print(' Integrating rectangle: ' + junc['rect'])
+            if self.pinfo.options.method_calc_P_mj is 'J_surf_mag':
                 I_peak = self.calc_avg_current_J_surf_mag(
                     variation, junc['rect'], junc['line'])
-            elif self.pinfo.options.p_mj_method is 'line_voltage':
-                #print(' Integrating rectangle: ' + junc['rect'])
+
+            elif self.pinfo.options.method_calc_P_mj is 'line_voltage':
                 I_peak = self.calc_current_line_voltage(
                     variation, junc['line'], Ljs[junc_nm])
+
             else:
                 raise NotImplementedError(
-                    'Other calculation methods (self.pinfo.options.p_mj_method) are possible but not implemented here. ')
+                    'Other calculation methods (self.pinfo.options.method_calc_P_mj) are possible but not implemented here. ')
 
             Pj['p_' + junc_nm] = Ljs[junc_nm] * \
                 I_peak**2 / U_E  
@@ -854,6 +876,12 @@ class pyEPR_HFSS(object):
                         variations=None,
                         modes=None):
         """
+        Main analysis routine 
+
+        Load results with pyEPR_Analysis
+        ..code-block python 
+            pyEPR_Analysis(self.data_filename, variations=variations) ```
+
         Optional Parameters:
         ------------------------
             variations : list | None
@@ -966,7 +994,7 @@ class pyEPR_HFSS(object):
     {100*(self.U_E - self.U_H)/self.U_E:>15.1f}%  {self.U_E:>9.4g} {self.U_H:>9.4g}\n""")
 
                 # Calcualte EPR for each of the junctions
-                print(f'    Calculating junction EPR [method={self.pinfo.options.p_mj_method}]')
+                print(f'    Calculating junction EPR [method={self.pinfo.options.method_calc_P_mj}]')
                 print(f"\t{'junction':<15s} EPR p_{mode}j   sign s_{mode}j")
                 Pm[mode], Sm[mode] = self.calc_p_junction(
                     variation, self.U_H, self.U_E, Ljs)
@@ -1014,22 +1042,25 @@ class pyEPR_HFSS(object):
                 '/Q_coupling_matrix'] = pd.DataFrame(Qm_coupling).transpose()
             hdf['v'+variation+'/pyEPR_sols'] = pd.DataFrame(SOL).transpose()
 
-            if self.pinfo.options.save_mesh_stats:
+            if self.options.save_mesh_stats:
                 self._save_mesh_conv_stats(hdf, variation)
 
         hdf.close()
         print('\nANALYSIS DONE. Data saved to:\n\n' + self.data_filename+'\n\n')
 
-        #pyEPR_Analysis(self.data_filename, variations=variations)
         return self.data_filename, variations
 
     def _save_mesh_conv_stats(self, hdf, variation):
+        '''
+        Save mesh statistics. 
+        '''
         msh = self.setup.get_mesh_stats(self.listvariations[ureg(variation)])
         if msh is not None:
             hdf['v'+variation+'/mesh_stats'] = msh   # returns dataframe
 
         conv = self.setup.get_convergence(
             self.listvariations[ureg(variation)])  # returns dataframe
+
         if conv is not None:
             hdf['v'+variation+'/convergence'] = conv
 

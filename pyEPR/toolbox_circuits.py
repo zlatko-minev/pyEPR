@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Mar 19 18:14:08 2019
-
 Unit and variable conversions.
 
-@author: Zlatko Minev
+@author: Zlatko K. Minev
 """
 
 # Python 2.7 and 3 compatibility

@@ -48,19 +48,18 @@ The following code illustrates how to perform a complete analysis of a simple tw
 ```python
 from pyEPR import *
 
-# 1.  Project and design. Open link to HFSS controls.
+# Connect to your HFSS project
 pinfo = Project_Info(r'C:/path-to-sims', 
 			    project_name = 'two_qubit_one_cavity', # Project file name (string). 
 			    									   # "None" will get the current active one.
 			    design_name  = 'Alice_Bob'             # Design name (string). 
 			     									   # "None" will get the current active one.
-			    )
-pinfo.connect_to_project() # Test connection to HFSS
+			    ).conect()
 
-# 2a. Junctions. Specify junctions in HFSS model
-pinfo.junctions['jAlice'] = {'Lj_variable':'LJAlice', 'rect':'qubitAlice', 'line': 'alice_line', 'length':1E-4}
-pinfo.junctions['jBob']   = {'Lj_variable':'LJBob',   'rect':'qubitBob',   'line': 'bob_line',   'length':1E-4}
-pinfo.validate_junction_info() # Check that valid names of variables and objects have been supplied. Please check length of junction rectangle manually for now. 
+# Specify your Josephson tunnel junction info for HFSS
+pinfo.junctions['jAlice'] = {'Lj_variable':'LJAlice', 'rect':'qubitAlice', 'line': 'alice_line', 'length':parse_units('50um')}
+pinfo.junctions['jBob']   = {'Lj_variable':'LJBob',   'rect':'qubitBob',   'line': 'bob_line',   'length':parse_units('50um')}
+pinfo.validate_junction_info() # Check that valid names of variables and objects have been supplied.
 
 # 2b. Dissipative elements. (see more options in Project_Info.dissipative)
 pinfo.dissipative.dielectrics_bulk    = ['si_substrate', 'dielectic_object2']    # supply names of hfss objects
@@ -109,7 +108,8 @@ epr.plot_Hresults()
 
 # Installation and setup of `pyEPR`
 -------------
-If you are starting from scratch, follow the installation guide below to setup a Python 2.7 or 3.x environment ant to fork this repository. To keep up to date with this git, you can use SourceTree, a git-gui manager.
+Use `pyEPR` directly from the source, and pull updates from the master git repo, since we often update it. The following steps explain how to set up Python 3, fork the `pyEPR` repo and use it. 
+Please keep up to date with `pyEPR` by using git. We like to make it simple using a git-gui manager, [SourceTree](sourcetree.com).
 
 **Recommended procedure.**   <br />
 
@@ -120,10 +120,11 @@ If you are starting from scratch, follow the installation guide below to setup a
       $ echo %PATH%
       `
 
- 2. Install the required packages, including [pint](http://pint.readthedocs.io/en/latest/) and [qutip](http://qutip.org/). In a terminal window
+ 2. Install the required packages, including [pint](http://pint.readthedocs.io/en/latest/), [qutip](http://qutip.org/), and [attrdict](https://github.com/bcj/AttrDict). In a terminal window
  ```sh
  conda install -c conda-forge pint
  conda install -c conda-forge qutip
+ pip install attrdict
  ```
  3. Fork this pyEPR repository on GitHub with your GitHub account. You may clone the fork to your PC and manage it using the [SourceTree](https://www.sourcetreeapp.com/) git-gui manager.
  4. Add the pyEPR repository folder to your python search path. Make sure to add the git remote to the master is set up,  `git remote add MASTER_MINEV git://github.com/zlatko-minev/pyEPR.git`!  [(Help?)](https://stackoverflow.com/questions/11266478/git-add-remote-branch) 

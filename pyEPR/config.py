@@ -1,16 +1,35 @@
 """
 Created on Fri Oct 30 14:21:45 2015
 
-@author: Zaki, Zlatko
+Configuration file 
 """
+from . import AttrDict
 
 #------------------------------------------------------------
 # Directories 
-root_dir = r'D:\hfss\pyEPR'
+'Folder to save result data in'
+root_dir = r'D:\zkm-data-pyEPR'
+
+'''
+pyEPR_default_options
+	Default options to use
+
+method_calc_P_mj  :  
+	'line_voltage' : Uses the line voltage integral
+	'J_surf_mag'   : takes the avg. Jsurf over the rect. Make sure you have seeded 
+					 lots of tets here. I recommend starting with 4 across smallest dimension.
+					 Multi-junction calculation of energy participation ratio matrix based on <I_J>. Current is integrated average of J_surf by default: (zkm 3/29/16)
+            		 Will calculate the Pj matrix for the selected modes for the given junctions junc_rect array & length of juuncs
+'''
+options_hfss = AttrDict(dict(
+	method_calc_P_mj = 'line_voltage', # 'line_voltage' or 'J_surf_mag'
+	save_mesh_stats  = True,
+))
 
 
 class Dissipation_params:
 	''' Loss properties of various materials and surfaces '''
+	#TOOD: Turn into a dictionary 
 
 	# bulk dielectric:
 	# refs:  https://arxiv.org/abs/1308.1743

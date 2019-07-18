@@ -54,7 +54,7 @@ if not len(logger.handlers):
     # unlike the root logger, a custom logger can’t be configured using basicConfig().
     #c_format = logging.Formatter(
     #    '%(name)s - %(levelname)s - %(message)s\n   ::%(pathname)s:%(lineno)d: %(funcName)s\n')
-    c_format = logging.Formatter('%(asctime)s [%(funcName)s]: %(message)s',
+    c_format = logging.Formatter('%(asctime)s %(levelname)s [%(funcName)s]: %(message)s',
                                  datefmt='%I:%M%p %Ss')
 
     c_handler.setFormatter(c_format)
@@ -135,6 +135,19 @@ except (ImportError, ModuleNotFoundError):
         #raise(ImportError("Please install python package `pint`"))
 
 
+try:
+    from attrdict import AttrDict
+except (ImportError, ModuleNotFoundError):
+    raise(ImportError("""
+    Please install python package `AttrDict`
+
+    AttrDict is in PyPI, so it can be installed directly using:
+    
+    $ pip install attrdict
+
+    For more info, see https://github.com/bcj/AttrDict
+    """))
+
 ##############################################################################
 # pyEPR Specific
 
@@ -149,13 +162,15 @@ config.__STD_END_MSG = __STD_END_MSG
 
 
 # Convenience variable and function imports
-from .core import Project_Info, pyEPR_HFSS, pyEPR_Analysis
-from .hfss import release as hfss_release
-from .hfss import load_HFSS_project, get_active_design, get_active_project,\
-    HfssProject
 from . import toolbox_plotting
 from . import toolbox_circuits
 from . import toolbox
 from . import numeric_diag
 from . import core
 from . import hfss
+
+from .core import Project_Info, pyEPR_HFSS, pyEPR_Analysis
+from .hfss import release as hfss_release
+from .hfss import load_HFSS_project, get_active_design, get_active_project,\
+    HfssProject, CalcObject, parse_units, parse_units_user
+from .toolbox_plotting import mpl, plt, np, mpl_dpi

@@ -2,7 +2,7 @@
 """
 Created on Fri Aug 25 19:30:12 2017
 
-@author: Zlatko
+@author: Zlatko K. Minev
 """
 
 from __future__ import division, print_function, absolute_import
