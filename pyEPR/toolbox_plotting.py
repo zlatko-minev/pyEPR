@@ -2,6 +2,8 @@
 """
 Created on Fri Aug 25 19:30:12 2017
 
+Plotting snippets and useful functions 
+
 @author: Zlatko K. Minev
 """
 
@@ -14,14 +16,30 @@ import matplotlib.pyplot as plt
 from .config import Plotting_Options
 from matplotlib.colors import rgb2hex
 
+default_cmap = mpl.cm.viridis
 
 # ==============================================================================
-# Plotting
+# Plotting - MPL basics
 # ==============================================================================
 
 def mpl_dpi(dpi=200):
+    '''
+    Set the matpllib resolution for images dots per inch
+    '''
     mpl.rcParams['figure.dpi'] = dpi
     mpl.rcParams['savefig.dpi'] = dpi
+
+def plt_cla(ax):
+    '''
+    Clear all plotted objects on an axis
+
+    See https://dev.to/skotaro/artist-in-matplotlib---something-i-wanted-to-know-before-spending-tremendous-hours-on-googling-how-tos--31oo
+    '''
+    ax = ax if not ax is None else plt.gca()
+    for artist in ax.lines + ax.collections + ax.patches + ax.images + ax.texts:
+        artist.remove()
+    if ax.legend_:
+        ax.legend_.remove()
 
 def legend_translucent(ax, values=[], loc=0, alpha=0.5, leg_kw={}):
     '''
@@ -38,6 +56,44 @@ def legend_translucent(ax, values=[], loc=0, alpha=0.5, leg_kw={}):
     leg = ax.legend(*values, loc=loc, fancybox=True, **leg_kw)
     leg.get_frame().set_alpha(alpha)
     return leg
+
+
+#################################################################################
+# Color cycles
+
+def get_last_color(ax):
+    '''
+    gets the color fothe last plotted line
+    use:
+        datai.plot(label=name, marker='o')
+        data.plot(label=name, marker='o', c=get_last_color(plt.gca()))
+    '''
+    return ax.lines[-1].get_color()
+
+def get_next_color(ax):
+    ''' 
+    To reset color cycle 
+        ax.set_prop_cycle(None)
+
+    USE
+        from cycler import cycler
+        ax.set_prop_cycle(cycler('color', COLORS1) )  # COLORS1 = ['#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00']
+        get_color_cycle(3)  ['c', 'm', 'y', 'k'];     # from cycler import cycler
+
+        See also get_color_cycle
+    '''
+    return next(ax._get_lines.prop_cycler)['color']
+
+
+def get_color_cycle(n, colormap=default_cmap, start=0., stop=1., format='hex'):
+    '''
+    See also get_next_color
+    '''
+    pts = np.linspace(start, stop, n)
+    if format == 'hex':
+        colors = [rgb2hex(colormap(pt)) for pt in pts]
+    return colors
+
 
 
 def cmap_discrete(n, cmap_kw={}):
@@ -57,14 +113,6 @@ def cmap_discrete(n, cmap_kw={}):
 
     return get_color_cycle(n+1, **cmap_KW)
 
-
-def get_color_cycle(n, colormap=Plotting_Options.default_color_map, start=0., stop=1., format='hex'):
-    pts = np.linspace(start, stop, n)
-    if format == 'hex':
-        colors = [rgb2hex(colormap(pt)) for pt in pts]
-    return colors
-
-
 def cmap_discrete_CubeHelix(n, helix_kw={}):
     '''
         https://github.com/jiffyclub/palettable/blob/master/demo/Cubehelix%20Demo.ipynb
@@ -77,6 +125,9 @@ def cmap_discrete_CubeHelix(n, helix_kw={}):
     cube = cubehelix.Cubehelix.make(n=n, **helix_KW)
     return cube.mpl_colors
 
+
+#################################################################################
+# Special plots
 
 def xarr_heatmap(fg, title=None, kwheat={}, fmt=('%.3f', '%.2f'), fig=None):
     ''' Needs seaborn and xarray'''
