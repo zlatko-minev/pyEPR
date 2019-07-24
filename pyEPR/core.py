@@ -25,7 +25,7 @@ from . import hfss
 from . import logger
 from . import config
 from . import AttrDict
-from .hfss        import ureg, CalcObject, ConstantVecCalcObject
+from .hfss        import ureg, CalcObject, ConstantVecCalcObject, set_property
 from .toolbox     import print_NoNewLine, print_color, deprecated, fact, epsilon_0, hbar, Planck, fluxQ, nck, \
                          divide_diagonal_by_2, print_matrix, DataFrame_col_diff, get_instance_vars,\
                          sort_df_col, sort_Series_idx
@@ -908,8 +908,7 @@ class pyEPR_HFSS(object):
             modes = range(self.nmodes)
 
         if variations is None:
-            variations = (['-1'] if self.listvariations == (u'',)
-                          else [str(i) for i in range(self.nvariations)])
+            variations = self.variations
 
         # Setup save and save pinfo
         #TODO:  The pd.HDFStore  is used to store the pandas sereis and dataframe, but is otherwise cumbersome.
@@ -921,6 +920,7 @@ class pyEPR_HFSS(object):
 
         ###  Main loop - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         for ii, variation in enumerate(variations):
+            #TODO: Move this into a funciton calle self.analyze_variation
             
             print(f'\nVariation {variation}  [{ii+1}/{len(variations)}]')
             
@@ -1032,37 +1032,66 @@ class pyEPR_HFSS(object):
 
                 SOL[mode] = sol
 
-            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
             # Save
-            hdf['v'+variation+'/O_matrix'] = pd.DataFrame(Om)
-            # raw, not normalized
-            hdf['v'+variation+'/P_matrix'] = pd.DataFrame(Pm).transpose()
-            hdf['v'+variation+'/S_matrix'] = pd.DataFrame(Sm).transpose()
-            hdf['v'+variation +
-                '/Q_coupling_matrix'] = pd.DataFrame(Qm_coupling).transpose()
-            hdf['v'+variation+'/pyEPR_sols'] = pd.DataFrame(SOL).transpose()
-
-            if self.options.save_mesh_stats:
-                self._save_mesh_conv_stats(hdf, variation)
+            self._save_variation(hdf, variation, Om, Pm, Sm, Qm_coupling, SOL)
 
         hdf.close()
         print('\nANALYSIS DONE. Data saved to:\n\n' + self.data_filename+'\n\n')
 
         return self.data_filename, variations
 
-    def _save_mesh_conv_stats(self, hdf, variation):
+    def _save_variation(self, hdf, variation, Om, Pm, Sm, Qm_coupling, SOL):
         '''
-        Save mesh statistics. 
+        Save variation 
         '''
-        msh = self.setup.get_mesh_stats(self.listvariations[ureg(variation)])
-        if msh is not None:
-            hdf['v'+variation+'/mesh_stats'] = msh   # returns dataframe
+        hdf['v'+variation+'/O_matrix'] = pd.DataFrame(Om)
+        # raw, not normalized
+        hdf['v'+variation+'/P_matrix'] = pd.DataFrame(Pm).transpose()
+        hdf['v'+variation+'/S_matrix'] = pd.DataFrame(Sm).transpose()
+        hdf['v'+variation +
+            '/Q_coupling_matrix'] = pd.DataFrame(Qm_coupling).transpose()
+        hdf['v'+variation+'/pyEPR_sols'] = pd.DataFrame(SOL).transpose()
 
-        conv = self.setup.get_convergence(
-            self.listvariations[ureg(variation)])  # returns dataframe
+        if self.options.save_mesh_stats:
+            mesh = self.get_mesh_statistics(variation)
+            if mesh is not None:
+                hdf['v'+variation+'/mesh_stats'] = mesh  # dataframe
 
-        if conv is not None:
-            hdf['v'+variation+'/convergence'] = conv
+            conv = self.get_convergence(variation)
+            if conv is not None:
+                hdf['v'+variation+'/convergence'] = conv  # dataframe
+
+    def get_mesh_statistics(self, variation='0'):
+        '''
+        Input:
+            variation='0' ,'1', ...
+
+        Returns dataframe:
+        ```
+                Name	    Num Tets	Min edge    length	    Max edge length	RMS edge length	Min tet vol	Max tet vol	Mean tet vol	Std Devn (vol)
+            0	Region	    909451	    0.000243	0.860488	0.037048	    6.006260e-13	0.037352	0.000029	6.268190e-04
+            1	substrate	1490356	    0.000270	0.893770	0.023639	    1.160090e-12	0.031253	0.000007	2.309920e-04
+        ```
+        '''
+        variation = self.listvariations[ureg(variation)]
+        return self.setup.get_mesh_stats(variation)
+
+    def get_convergence(self, variation='0'):
+        '''
+        Input:
+            variation='0' ,'1', ...
+        
+        Returns dataframe:
+        ```
+        	Solved Elements	Max Delta Freq. % Pass Number		
+            1   	    128955	        NaN
+            2       	167607	        11.745000
+            3       	192746	        3.208600
+            4       	199244	        1.524000
+        ```
+        '''
+        variation=self.listvariations[ureg(variation)]
+        return self.setup.get_convergence(variation)
 
     def set_mode(self, mode_num, phase=0):
         '''
@@ -1075,7 +1104,7 @@ class pyEPR_HFSS(object):
         self.solutions.set_mode(mode_num + 1, phase)
 
         if self.has_fields() == False:
-            logger.warning(f" Error: HFSS does not have field solution for mode={mode}.\
+            logger.warning(f" Error: HFSS does not have field solution for mode={mode_num}.\
                                     Skipping this mode in the analysis")
 
         self.fields = self.setup.get_fields()
@@ -1091,11 +1120,14 @@ class pyEPR_HFSS(object):
         ''''
         Updates all information about the variations.
         nmodes, listvariations, nominalvariation, nvariations
+
+        variations = ['0','1','2'] or [] for empty
         '''
         self.nmodes           = int(self.setup.n_modes)
         self.listvariations   = self.design._solutions.ListVariations(str(self.setup.solution_name))
         self.nominalvariation = self.design.get_nominal_variation()
         self.nvariations      = np.size(self.listvariations)
+        self.variations       = [str(i) for i in range(self.nvariations)]
 
     def has_fields(self, variation=None):
         '''
@@ -1105,6 +1137,40 @@ class pyEPR_HFSS(object):
         If None, gets the nominal variation
         '''
         return self.solutions.has_fields(variation)
+
+    def hfss_report_f_convergence(self, variation= '0'):
+        '''
+        Create  a report in HFSS to plot the converge of freq and style it 
+        
+        TODO: Move to class for reporter 
+        '''
+        oDesign = self.design
+        variation = self.get_lv(variation)
+        report = oDesign._reporter
+
+        # Create report 
+        ycomp = [f"re(Mode({i}))" for i in range(1,1+self.nmodes)] 
+        params = ["Pass:=", ["All"]]+variation
+        report_name = "Freq. vs. pass"
+        if report_name in report.GetAllReportNames():
+            report.DeleteReports([report_name])
+        self.solutions.create_report(report_name, "Pass", ycomp, params, pass_name='AdaptivePass')
+
+        # Properties of lines
+        curves = [f"{report_name}:re(Mode({i})):Curve1" for i in range(1,1+self.nmodes)] 
+        set_property(report, 'Attributes', curves, 'Line Width', 3)
+        set_property(report, 'Scaling', f"{report_name}:AxisY1", 'Auto Units', False)
+        set_property(report, 'Scaling', f"{report_name}:AxisY1", 'Units', 'g')
+        set_property(report, 'Legend', f"{report_name}:Legend", 'Show Solution Name', False)
+
+        if 1: # Save 
+            try:
+                path = Path(self.data_dir)/'hfss_eig_f_convergence.csv'
+                report.ExportToFile(report_name,path)
+                return pd.read_csv(path, index_col= 0)
+            except Exception as e:
+                logger.error(f"Error could not save and export hfss plot to {path}. Is the plot made in HFSS with the correct name. Check the HFSS error window. \t Error =  {e}")
+        return None
 
 
 
@@ -1135,7 +1201,7 @@ def pyEPR_ND(freqs, Ljs, ϕzpf,
                  cos_trunc, fock_trunc, individual=use_1st_order)
     f_ND, χ_ND, _, _ = make_dispersive(
         Hs, fock_trunc, ϕzpf, freqs, use_1st_order=use_1st_order)
-    χ_ND = -χ_ND * 1E-6  # convert to MHz, and flip sign so that down shift is positive
+    χ_ND = -1*χ_ND * 1E-6  # convert to MHz, and flip sign so that down shift is positive
 
     return (f_ND, χ_ND, Hs) if return_H else (f_ND, χ_ND)
 

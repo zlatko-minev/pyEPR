@@ -284,6 +284,21 @@ def make_prop(name, prop_tab=None, prop_server=None, prop_args=None):
     return property(get_prop, set_prop)
 
 
+
+def set_property(prop_holder, prop_tab, prop_server, name, value, prop_args=[]):
+    '''
+    More general non obj oriented, functionatl verison
+    '''
+    if not isinstance(prop_server, list):
+        prop_server = [prop_server]
+    return prop_holder.ChangeProperty(
+            ["NAME:AllTabs",
+             ["NAME:"+prop_tab,
+              ["NAME:PropServers", *prop_server],
+              ["NAME:ChangedProps",
+               ["NAME:"+name, "Value:=", value] + prop_args]]])
+
+
 class HfssApp(COMWrapper):
     def __init__(self, ProgID='AnsoftHfss.HfssScriptInterface'):
         '''
@@ -482,7 +497,8 @@ class HfssDesign(COMWrapper):
         self._reporter = design.GetModule("ReportSetup")
         self._modeler = design.SetActiveEditor("3D Modeler")
         self._optimetrics = design.GetModule("Optimetrics")
-        self.modeler = HfssModeler(self, self._modeler, self._boundaries)
+        self._mesh = design.GetModule("MeshSetup")
+        self.modeler = HfssModeler(self, self._modeler, self._boundaries, self._mesh)
 
     def rename_design(self, name):
         old_name = self._design.GetName()
@@ -980,6 +996,39 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
         freqs = [float(ii) for ii in data[:, 1]]
         return freqs, kappa_over_2pis
 
+    """
+    Export eigenmodes vs pass number 
+    Did not figre out how to set pass number in a hurry. 
+
+    
+    import tempfile
+    self = epr_hfss.solutions
+
+    '''
+    HFSS: Exports a tab delimited table of Eigenmodes in HFSS. Not in HFSS-IE.
+    <setupName> <solutionName> <DesignVariationKey> 
+    <filename>
+    Return Value:    None
+
+    Parameters:       
+        <SolutionName>
+            Type: <string>
+            Name of the solutions within the solution setup.
+        <DesignVariationKey>
+            Type: <string>
+            Design variation string.
+    '''
+    setup = self.parent
+    fn = tempfile.mktemp()
+    variation_list=''
+    soln_name = f'{setup.name} : AdaptivePas'
+    available_solns = self._solutions.GetValidISolutionList()
+    if not(soln_name in available_solns):
+        logger.error(f'ERROR Tried to export freq vs pass number, but solution  `{soln_name}` was not in avaialbe `{available_solns}`. Returning []')
+        #return []
+    self._solutions.ExportEigenmodes(soln_name, ['Pass:=5'], fn)
+    """
+
     def set_mode(self, n, phase=0):
         '''
         Indicates which source excitations should be used for fields post processing.
@@ -1027,6 +1076,29 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
             variation = self.parent.parent.get_nominal_variation()
 
         return bool(self._solutions.HasFields(self.parent.solution_name, variation))
+
+    def create_report(self, plot_name, xcomp, ycomp, params, pass_name='LastAdaptive'):
+        '''
+        pass_name: AdaptivePass, LastAdaptive
+
+        Example 
+        ------------------------------------------------------
+        Exammple plot for a single vareiation all pass converge of mode freq
+        .. code-block python
+            ycomp = [f"re(Mode({i}))" for i in range(1,1+epr_hfss.nmodes)] 
+            params = ["Pass:=", ["All"]]+variation
+            setup.create_report("Freq. vs. pass", "Pass", ycomp, params, pass_name='AdaptivePass')
+        '''
+        assert isinstance(ycomp, list)
+        assert isinstance(params, list)
+        
+        setup = self.parent
+        reporter = setup._reporter
+        return reporter.CreateReport(plot_name, "Eigenmode Parameters", "Rectangular Plot", f"{setup.name} : {pass_name}", [],
+                            params, 
+                            ["X Component:=", xcomp, 
+                            "Y Component:=", ycomp],[])
+
 
 
 class HfssDMDesignSolutions(HfssDesignSolutions):
@@ -1134,7 +1206,7 @@ class HfssReport(COMWrapper):
 
 
 class HfssModeler(COMWrapper):
-    def __init__(self, design, modeler, boundaries):
+    def __init__(self, design, modeler, boundaries, mesh):
         """
         :type design: HfssDesign
         """
@@ -1142,6 +1214,7 @@ class HfssModeler(COMWrapper):
         self.parent = design
         self._modeler = modeler
         self._boundaries = boundaries
+        self._mesh = mesh # Mesh module
 
     def set_units(self, units, rescale=True):
         self._modeler.SetModelUnits(
@@ -1169,7 +1242,8 @@ class HfssModeler(COMWrapper):
                           wireframe=False,
                           color=None,
                           transparency=0.9,
-                          material=None,
+                          material=None, #str
+                          solve_inside=None, # bool
                           coordinate_system="Global"):
         arr = ["NAME:Attributes", "PartCoordinateSystem:=", coordinate_system]
         if name is not None:
@@ -1188,10 +1262,57 @@ class HfssModeler(COMWrapper):
             arr.extend(["Transparency:=", transparency])
         if material is not None:
             arr.extend(["MaterialName:=", material])
+        if solve_inside is not None:
+            arr.extend(["SolveInside:=", solve_inside])
+
         return arr
 
     def _selections_array(self, *names):
         return ["NAME:Selections", "Selections:=", ",".join(names)]
+
+    def mesh_length(self, name_mesh, objects:list, MaxLength='0.1mm',**kwargs):
+        '''
+        "RefineInside:="	, False,
+        "Enabled:="		, True,
+        "RestrictElem:="	, False,
+        "NumMaxElem:="		, "1000",
+        "RestrictLength:="	, True,
+        "MaxLength:="		, "0.1mm"
+
+        Example use:
+        modeler.assign_mesh_length('mesh2', ["Q1_mesh"], MaxLength=0.1)
+        '''
+        assert isinstance(objects, list)
+
+        arr = [f"NAME:{name_mesh}",
+            "Objects:=", objects,
+            'MaxLength:=',MaxLength]
+        ops = ['RefineInside', 'Enabled', 'RestrictElem', 'NumMaxElem', 'RestrictLength']
+        for key, val in kwargs.items():
+            if key in ops:
+                arr += [key+':=', str(val)]
+            else:
+                logger.error('KEY `{key}` NOT IN ops!')
+        
+        self._mesh.AssignLengthOp(arr)
+
+    def mesh_reassign(self, name_mesh, objects:list):
+        assert isinstance(objects, list)
+        self._mesh.ReassignOp(name_mesh, ["Objects:=",objects])
+
+    def mesh_get_names(self, kind="Length Based"):
+        ''' "Length Based", "Skin Depth Based", ...'''
+        return list(self._mesh.GetOperationNames(kind))
+
+    def mesh_get_all_props(self, mesh_name):
+        #TODO: make mesh tis own  class with preperties
+        prop_tab='MeshSetupTab'
+        prop_server=f'MeshSetup:{mesh_name}'
+        prop_names = self.parent._design.GetProperties('MeshSetupTab', prop_server)
+        dic={}
+        for name in prop_names:
+            dic[name] = self._modeler.GetPropertyValue(prop_tab, prop_server, name)
+        return dic
 
     def draw_box_corner(self, pos, size, **kwargs):
         name = self._modeler.CreateBox(
@@ -1419,6 +1540,27 @@ class HfssModeler(COMWrapper):
             self._boundaries.ReassignBoundary(["NAME:" + boundary_name,
                                                "Objects:=", list(set(objects + object_names))])
 
+    def append_mesh(self, mesh_name: str, object_names: list, old_objs:list,
+                    **kwargs):
+        '''
+        This will create a new boundary if need, and will 
+        otherwise append given names to an exisiting boundary 
+        old_obj = circ._mesh_assign
+        '''
+        mesh_name = str(mesh_name)
+        if isinstance(object_names, str):
+            object_names = [object_names]
+        object_names = list(object_names)  # enforce list
+
+        if mesh_name not in self.mesh_get_names():  # need to make a new boundary
+            objs = object_names
+            self.mesh_length(mesh_name, object_names, **kwargs)
+        else: # need to append
+            objs=list(set(old_objs + object_names))
+            self.mesh_reassign(mesh_name, objs)
+
+        return objs
+
     def assign_perfect_E(self, obj, name='PerfE'):
         '''
             Takes a name of an object or a list of object names.
@@ -1432,7 +1574,7 @@ class HfssModeler(COMWrapper):
         self._boundaries.AssignPerfectE(
             ["NAME:"+name, "Objects:=", obj, "InfGroundPlane:=", False])
 
-    def _make_lumped_rlc(self, r, l, c, start, end, obj_arr, name="LumpLRC"):
+    def _make_lumped_rlc(self, r, l, c, start, end, obj_arr, name="LumpRLC"):
         name = increment_name(name, self._boundaries.GetBoundaries())
         params = ["NAME:"+name]
         params += obj_arr
@@ -1631,6 +1773,8 @@ class ModelEntity(str, HfssPropertyObject):
         "Transparent", prop_tab="Geometry3DAttributeTab", prop_server=lambda self: self)
     material = make_str_prop(
         "Material", prop_tab="Geometry3DAttributeTab", prop_server=lambda self: self)
+    wireframe = make_float_prop(
+        "Display Wireframe", prop_tab="Geometry3DAttributeTab", prop_server=lambda self: self)
     coordinate_system = make_str_prop("Coordinate System")
 
     def __new__(self, val, *args, **kwargs):
@@ -1678,12 +1822,14 @@ class Rect(ModelEntity):
 
     def __init__(self, name, modeler, corner, size):
         super(Rect, self).__init__(name, modeler)
+        self.prop_holder = modeler._modeler
         self.corner = corner
         self.size = size
         self.center = [c + s/2 if s else c for c, s in zip(corner, size)]
 
     def make_center_line(self, axis):
-        '''Returns `start` and `end` list of 3 coordinates
+        '''
+        Returns `start` and `end` list of 3 coordinates
         '''
         axis_idx = ["x", "y", "z"].index(axis.lower())
         start = [c for c in self.center]
@@ -1694,7 +1840,7 @@ class Rect(ModelEntity):
         end = [self.modeler.eval_expr(s) for s in end]
         return start, end
 
-    def make_rlc_boundary(self, axis, r=0, l=0, c=0, name="LumpLRC"):
+    def make_rlc_boundary(self, axis, r=0, l=0, c=0, name="LumpRLC"):
         start, end = self.make_center_line(axis)
         self.modeler._make_lumped_rlc(
             r, l, c, start, end, ["Objects:=", [self]], name=name)
