@@ -32,6 +32,8 @@ from .toolbox     import print_NoNewLine, print_color, deprecated, fact, epsilon
 from .toolbox_circuits import Calcs_basic
 from .toolbox_plotting import cmap_discrete, legend_translucent
 from .numeric_diag import bbq_hmt, make_dispersive
+import matplotlib as mpl
+from .toolbox_report import plot_convergence_f_vspass, plot_convergence_max_df, plot_convergence_solved_elem, plot_convergence_maxdf_vs_sol
 
 
 class Project_Info(object):
@@ -1202,8 +1204,6 @@ class pyEPR_HFSS(object):
         return None
 
     def hfss_report_full_convergence(self, fig=None):
-        import matplotlib as mpl
-        from .toolbox_plotting import plot_convergence_f_vspass, plot_convergence_max_df, plot_convergence_solved_elem, plot_convergence_maxdf_vs_sol
         if fig is None:
             fig = plt.figure(figsize=(11,3.))
             fig.clf()
