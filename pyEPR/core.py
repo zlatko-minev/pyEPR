@@ -1201,6 +1201,29 @@ class pyEPR_HFSS(object):
                 logger.error(f"Error could not save and export hfss plot to {path}. Is the plot made in HFSS with the correct name. Check the HFSS error window. \t Error =  {e}")
         return None
 
+    def hfss_report_full_convergence(self, fig=None):
+        import matplotlib as mpl
+        from .toolbox_plotting import plot_convergence_f_vspass, plot_convergence_max_df, plot_convergence_solved_elem, plot_convergence_maxdf_vs_sol
+        if fig is None:
+            fig = plt.figure(figsize=(11,3.))
+            fig.clf()
+        gs = mpl.gridspec.GridSpec(1, 3, width_ratios=[1.2, 1.5, 1])#, height_ratios=[4, 1], wspace=0.5
+        axs = [fig.add_subplot(gs[i]) for i in range(3)]
+        for variation in self.variations:
+            print(variation)
+            convergence_t = self.get_convergence()
+            convergence_f = self.hfss_report_f_convergence()
+            ax0t = axs[1].twinx()
+            plot_convergence_f_vspass(axs[0], convergence_f)
+            plot_convergence_max_df(axs[1], convergence_t['Max Delta Freq. %'])
+            plot_convergence_solved_elem(ax0t, convergence_t['Solved Elements'])
+            plot_convergence_maxdf_vs_sol(axs[2], convergence_t['Max Delta Freq. %'], convergence_t['Solved Elements'])
+            
+            
+        fig.tight_layout(w_pad=0.1)#pad=0.0, w_pad=0.1, h_pad=1.0)
+        from IPython.display import display
+        display(fig)
+
 
 
 #%%==============================================================================
