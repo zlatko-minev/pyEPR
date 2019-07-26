@@ -1061,6 +1061,11 @@ class pyEPR_HFSS(object):
             if conv is not None:
                 hdf['v'+variation+'/convergence'] = conv  # dataframe
 
+            convergence_f = self.hfss_report_f_convergence(variation) # dataframe
+            if (not (conv is None)) and (not (conv is [])):
+                hdf['v'+variation+'/convergence_f_pass'] = convergence_f  # dataframe
+
+
     def get_mesh_statistics(self, variation='0'):
         '''
         Input:
@@ -1092,6 +1097,20 @@ class pyEPR_HFSS(object):
         '''
         variation=self.listvariations[ureg(variation)]
         return self.setup.get_convergence(variation)
+
+    def get_convergence_vs_pass(self, variation='0'):
+        '''
+        Returns a convergence vs pass number of the eignemode freqs. 
+        Makes a plot in HFSS that return a pandas dataframe:
+            ```
+        	re(Mode(1)) [g]	re(Mode(2)) [g]	re(Mode(3)) [g]
+            Pass []			
+            1	4.643101	4.944204	5.586289
+            2	5.114490	5.505828	6.242423
+            3	5.278594	5.604426	6.296777
+            ```
+        '''
+        return self.hfss_report_f_convergence(variation)
 
     def set_mode(self, mode_num, phase=0):
         '''
@@ -1141,9 +1160,19 @@ class pyEPR_HFSS(object):
     def hfss_report_f_convergence(self, variation= '0'):
         '''
         Create  a report in HFSS to plot the converge of freq and style it 
-        
-        TODO: Move to class for reporter 
+
+        Returns a convergence vs pass number of the eignemode freqs. 
+        Returns a pandas dataframe:
+            ```
+        	re(Mode(1)) [g]	re(Mode(2)) [g]	re(Mode(3)) [g]
+            Pass []			
+            1	4.643101	4.944204	5.586289
+            2	5.114490	5.505828	6.242423
+            3	5.278594	5.604426	6.296777
+            ```
         '''
+        #TODO: Move to class for reporter ?
+
         oDesign = self.design
         variation = self.get_lv(variation)
         report = oDesign._reporter

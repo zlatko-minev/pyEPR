@@ -136,7 +136,7 @@ except (ImportError, ModuleNotFoundError):
 
 
 try:
-    from attrdict import AttrDict
+    from attrdict import AttrDict # replace with Dict?
 except (ImportError, ModuleNotFoundError):
     raise(ImportError("""
     Please install python package `AttrDict`

@@ -5,23 +5,26 @@ Created on Sat Feb 04 09:32:46 2017
 @author: Zlatko K. Minev, pyEPR ream
 """
 from __future__ import division, print_function, absolute_import   # Python 2.7 and 3 compatibility
+import platform         # Which OS we run
 import numpy as np
 import pandas as pd
 import warnings
 
-### Constants
-from collections     import OrderedDict
+# Constants
+from collections import OrderedDict
 from scipy.constants import Planck, elementary_charge, epsilon_0, pi
 
-# Convinience  
-π   = pi
-ħ   = hbar  = Planck/(2*pi)              # Reduced Planks constant
-ϕ0  = fluxQ = ħ / (2*elementary_charge)  # Reduced Flux Quantum  (3.29105976 × 10-16 Webers) 
-e_el        = elementary_charge          # Magnitude of the electric charge carried by a single electron
+# Convinience
+π = pi
+ħ = hbar = Planck/(2*pi)              # Reduced Planks constant
+# Reduced Flux Quantum  (3.29105976 × 10-16 Webers)
+ϕ0 = fluxQ = ħ / (2*elementary_charge)
+# Magnitude of the electric charge carried by a single electron
+e_el = elementary_charge
 
-#==============================================================================
+# ==============================================================================
 # Utility functions
-#==============================================================================
+# ==============================================================================
 
 
 def combinekw(kw1, kw2):
@@ -30,25 +33,27 @@ def combinekw(kw1, kw2):
     kw.update(kw2)
     return kw
 
+
 def isint(value):
-  try:
-    int(value)
-    return True
-  except ValueError:
-    return False
+    try:
+        int(value)
+        return True
+    except ValueError:
+        return False
 
 
 def isfloat(value):
-  try:
-    float(value)
-    return True
-  except ValueError:
-    return False
+    try:
+        float(value)
+        return True
+    except ValueError:
+        return False
 
 
 def floor_10(x):
     ''' round to nearest lower power of 10 c'''
     return 10.**(np.floor(np.log10(x)))
+
 
 def fact(n):
     ''' Factorial '''
@@ -61,11 +66,13 @@ def nck(n, k):
     ''' choose '''
     return fact(n)/(fact(k)*fact(n-k))
 
+
 def get_above_diagonal(M):
     ''' extract the values that are above the diagonal.
         Assumes square matrix
     '''
     return M[np.triu_indices(M.shape[0], k=1)]
+
 
 def sort_df_col(df):
     '''         sort by numerical int order    '''
@@ -74,6 +81,7 @@ def sort_df_col(df):
         return df[col_names.astype(int).sort_values().astype(str)]
     else:
         return df
+
 
 def sort_Series_idx(sr):
     '''         sort by numerical int order    '''
@@ -84,14 +92,13 @@ def sort_Series_idx(sr):
         return sr
 
 
-
 def get_instance_vars(obj, Forbidden=[]):
     VARS = {}
     for v in dir(obj):
         if not ((v.startswith('__')) or (v.startswith('_'))):
-            if not callable(getattr(obj,v)):
+            if not callable(getattr(obj, v)):
                 if not (v in Forbidden):
-                    VARS[v] = getattr(obj,v)
+                    VARS[v] = getattr(obj, v)
     return VARS
 
 
@@ -100,18 +107,50 @@ def deprecated(func):
     as deprecated. It will result in a warning being emmitted
     when the function is used. See StackExchange"""
     def newFunc(*args, **kwargs):
-        warnings.simplefilter('always', DeprecationWarning) #turn off filter
-        warnings.warn("Call to deprecated function {}.".format(func.__name__), category=DeprecationWarning, stacklevel=2)
-        warnings.simplefilter('default', DeprecationWarning) #reset filter
+        warnings.simplefilter('always', DeprecationWarning)  # turn off filter
+        warnings.warn("Call to deprecated function {}.".format(
+            func.__name__), category=DeprecationWarning, stacklevel=2)
+        warnings.simplefilter('default', DeprecationWarning)  # reset filter
         return func(*args, **kwargs)
     newFunc.__name__ = func.__name__
     newFunc.__doc__ = func.__doc__
     newFunc.__dict__.update(func.__dict__)
     return newFunc
 
-#==============================================================================
+
+def info_str_platform():
+    return '''
+
+ System platform information:
+        
+    system   : %s  
+    node     : %s
+    release  : %s
+    machine  : %s
+    processor: %s
+    summary  : %s
+    version  : %s
+        
+ Python platform information:
+        
+    version  : %s (implem: %s)
+    compiler : %s
+
+    ''' % (
+        platform.system(),
+        platform.node(),
+        platform.release(),
+        platform.machine(),
+        platform.processor(),
+        platform.platform(),
+        platform.version(),
+        platform.python_version(), platform.python_implementation(),
+        platform.python_compiler())
+
+
+# ==============================================================================
 # Matrix
-#==============================================================================
+# ==============================================================================
 
 
 def print_matrix(M, frmt="{:7.2f}", append_row=""):
@@ -153,7 +192,7 @@ class Print_colors:
     underline, reverse, strike through, 
     and invisible work with the main class i.e. colors.bold
     https://www.geeksforgeeks.org/print-colors-python-terminal/
-    
+
     Example use:
     ..codeblock python
         print(colors.bg.green, "adgd", colors.fg.red, "dsgdsg") 
@@ -197,9 +236,9 @@ class Print_colors:
 
 pc = Print_colors
 
-#==============================================================================
-#%%         Dataframe
-#==============================================================================
+# ==============================================================================
+# %%         Dataframe
+# ==============================================================================
 
 
 def DataFrame_col_diff(PS, indx=0):
