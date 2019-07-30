@@ -57,8 +57,8 @@ BASIS_ORDER = {"Zero Order": 0,
                "Second Order": 2,
                "Mixed Order": -1}
 
-LENGTH_UNIT = 'meter'
-LENGTH_UNIT_ASSUMED = 'mm'  # if a user inputs a blank number with no units in `parse_fix`,
+LENGTH_UNIT = 'meter'       # HFSS assumed default input units
+LENGTH_UNIT_ASSUMED = 'mm'  # USER UNITS: if a user inputs a blank number with no units in `parse_fix`,
                             # we can assume the following using 
 
 def simplify_arith_expr(expr):
@@ -1000,7 +1000,7 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
     Export eigenmodes vs pass number 
     Did not figre out how to set pass number in a hurry. 
 
-    
+
     import tempfile
     self = epr_hfss.solutions
 
@@ -1026,7 +1026,7 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
     if not(soln_name in available_solns):
         logger.error(f'ERROR Tried to export freq vs pass number, but solution  `{soln_name}` was not in avaialbe `{available_solns}`. Returning []')
         #return []
-    self._solutions.ExportEigenmodes(soln_name, ['Pass:=5'], fn)
+    self._solutions.ExportEigenmodes(soln_name, ['Pass:=5'], fn) # ['Pass:=5'] fails  can do with ''
     """
 
     def set_mode(self, n, phase=0):

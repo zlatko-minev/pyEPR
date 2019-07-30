@@ -18,6 +18,16 @@ from .toolbox import ϕ0, fluxQ, Planck, hbar, e_el, pi, ħ, elementary_charge, 
 #from scipy.constants import hbar, Planck, e as e_el, epsilon_0, pi
 
 
+from pyEPR.toolbox_circuits import *
+import pint
+ureg = pint.UnitRegistry()
+ureg.enable_contexts('spectroscopy') 
+ureg.ϕ0 = ϕ0
+#_c_jj = pint.Context('jj')
+#_c_jj.add_transformation('([length] ** 2 * [mass] / [current] ** 2 / [time] ** 2)', '[current]', lambda ureg, x, **kw: ureg.ϕ0 / x)
+#ureg.add_context(_c_jj)
+#ureg.enable_contexts('jj') 
+
 class Convert(object):
     '''
         Static container class for conversions of units and variables. 
@@ -30,6 +40,13 @@ class Convert(object):
             Convert.transmon_print_all_params(Lj_nH, Cs_fF);
 
         ```
+
+        TODO:  Superseed with pint 
+        with ureg.context('sp'):
+            print(ureg.parse_expression('1 J').to('MHz'))
+        See
+            https://pint.readthedocs.io/en/0.9/contexts.html
+            https://github.com/hgrecco/pint/blob/master/pint/default_en.txt
     '''
     # Known SI prefixed
     _prefix = {'y': -24,  # yocto
