@@ -76,12 +76,18 @@ class Project_Info(object):
     -----------------------
         project_path  : str
             Directory path to the hfss project file. Should be the directory, not the file.
+            default = None: Assumes the project is open, and thus gets the project based on `project_name`
         project_name  : str,  None
             Name of the project within the project_path. "None" will get the current active one.
         design_name   : str,  None
             Name of the design within the project. "None" will get the current active one.
         setup_name    : str,  None
             Name of the setup within the design. "None" will get the current active one.
+
+
+    Additional init setting: 
+    -----------------------
+        do_connect : True by default. Connect to HFSS
 
 
     HFSS desgin settings
@@ -108,9 +114,10 @@ class Project_Info(object):
             self.resistive_surfaces  = None
             self.seams               = None            
 
-    def __init__(self, project_path, project_name=None, design_name=None):
+    def __init__(self, project_path=None, project_name=None, design_name=None,
+                 do_connect = True):
         
-        self.project_path  = str(Path(project_path)) # Path: format path correctly to system convention
+        self.project_path  = str(Path(project_path)) if not (project_path is None) else None # Path: format path correctly to system convention
         self.project_name  = project_name
         self.design_name   = design_name
         self.setup_name    = None
@@ -130,6 +137,9 @@ class Project_Info(object):
         self.project       = None
         self.design        = None
         self.setup         = None
+
+        if do_connect:
+            self.connect()
         
 
     _Forbidden = ['app', 'design', 'desktop', 'project',
@@ -153,55 +163,58 @@ class Project_Info(object):
         '''
         Connect to HFSS design.
         '''
-        print('\n\n\n')
-        #print('* '*40)
-        print('Connecting to HFSS ...')
-        assert self.project_path is not None
+        #logger.info('Connecting to HFSS ...')
 
-        self.app, self.desktop, self.project = hfss.load_HFSS_project(
+        self.app, self.desktop, self.project = hfss.load_ansys_project(
             self.project_name, self.project_path)
+        self.project_name = self.project.name
+        self.project_path = self.project.get_path()
 
         # Design
-        try:
-            self.design = self.project.get_design(
-                self.design_name) if self.design_name != None else self.project.get_active_design()
-        except Exception as e:
-            tb = sys.exc_info()[2]
-            print("\n\nOriginal error:\n", e)
-            raise(Exception(
-                ' Did you provide the correct design name? Failed to pull up design.').with_traceback(tb))
+        if self.design_name is None:
+            self.design = self.project.get_active_design()
+            self.design_name = self.design.name
+            logger.info(f'\tOpened active design\n\tDesign:    {self.design_name} [Solution type: {self.design.solution_type}]')
+        else:
+            try:
+                self.design = self.project.get_design(self.design_name)
+            except Exception as e:
+                tb = sys.exc_info()[2]
+                logger.error(f"Original error: {e}\n")
+                raise(Exception(' Did you provide the correct design name? Failed to pull up design.').with_traceback(tb))
 
-        if not ('Eigenmode' == self.design.solution_type):
-            print('\tWarning: The design tpye is not Eigenmode. Are you sure you dont want eigenmode?', file=sys.stderr)
+        #if not ('Eigenmode' == self.design.solution_type):
+        #    logger.warning('\tWarning: The design tpye is not Eigenmode. Are you sure you dont want eigenmode?')
 
         # Setup
         try:
-            if len(self.design.get_setup_names()) == 0:
-                print('\tNo eigen setup detected. Creating a default one.',
-                      file=sys.stderr)
-                assert ('Eigenmode' == self.design.solution_type)
-                self.design.create_em_setup()
-                self.setup_name = 'Setup'
-
+            n_setups = len(self.design.get_setup_names())
+            if n_setups == 0:
+                logger.warning('\tNo design setup detected.')
+                if self.design.solution_type == 'Eigenmode':
+                    logger.warning('\tCreating eigenmode default setup one.')
+                    self.design.create_em_setup()
+                    self.setup_name = 'Setup'
             self.setup = self.design.get_setup(name=self.setup_name)
+            self.setup_name = self.setup.name
+            logger.info(f'\tOpened setup: `{self.setup_name}`')
+
         except Exception as e:
             tb = sys.exc_info()[2]
-            print("\n\nOriginal error:\n", e)
-            raise(Exception(
-                ' Did you provide the correct setup name? Failed to pull up setup.').with_traceback(tb))
+            logger.error(f"Original error: {e}\n")
+            raise(Exception(' Did you provide the correct setup name? Failed to pull up setup.').with_traceback(tb))
 
         # Finalize
         self.project_name = self.project.name
         self.design_name  = self.design.name
-        self.setup_name   = self.setup.name
         
-        oDesign, oModeler = self.get_dm()
-        print('\tConnected successfully.\n\t :)\t :)\t :)\t\n')
+        logger.info('\tConnected successfully.\t :)\t :)\t :)\t\n')
     
-        #self.design, oModeler, self.app, self.desktop, self.project, self.setup
         return self
 
     def check_connected(self):
+        """Checks if fully connected including setup
+        """
         return\
         (self.setup   is not None) and\
         (self.design  is not None) and\

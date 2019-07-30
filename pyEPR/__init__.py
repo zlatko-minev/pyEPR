@@ -171,6 +171,6 @@ from . import hfss
 
 from .core import Project_Info, pyEPR_HFSS, pyEPR_Analysis
 from .hfss import release as hfss_release
-from .hfss import load_HFSS_project, get_active_design, get_active_project,\
+from .hfss import load_ansys_project, get_active_design, get_active_project,\
     HfssProject, CalcObject, parse_units, parse_units_user
 from .toolbox_plotting import mpl, plt, np, mpl_dpi

@@ -14,6 +14,7 @@ Purpose:
 from __future__ import division, print_function    # Python 2.7 and 3 compatibility
   
 import os
+import re
 import time
 import types
 import numpy       as np
@@ -344,6 +345,34 @@ class HfssDesktop(COMWrapper):
     def get_project_names(self):
         return self._desktop.GetProjectList()
 
+    def get_messages(self, project_name="", design_name="", level=0):
+        """Use:  Collects the messages from a specified project and design.
+        Syntax:              GetMessages <ProjectName>, <DesignName>, <SeverityName>
+        Return Value:    A simple array of strings.
+
+        Parameters:      
+        <ProjectName>
+            Type:<string>
+            Name of the project for which to collect messages.
+            An incorrect project name results in no messages (design is ignored)
+            An empty project name results in all messages (design is ignored)
+
+        <DesignName>
+            Type: <string>
+            Name of the design in the named project for which to collect messages
+            An incorrect design name results in no messages for the named project
+            An empty design name results in all messages for the named project
+
+        <SeverityName>
+            Type: <integer>
+            Severity is 0-3, and is tied in to info/warning/error/fatal types as follows:
+                0 is info and above
+                1 is warning and above
+                2 is error and fatal
+                3 is fatal only (rarely used)
+        """
+        return self._desktop.GetMessages(project_name, design_name, level)
+
     def get_version(self):
         return self._desktop.GetVersion()
 
@@ -486,7 +515,13 @@ class HfssDesign(COMWrapper):
         self.parent = project
         self._design = design
         self.name = design.GetName()
-        self.solution_type = design.GetSolutionType()
+        try:
+            # This funciton does not exist if the desing is not HFSS
+            self.solution_type = design.GetSolutionType()
+        except Exception as e:
+            logger.debug(f'Exception occured at design.GetSolutionType() {e}. Assuming Q3D design') 
+            self.solution_type ='Q3D'
+
         if design is None:
             return
         self._setup_module = design.GetModule("AnalysisSetup")
@@ -536,6 +571,8 @@ class HfssDesign(COMWrapper):
             return HfssEMSetup(self, name)
         elif self.solution_type == "DrivenModal":
             return HfssDMSetup(self, name)
+        elif self.solution_type == "Q3D":
+            return AnsysQ3DSetup(self, name)
 
     def create_dm_setup(self, freq_ghz=1, name="Setup", max_delta_s=0.1, max_passes=10,
                         min_passes=1, min_converged=1, pct_refinement=30,
@@ -948,6 +985,122 @@ class HfssEMSetup(HfssSetup):
 
     def get_solutions(self):
         return HfssEMDesignSolutions(self, self.parent._solutions)
+
+class AnsysQ3DSetup(HfssSetup):
+    prop_tab = "CG"
+    max_pass = make_int_prop("Max. Number of Passes")
+    max_pass = make_int_prop("Min. Number of Passes")
+    pct_error = make_int_prop("Percent Error")
+
+    def get_matrix(self, variation, mat_type = 'Maxwell'):
+        '''
+        Arguments:
+        -----------
+            variation : an empty string returns nominal variation. 
+                        Otherwise need the list 
+        Internals:
+        -----------
+            Uses self.solution_name  = Setup1 : LastAdaptive
+        Returns:
+        ---------------------
+            df_cmat, user_units, (df_cond, units_cond), design_variation
+        '''
+        temp = tempfile.NamedTemporaryFile()
+        temp.close()
+        path = temp.name+'.txt'
+        self.parent._design.ExportMatrixData(path, "C", variation, self.solution_name, 
+                                            "Original", "ohm", "nH", "fF", "mSie", 
+                                            6000000000, mat_type, 0, False)
+
+        df_cmat, user_units, (df_cond, units_cond), design_variation = self.load_q3d_matrix(path)
+        return df_cmat, user_units, (df_cond, units_cond), design_variation
+        
+    @staticmethod
+    def _readin_Q3D_matrix(path):
+        """
+        Read in the txt file created from q3d export
+        and output the capacitance matrix
+        
+        When exporting pick "save as type: data table"
+
+        See Zlatko 
+
+        RETURNS: Dataframe
+
+        Example file:
+        ```
+        DesignVariation:$BBoxL='650um' $boxH='750um' $boxL='2mm' $QubitGap='30um' $QubitH='90um' $QubitL='450um' Lj_1='13nH'
+        Setup1:LastAdaptive
+        Problem Type:C
+        C Units:farad, G Units:mSie
+        Reduce Matrix:Original
+        Frequency: 5.5E+09 Hz
+
+        Capacitance Matrix
+            ground_plane	Q1_bus_Q0_connector_pad	Q1_bus_Q2_connector_pad	Q1_pad_bot	Q1_pad_top1	Q1_readout_connector_pad	
+        ground_plane	2.8829E-13	-3.254E-14	-3.1978E-14	-4.0063E-14	-4.3842E-14	-3.0053E-14	
+        Q1_bus_Q0_connector_pad	-3.254E-14	4.7257E-14	-2.2765E-16	-1.269E-14	-1.3351E-15	-1.451E-16	
+        Q1_bus_Q2_connector_pad	-3.1978E-14	-2.2765E-16	4.5327E-14	-1.218E-15	-1.1552E-14	-5.0414E-17	
+        Q1_pad_bot	-4.0063E-14	-1.269E-14	-1.218E-15	9.5831E-14	-3.2415E-14	-8.3665E-15	
+        Q1_pad_top1	-4.3842E-14	-1.3351E-15	-1.1552E-14	-3.2415E-14	9.132E-14	-1.0199E-15	
+        Q1_readout_connector_pad	-3.0053E-14	-1.451E-16	-5.0414E-17	-8.3665E-15	-1.0199E-15	3.9884E-14	
+
+        Conductance Matrix
+            ground_plane	Q1_bus_Q0_connector_pad	Q1_bus_Q2_connector_pad	Q1_pad_bot	Q1_pad_top1	Q1_readout_connector_pad	
+        ground_plane	0	0	0	0	0	0	
+        Q1_bus_Q0_connector_pad	0	0	0	0	0	0	
+        Q1_bus_Q2_connector_pad	0	0	0	0	0	0	
+        Q1_pad_bot	0	0	0	0	0	0	
+        Q1_pad_top1	0	0	0	0	0	0	
+        Q1_readout_connector_pad	0	0	0	0	0	0	
+        ```
+        """
+
+        text = Path(path).read_text()
+        
+        s1 = text.split('Capacitance Matrix')
+        assert len(s1) == 2, "Copuld not split text to `Capacitance Matrix`"
+        
+        s2 = s1[1].split('Conductance Matrix')
+        
+        df_cmat = pd.read_csv(pd.compat.StringIO(s2[0].strip()), delim_whitespace=True, skipinitialspace=True, index_col=0)
+        units = re.findall(r'C Units:(.*?),', text)[0]
+
+        if len(s2)>1:
+            df_cond = pd.read_csv(pd.compat.StringIO(s2[1].strip()), delim_whitespace=True, skipinitialspace=True, index_col=0)
+            units_cond = re.findall(r'G Units:(.*?)\n', text)[0]
+        else:
+            df_cond = None
+
+        
+        design_variation = re.findall(r'DesignVariation:(.*?)\n', text)[0]
+        
+        return df_cmat, units, design_variation, df_cond, units_cond
+
+    @staticmethod
+    def load_q3d_matrix(path, user_units = 'fF'):
+        """Load Q3D capcitance file exported as Maxwell matrix.
+        Exports also conductance conductance.
+        Units are read in automatically and converted to user units. 
+        
+        Arguments:
+            path {[str or Path]} -- [path to file text with matrix]
+        
+        Returns:
+            df_cmat, user_units, (df_cond, units_cond), design_variation
+            
+            dataframes: df_cmat, df_cond
+        """
+        df_cmat, Cunits, design_variation, df_cond, units_cond = AnsysQ3DSetup._readin_Q3D_matrix(path)
+
+        # Unit convert
+        q = ureg.parse_expression(Cunits).to(user_units)
+        df_cmat = df_cmat * q.magnitude # scale to user units
+        
+        #print("Imported capacitance matrix with UNITS: [%s] now converted to USER UNITS:[%s] from file:\n\t%s"%(Cunits, user_units, path))
+
+        return df_cmat, user_units, (df_cond, units_cond), design_variation
+
 
 
 class HfssDesignSolutions(COMWrapper):
@@ -2257,33 +2410,37 @@ def get_report_arrays(name):
     return r.get_arrays()
 
 
-def load_HFSS_project(proj_name, project_path, extension='.aedt'):  # aedt is for 2016 version
+def load_ansys_project(proj_name, project_path = None, extension='.aedt'):
     ''' 
-        proj_name : None  --> get active.
-        (make sure 2 run as admin)
+    proj_name : None  --> get active.
+    (make sure 2 run as admin)
+
+    extension : `aedt` is for 2016 version and newer
     '''
-    project_path = Path(project_path)  # convert slashes correctly for system
+    if project_path:
+        project_path = Path(project_path)  # convert slashes correctly for system
 
-    # Checks
-    assert project_path.is_dir(
-    ),   "ERROR! project_path is not a valid directory. Check the path, and especially \\ charecters."
+        # Checks
+        assert project_path.is_dir(
+        ),   "ERROR! project_path is not a valid directory. Check the path, and especially \\ charecters."
 
-    project_path /= project_path / Path(proj_name + extension)
+        project_path /= project_path / Path(proj_name + extension)
 
-    if (project_path).is_file():
-        print('\tFile path to HFSS project found.')
-    else:
-        raise Exception(
-            "ERROR! Valid directory, but invalid project filename. Not found! Please check your filename.\n%s\n" % project_path)
+        if (project_path).is_file():
+            print('\tFile path to HFSS project found.')
+        else:
+            raise Exception(
+                "ERROR! Valid directory, but invalid project filename. Not found! Please check your filename.\n%s\n" % project_path)
 
-    if (project_path/'.lock').is_file():
-        print('\t\tFile is locked. If connection fails, delete the .lock file.')
+        if (project_path/'.lock').is_file():
+            print('\t\tFile is locked. If connection fails, delete the .lock file.')
 
     app = HfssApp()
-    print("\tOpened HFSS-App.")
+    logger.info("\tOpened Ansys App")
 
     desktop = app.get_app_desktop()
-    print("\tOpened HFSS desktop.")
+    logger.info(f"\tOpened Ansys Desktop v{desktop.get_version()}")
+    #logger.debug(f"\tOpen projects: {desktop.get_project_names()}")
 
     if proj_name is not None:
         if proj_name in desktop.get_project_names():
@@ -2293,6 +2450,6 @@ def load_HFSS_project(proj_name, project_path, extension='.aedt'):  # aedt is fo
             project = desktop.open_project(str(project_path))
     else:
         project = desktop.get_active_project()
-    print("\tOpened link to HFSS user project.")
+    logger.info(f"\tOpened Ansys Project\n\tFolder:    {project.get_path()}\n\tProject:   {project.name}")
 
     return app, desktop, project
