@@ -742,6 +742,7 @@ class HfssSetup(HfssPropertyObject):
         self._solutions = design._solutions
         self.name = setup
         self.solution_name = setup + " : LastAdaptive"
+        #self.solution_name_pass = setup + " : AdaptivePass"
         self.prop_server = "AnalysisSetup:" + setup
         self.expression_cache_items = []
 
@@ -879,31 +880,39 @@ class HfssSetup(HfssPropertyObject):
         ]
         self._setup_module.EditSetup(self.name, args)
 
-    def get_convergence(self, variation=""):
-        '''  variation should be in the form
-             variation = "scale_factor='1.2001'" ...
+    def get_convergence(self, variation="", pre_fn_args=[], overwrite=True):
         '''
-#        fn = tempfile.mktemp()
+        Returns converge as a dataframe 
+            Variation should be in the form
+            variation = "scale_factor='1.2001'" ...
+        '''
+        # Write file
         temp = tempfile.NamedTemporaryFile()
         temp.close()
-        #print(temp.name)
-        self.parent._design.ExportConvergence(
-            self.name, variation, temp.name + '.conv', False)
-        import pandas as pd
-        try:  # crashed if not data
-            df = pd.read_csv(temp.name + '.conv', delimiter='|', skipinitialspace=True,
-                             skiprows=16, skipfooter=0, skip_blank_lines=True, engine='python')
+        temp = temp.name + '.conv'
+        self.parent._design.ExportConvergence(self.name, variation, *pre_fn_args, temp, overwrite)
+        
+        # Read File
+        temp = Path(temp)
+        if not temp.is_file():
+            logger.error(f'''ERROR!  Error in trying to read temporary convergence file.
+                        `get_convergence` did not seem to have the file written {file}.
+                        Perhaps there was no convergence?  Check to see if there is a CONV available for this current variation. If the nominal design is not solved, it will not have a CONV., but will show up as a variation
+                        Check for error messages in HFSS. 
+                        Retuning None''')
+            return None, ''    
+        text = temp.read_text()
+        
+        # Parse file
+        text2 = text.split(r'==================')
+        if len(text) >=3:
+            df = pd.read_csv(pd.compat.StringIO(text2[3].strip()), sep='|', skipinitialspace=True, index_col=0)
             df = df.drop('Unnamed: 3', 1)
-            df.index = df['Pass Number']
-            df = df.drop('Pass Number', 1)
-        except Exception as e:
-            print("ERROR in CONV reading operation.")
-            print(e)
-            print('ERROR!  Error in trying to read temporary CONV file ' + temp.name +
-                  '\n. Check to see if there is a CONV available for this current variation. If the nominal design is not solved, it will not have a CONV., but will show up as a variation.')
-            df = None
-        #print(df)
-        return df
+        else:
+            logger.error(f'ERROR IN reading in {temp}:\n{text}')
+            df= None
+
+        return df, text
 
     def get_mesh_stats(self, variation=""):
         '''  variation should be in the form
@@ -986,31 +995,63 @@ class HfssEMSetup(HfssSetup):
     def get_solutions(self):
         return HfssEMDesignSolutions(self, self.parent._solutions)
 
+
 class AnsysQ3DSetup(HfssSetup):
     prop_tab = "CG"
     max_pass = make_int_prop("Max. Number of Passes")
     max_pass = make_int_prop("Min. Number of Passes")
     pct_error = make_int_prop("Percent Error")
+    frequency = make_str_prop("Adaptive Freq", 'General') # e.g., '5GHz'
+    n_modes = 0 # for compatability with eigenmode
 
-    def get_matrix(self, variation, mat_type = 'Maxwell'):
+    def get_frequency_Hz(self):
+        return int(ureg(self.frequency).to('Hz').magnitude)
+
+    def get_solutions(self):
+        return HfssQ3DDesignSolutions(self, self.parent._solutions)
+
+    def get_convergence(self, variation=""):
+        '''
+        Returns df
+                    # Triangle   Delta %
+            Pass                      
+            1            164       NaN
+        '''
+        return super().get_convergence(variation, pre_fn_args=['CG'])
+
+    def get_matrix(self, variation='', pass_number=0, frequency=None,
+                    MatrixType = 'Maxwell',
+                    solution_kind = 'LastAdaptive', # AdpativePass
+                    ACPlusDCResistance = False,
+                    soln_type = "C"):
         '''
         Arguments:
         -----------
             variation : an empty string returns nominal variation. 
                         Otherwise need the list 
+            frequency : in Hz
+            soln_type = "C", "AC RL" and "DC RL"
+            solution_kind = 'LastAdaptive' # AdaptivePass
         Internals:
         -----------
             Uses self.solution_name  = Setup1 : LastAdaptive
+
         Returns:
         ---------------------
             df_cmat, user_units, (df_cond, units_cond), design_variation
         '''
+        if frequency is None:
+            frequency = self.get_frequency_Hz()
+
         temp = tempfile.NamedTemporaryFile()
         temp.close()
         path = temp.name+'.txt'
-        self.parent._design.ExportMatrixData(path, "C", variation, self.solution_name, 
+        # <FileName>, <SolnType>, <DesignVariationKey>, <Solution>, <Matrix>, <ResUnit>,
+        # <IndUnit>, <CapUnit>, <CondUnit>, <Frequency>, <MatrixType>, <PassNumber>, <ACPlusDCResistance>
+        self.parent._design.ExportMatrixData(path, soln_type, variation, f'{self.name}:{solution_kind}', 
                                             "Original", "ohm", "nH", "fF", "mSie", 
-                                            6000000000, mat_type, 0, False)
+                                            frequency, MatrixType, 
+                                            pass_number, ACPlusDCResistance)
 
         df_cmat, user_units, (df_cond, units_cond), design_variation = self.load_q3d_matrix(path)
         return df_cmat, user_units, (df_cond, units_cond), design_variation
@@ -1257,6 +1298,8 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
 class HfssDMDesignSolutions(HfssDesignSolutions):
     pass
 
+class HfssQ3DDesignSolutions(HfssDesignSolutions):
+    pass
 
 class HfssFrequencySweep(COMWrapper):
     prop_tab = "HfssTab"

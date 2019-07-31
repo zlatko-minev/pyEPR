@@ -23,7 +23,7 @@ def plot_convergence_max_df(ax, s, kw={}, color = 'r'):
     ax.set_yscale("log")
     _style_plot_convergence(ax)
     fig = ax.figure
-    fig.text(0.45, 0.95, "Max Δf %", ha="center", va="bottom", size="medium",color=color)
+    fig.text(0.45, 0.95, s.name, ha="center", va="bottom", size="medium",color=color)
     ax.tick_params(axis='y', labelcolor=color)
     #ax.axhline(1.0, color='k', lw=1.5,alpha= 0.35)
     #ax.axhline(0.1, color='k', lw=1.5,alpha= 0.35)
@@ -36,7 +36,7 @@ def plot_convergence_solved_elem(ax, s, kw={}, color = 'b'):
     '''For a single pass'''
     (s/1000).plot(ax=ax, **{**dict(c='b'), **_style_plot_conv_kw, **kw})
     _style_plot_convergence(ax )
-    ax.set_ylim([100,None])
+    #ax.set_ylim([100,None])
     #ax.set_yscale("log")
     ax.minorticks_off()
     ax.grid(False)
@@ -50,17 +50,18 @@ def plot_convergence_solved_elem(ax, s, kw={}, color = 'b'):
     
 def plot_convergence_f_vspass(ax, s, kw={}):
     '''For a single pass'''
-    (s).plot(ax=ax, **{**_style_plot_conv_kw, **kw})
-    _style_plot_convergence(ax, 'Eigenmode f vs. pass [GHz]', y_title=True)
-    legend_translucent(ax, leg_kw =dict(fontsize=6))
+    if s is not None:
+        (s).plot(ax=ax, **{**_style_plot_conv_kw, **kw})
+        _style_plot_convergence(ax, 'Eigenmode f vs. pass [GHz]', y_title=True)
+        legend_translucent(ax, leg_kw =dict(fontsize=6))
     
 def plot_convergence_maxdf_vs_sol(ax, s, s2, kw={}):
     '''
-    ax, 'Max Δf %', 'Solved elements (1000s)', kw for plot
+    ax, 'Max Δf %', 'Solved elements', kw for plot
     '''
     s = s.copy()
-    s.index = s2/1000
+    s.index = s2
     (s).plot(ax=ax, **{**_style_plot_conv_kw, **kw})
-    _style_plot_convergence(ax, 'Max Δf %', xlabel='Solved elements (1000s)', y_title=True)
+    _style_plot_convergence(ax, s.name, xlabel='Solved elements', y_title=True)
     ax.set_yscale("log")
-    #ax.set_xscale("log")
+    ax.set_xscale("log")

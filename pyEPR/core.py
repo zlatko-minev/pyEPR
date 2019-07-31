@@ -197,7 +197,7 @@ class Project_Info(object):
                     self.setup_name = 'Setup'
             self.setup = self.design.get_setup(name=self.setup_name)
             self.setup_name = self.setup.name
-            logger.info(f'\tOpened setup: `{self.setup_name}`')
+            logger.info(f'\tOpened setup: {self.setup_name} [{type(self.setup)}]')
 
         except Exception as e:
             tb = sys.exc_info()[2]
@@ -762,12 +762,14 @@ class pyEPR_HFSS(object):
             Qseamsweep.append(config.Dissipation_params.gseam/yseam)
 #        Qseamsweep['Qseam_sweep_'+seam+'_'+str(mode)] = gseam/yseam
             #Cprint 'Qseam_' + seam + '_' + str(mode) + str(' = ') + str(gseam/yseam)
+        
         if pltresult:
-            fig, ax = plt.subplots()
+            _, ax = plt.subplots()
             ax.plot(values, Qseamsweep)
             ax.set_yscale('log')
             ax.set_xlabel(variable+' ('+unit+')')
             ax.set_ylabel('Q'+'_'+seam)
+
         return Qseamsweep
 
     def get_Qdielectric(self, dielectric, mode, variation):
@@ -1072,7 +1074,7 @@ class pyEPR_HFSS(object):
             if mesh is not None:
                 hdf['v'+variation+'/mesh_stats'] = mesh  # dataframe
 
-            conv = self.get_convergence(variation)
+            conv, _ = self.get_convergence(variation)
             if conv is not None:
                 hdf['v'+variation+'/convergence'] = conv  # dataframe
 
@@ -1110,8 +1112,9 @@ class pyEPR_HFSS(object):
             4       	199244	        1.524000
         ```
         '''
-        variation=self.listvariations[ureg(variation)]
-        return self.setup.get_convergence(variation)
+        variation = self.listvariations[ureg(variation)]
+        df, _ = self.setup.get_convergence(variation)
+        return df
 
     def get_convergence_vs_pass(self, variation='0'):
         '''
@@ -1187,6 +1190,9 @@ class pyEPR_HFSS(object):
             ```
         '''
         #TODO: Move to class for reporter ?
+        
+        if not (self.design.solution_type == 'Eigenmode'):
+            return None
 
         oDesign = self.design
         variation = self.get_lv(variation)
@@ -1214,28 +1220,33 @@ class pyEPR_HFSS(object):
                 return pd.read_csv(path, index_col= 0)
             except Exception as e:
                 logger.error(f"Error could not save and export hfss plot to {path}. Is the plot made in HFSS with the correct name. Check the HFSS error window. \t Error =  {e}")
+
         return None
 
-    def hfss_report_full_convergence(self, fig=None):
+    def hfss_report_full_convergence(self, fig=None,_display=True):
         if fig is None:
             fig = plt.figure(figsize=(11,3.))
             fig.clf()
         gs = mpl.gridspec.GridSpec(1, 3, width_ratios=[1.2, 1.5, 1])#, height_ratios=[4, 1], wspace=0.5
         axs = [fig.add_subplot(gs[i]) for i in range(3)]
+
         for variation in self.variations:
             print(variation)
             convergence_t = self.get_convergence()
             convergence_f = self.hfss_report_f_convergence()
             ax0t = axs[1].twinx()
             plot_convergence_f_vspass(axs[0], convergence_f)
-            plot_convergence_max_df(axs[1], convergence_t['Max Delta Freq. %'])
-            plot_convergence_solved_elem(ax0t, convergence_t['Solved Elements'])
-            plot_convergence_maxdf_vs_sol(axs[2], convergence_t['Max Delta Freq. %'], convergence_t['Solved Elements'])
+            plot_convergence_max_df(axs[1], convergence_t.iloc[:,1])
+            plot_convergence_solved_elem(ax0t, convergence_t.iloc[:,0])
+            plot_convergence_maxdf_vs_sol(axs[2], convergence_t.iloc[:,1],
+                                                  convergence_t.iloc[:,0])
             
             
         fig.tight_layout(w_pad=0.1)#pad=0.0, w_pad=0.1, h_pad=1.0)
-        from IPython.display import display
-        display(fig)
+        if _display:
+            from IPython.display import display
+            display(fig)
+        return fig
 
 
 
