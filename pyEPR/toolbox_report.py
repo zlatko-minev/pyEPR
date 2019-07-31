@@ -1,4 +1,13 @@
+"""
+Module for reporting utility function 
+
+@author: Zlatko K Minev
+"""
+
+import numpy as np
+import pandas as pd
 from .toolbox_plotting import  legend_translucent, mpl, plt
+
 
 def _style_plot_convergence(ax, ylabel=None, xlabel = 'Pass number', ylabel_col='k', y_title=False):
     ax.set_xlabel(xlabel)
@@ -65,3 +74,46 @@ def plot_convergence_maxdf_vs_sol(ax, s, s2, kw={}):
     _style_plot_convergence(ax, s.name, xlabel='Solved elements', y_title=True)
     ax.set_yscale("log")
     ax.set_xscale("log")
+
+
+
+# quick and dirty use
+def _plot_q3d_convergence_main(epr, RES):
+    fig = epr.hfss_report_full_convergence(_display=False)
+
+    ax = fig.axes[0]
+    ax2 = ax.twinx()
+    ax.cla()
+    ax2.cla()
+    RES['alpha'].plot(ax=ax,c='b')
+    (RES['fQ']*1000).plot(ax=ax2, c='red')
+    from matplotlib import pyplot as plt
+    _style_plot_convergence(ax, 'Alpha (blue),  Freq (red) [MHz]', y_title=True)
+    ax2.set_ylabel('Frequency (MHz)',color='r')
+    ax.set_ylabel('Alpha(MHz)',color='b')
+    ax2.spines['right'].set_color('r')
+    ax2.tick_params(axis='y', labelcolor='r')
+    ax.tick_params(axis='y', labelcolor='b')
+    #legend_translucent(ax)
+    #legend_translucent(ax2)
+    ax.set_xlabel('Pass')
+    fig.tight_layout()
+    
+    return fig
+
+
+def _plot_q3d_convergence_chi_f(RES):
+    df_chi = pd.DataFrame(RES['chi_in_MHz'].values.tolist())
+    df_chi.index.name= 'Pass'
+    df_g = pd.DataFrame(RES['gbus'].values.tolist())
+    df_g.index.name= 'Pass'
+
+    fig, axs =plt.subplots(1,2,figsize=(9,3.5))
+    df_chi.plot(lw=2,ax=axs[0])
+    df_g.plot(lw=2,ax=axs[1])
+    _style_plot_convergence(axs[0])
+    _style_plot_convergence(axs[1])
+    axs[0].set_title(r'$\chi$ convergence (MHz)')
+    axs[1].set_title(r'$g$ convergence (MHz)')
+
+    return fig
