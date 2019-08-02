@@ -1614,29 +1614,30 @@ class HfssModeler(COMWrapper):
         return self.draw_cylinder(edge_pos, radius, height, axis, **kwargs)
     
     def draw_wirebond(self, pos, ori, width, height='0.1mm', z=0,
+                      wire_diameter = "0.02mm", NumSides=6,
                       **kwargs): 
         '''
             Args:
-                pos: 2D positon vector  
+                pos: 2D positon vector  (specify center point)
                 ori: should be normed
                 z: z postion
             
             # TODO create Wirebond class
+            psoition is the origin of one point
+            ori is the orientation vector, which gets normalized
         '''
-        #pos, ori, width, heigth = parse_entry((pos, ori, width, height))
-        xpad = pos[0]-width/2.*ori[0]
-        ypad = pos[1]+width/2.*ori[1]
-        xdir = ori[0]
-        ydir = ori[1]
+        p = np.array(pos)
+        o = np.array(ori)
+        pad1 = p-o*width/2.
         name = self._modeler.CreateBondwire(["NAME:BondwireParameters",
                                              "WireType:=", "Low",
-                                             "WireDiameter:=", "0.02mm",
-                                             "NumSides:=", 6,
-                                             "XPadPos:=", xpad,
-                                             "YPadPos:=", ypad,
+                                             "WireDiameter:=", wire_diameter,
+                                             "NumSides:=", NumSides,
+                                             "XPadPos:=", pad1[0],
+                                             "YPadPos:=", pad1[1],
                                              "ZPadPos:=", z,
-                                             "XDir:=", xdir,
-                                             "YDir:=", ydir,
+                                             "XDir:=", ori[0],
+                                             "YDir:=", ori[1],
                                              "ZDir:=", 0,
                                              "Distance:=", width,
                                              "h1:=", height,
