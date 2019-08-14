@@ -300,7 +300,7 @@ class pyEPR_HFSS(object):
             assert len(args) == 0, 'Since you did not pass a Project_info object as a arguemnt, we now assuem you are trying to create a project info object here by apassing its arguments. See Project_Info. It does not take any arguments, only kwargs.'
             project_info = Project_Info(*args, **kwargs) 
 
-        2
+        
         # Input
         self.pinfo = project_info
         if self.pinfo.check_connected() is False:
@@ -1076,7 +1076,7 @@ class pyEPR_HFSS(object):
             if mesh is not None:
                 hdf['v'+variation+'/mesh_stats'] = mesh  # dataframe
 
-            conv, _ = self.get_convergence(variation)
+            conv = self.get_convergence(variation)
             if conv is not None:
                 hdf['v'+variation+'/convergence'] = conv  # dataframe
 
@@ -1248,6 +1248,7 @@ class pyEPR_HFSS(object):
         if _display:
             from IPython.display import display
             display(fig)
+        
         return fig
 
 
