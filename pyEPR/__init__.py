@@ -1,6 +1,6 @@
 # This file is part of pyEPR: Energy participation ratio (EPR) design of quantum circuits in python
 #
-#    Copyright (c) 2015 and later, Zlatko minev and Zaki Leghtas
+#    Copyright (c) 2015 and later, Zlatko K. Minev and Zaki Leghtas
 #    All rights reserved.
 #
 #    Redistribution and use in source and binary forms, with or without
@@ -65,17 +65,17 @@ if not len(logger.handlers):
 ##############################################################################
 # Import Checks Matplotlib & core packages
 __STD_END_MSG = """\n   If you need a part of pyEPR that uses this package,
-   then please install it. Then add it to the system path (if needed). 
-   See online setup instructions at 
+   then please install it. Then add it to the system path (if needed).
+   See online setup instructions at
    github.com/zlatko-minev/pyEPR"""
 
 try:
     import matplotlib as mpl
 except (ImportError, ModuleNotFoundError):
     logger.warning("""IMPORT WARNING:
-   Could not find package `matplotlib`. 
+   Could not find package `matplotlib`.
    Default plotting will not work unless you install it. """ + __STD_END_MSG)
-    raise(ImportError("Please install python package `matplotlib`"))
+    raise ImportError("Please install python package `matplotlib`")
 
 
 try:
@@ -85,8 +85,7 @@ try:
         'ignore', category=pd.io.pytables.PerformanceWarning)
 except (ImportError, ModuleNotFoundError):
     if __imports_warn:
-        logger.warning("""IMPORT WARNING:
-   `pandas` python package not found.""" + __STD_END_MSG)
+        logger.warning("IMPORT WARNING: `pandas` python package not found. %s", __STD_END_MSG)
 
 # Check for qutip
 try:
@@ -94,9 +93,9 @@ try:
 except (ImportError, ModuleNotFoundError):
     if __imports_warn:
         logger.warning("""IMPORT WARNING:
-   `qutip` package not found. 
+   `qutip` package not found.
    Numerical diagonalization will not work.
- 
+
    You could try `conda install -c conda-forge qutip`
                    """ + __STD_END_MSG)
 # else:
@@ -107,11 +106,11 @@ try:
     import pythoncom
 except (ImportError, ModuleNotFoundError):
     if __imports_warn:
-        logger.warning("""IMPORT WARNING: 
+        logger.warning("""IMPORT WARNING:
    Python package 'pythoncom' could not be loaded
-   It is used in communicting with HFSS on PCs. If you wish to do this, please set it up. 
-   For Linux, check the HFSS python linux files for the com module used. It is equivalent, 
-   and can be used just as well. 
+   It is used in communicting with HFSS on PCs. If you wish to do this, please set it up.
+   For Linux, check the HFSS python linux files for the com module used. It is equivalent,
+   and can be used just as well.
    """ + __STD_END_MSG)
 
 try:
@@ -120,16 +119,16 @@ except (ImportError, ModuleNotFoundError):
     if __imports_warn:
         logger.warning("""IMPORT WARNING:
    Could not load from 'win32com.client'.
-   The communication to hfss won't work. If you want to use it, you need to set it up. 
+   The communication to hfss won't work. If you want to use it, you need to set it up.
    """ + __STD_END_MSG)
 
 try:
     from pint import UnitRegistry  # units
 except (ImportError, ModuleNotFoundError):
     if __imports_warn:
-        logger.error("""IMPORT ERROR: 
+        logger.error("""IMPORT ERROR:
    Python package 'pint' could not be loaded
-   It is used in communicting with HFSS. 
+   It is used in communicting with HFSS.
    try  `conda install -c conda-forge pint`
    """ + __STD_END_MSG)
         #raise(ImportError("Please install python package `pint`"))
@@ -142,7 +141,7 @@ except (ImportError, ModuleNotFoundError):
     Please install python package `AttrDict`
 
     AttrDict is in PyPI, so it can be installed directly using:
-    
+
     $ pip install attrdict
 
     For more info, see https://github.com/bcj/AttrDict
@@ -156,7 +155,7 @@ from . import config
 try:  # Check if we're in IPython.
     __IPYTHON__
     config.ipython = True
-except:
+except Exception:
     config.ipython = False
 config.__STD_END_MSG = __STD_END_MSG
 

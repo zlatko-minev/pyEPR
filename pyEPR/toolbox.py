@@ -122,17 +122,17 @@ def info_str_platform():
     return '''
 
  System platform information:
-        
-    system   : %s  
+
+    system   : %s
     node     : %s
     release  : %s
     machine  : %s
     processor: %s
     summary  : %s
     version  : %s
-        
+
  Python platform information:
-        
+
     version  : %s (implem: %s)
     compiler : %s
 
@@ -185,18 +185,18 @@ def print_color(text, style=0, fg=24, bg=43, newline=True):
 
 
 class Print_colors:
-    '''Colors class:reset all colors with colors.reset; two 
-    sub classes fg for foreground 
-    and bg for background; use as colors.subclass.colorname. 
-    i.e. colors.fg.red or colors.bg.greenalso, the generic bold, disable, 
-    underline, reverse, strike through, 
+    '''Colors class:reset all colors with colors.reset; two
+    sub classes fg for foreground
+    and bg for background; use as colors.subclass.colorname.
+    i.e. colors.fg.red or colors.bg.greenalso, the generic bold, disable,
+    underline, reverse, strike through,
     and invisible work with the main class i.e. colors.bold
     https://www.geeksforgeeks.org/print-colors-python-terminal/
 
     Example use:
     ..codeblock python
-        print(colors.bg.green, "adgd", colors.fg.red, "dsgdsg") 
-        print(colors.bg.lightgrey, "dsgsd", colors.fg.red, "sdgsd") 
+        print(colors.bg.green, "adgd", colors.fg.red, "dsgdsg")
+        print(colors.bg.lightgrey, "dsgsd", colors.fg.red, "sdgsd")
     '''
     reset = '\033[0m'
     bold = '\033[01m'
@@ -256,7 +256,7 @@ def DataFrame_col_diff(PS, indx=0):
         return np.logical_not(np.logical_and.reduce(R))
 
 
-def DataFrame_display_side_by_side(*args):
+def DataFrame_display_side_by_side(*args, do_display=True):
     '''
     from pyEPR.toolbox import display_dfs
     https://stackoverflow.com/questions/38783027/jupyter-notebook-display-two-pandas-tables-side-by-side
@@ -265,8 +265,10 @@ def DataFrame_display_side_by_side(*args):
     html_str = ''
     for df in args:
         html_str += df.to_html()
-    display_html(html_str.replace(
-        'table', 'table style="display:inline"'), raw=True)
+    text = html_str.replace('table', 'table style="display:inline"')
+    if do_display:
+        display_html(text, raw=True)
+    return text
 
 
 display_dfs = DataFrame_display_side_by_side
