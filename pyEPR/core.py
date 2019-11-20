@@ -311,8 +311,11 @@ class pyEPR_HFSS(object):
         self.append_analysis  = False #TODO
 
         # hfss connect module
-        self.fields           = self.setup.get_fields()
-        self.solutions        = self.setup.get_solutions()
+        self.fields           = None
+        self.solutions        = None
+        if self.setup:
+            self.fields       = self.setup.get_fields()
+            self.solutions    = self.setup.get_solutions()
 
         # Variations - the following get updated in update_variation_information
         self.nmodes           = int(1)
