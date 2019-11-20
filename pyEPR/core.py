@@ -195,9 +195,10 @@ class Project_Info(object):
                     logger.warning('\tCreating eigenmode default setup one.')
                     self.design.create_em_setup()
                     self.setup_name = 'Setup'
-            self.setup = self.design.get_setup(name=self.setup_name)
-            self.setup_name = self.setup.name
-            logger.info(f'\tOpened setup: {self.setup_name} [{type(self.setup)}]')
+            else:
+                self.setup = self.design.get_setup(name=self.setup_name)
+                self.setup_name = self.setup.name
+                logger.info(f'\tOpened setup: {self.setup_name} [{type(self.setup)}]')
 
         except Exception as e:
             tb = sys.exc_info()[2]
