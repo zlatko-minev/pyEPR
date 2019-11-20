@@ -1141,6 +1141,8 @@ class pyEPR_HFSS(object):
         Set source excitations should be used for fields post processing.
         Counting modes from 0 onward
         '''
+        assert self.setup, "ERROR: There is no 'setup' connected."
+
         if mode_num < 0:
             logger.error('Too small a mode number')
 
@@ -1166,11 +1168,12 @@ class pyEPR_HFSS(object):
 
         variations = ['0','1','2'] or [] for empty
         '''
-        self.nmodes           = int(self.setup.n_modes)
-        self.listvariations   = self.design._solutions.ListVariations(str(self.setup.solution_name))
-        self.nominalvariation = self.design.get_nominal_variation()
-        self.nvariations      = np.size(self.listvariations)
-        self.variations       = [str(i) for i in range(self.nvariations)]
+        if self.setup:
+            self.nmodes           = int(self.setup.n_modes)
+            self.listvariations   = self.design._solutions.ListVariations(str(self.setup.solution_name))
+            self.nominalvariation = self.design.get_nominal_variation()
+            self.nvariations      = np.size(self.listvariations)
+            self.variations       = [str(i) for i in range(self.nvariations)]
 
     def has_fields(self, variation=None):
         '''
@@ -1179,7 +1182,10 @@ class pyEPR_HFSS(object):
         variation : str | None
         If None, gets the nominal variation
         '''
-        return self.solutions.has_fields(variation)
+        if self.solutions:
+            return self.solutions.has_fields(variation)
+        else:
+            False
 
     def hfss_report_f_convergence(self, variation= '0'):
         '''
@@ -1196,7 +1202,10 @@ class pyEPR_HFSS(object):
             ```
         '''
         #TODO: Move to class for reporter ?
-        
+        if not self.setup:
+            logger.error('NO SETUP PRESENT - hfss_report_f_convergence.')
+            return None
+
         if not (self.design.solution_type == 'Eigenmode'):
             return None
 
@@ -1230,6 +1239,7 @@ class pyEPR_HFSS(object):
         return None
 
     def hfss_report_full_convergence(self, fig=None,_display=True):
+        
         if fig is None:
             fig = plt.figure(figsize=(11,3.))
             fig.clf()
