@@ -147,6 +147,20 @@ except (ImportError, ModuleNotFoundError):
     For more info, see https://github.com/bcj/AttrDict
     """))
 
+##### Check if the config is set up
+if 1:
+    from pathlib import Path
+    path = Path(__path__[0]) # module path 
+    if not (path/'config.py').is_file(): 
+        # if config does not exist copy default config
+        print(f'\n**** pyEPR WARNING: config.py does not exist. The user should set this up.\n \
+             We are now going to coopy config_default.py to config.py from:\n {path}\n\
+             Check the save_dir file path to make sure that it is corect. \n')
+        import shutil
+        shutil.copy(str(path/'config_default.py'), str(path/'config.py'))
+
+        
+
 ##############################################################################
 # pyEPR Specific
 
