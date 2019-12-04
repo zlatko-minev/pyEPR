@@ -21,16 +21,16 @@ from .toolbox import ϕ0, fluxQ, Planck, hbar, e_el, pi, ħ, elementary_charge, 
 from pyEPR.toolbox_circuits import *
 import pint
 ureg = pint.UnitRegistry()
-ureg.enable_contexts('spectroscopy') 
+ureg.enable_contexts('spectroscopy')
 ureg.ϕ0 = ϕ0
 #_c_jj = pint.Context('jj')
 #_c_jj.add_transformation('([length] ** 2 * [mass] / [current] ** 2 / [time] ** 2)', '[current]', lambda ureg, x, **kw: ureg.ϕ0 / x)
 #ureg.add_context(_c_jj)
-#ureg.enable_contexts('jj') 
+#ureg.enable_contexts('jj')
 
 class Convert(object):
     '''
-        Static container class for conversions of units and variables. 
+        Static container class for conversions of units and variables.
 
         TEST CONVERSION:
         ```python
@@ -41,7 +41,7 @@ class Convert(object):
 
         ```
 
-        TODO:  Superseed with pint 
+        TODO:  Superseed with pint
         with ureg.context('sp'):
             print(ureg.parse_expression('1 J').to('MHz'))
         See
@@ -86,7 +86,7 @@ class Convert(object):
         """
             Convert from SI unit prefix to regular SI units
             If the from_units is ' ' or not in the prefix list,
-            then the unit is assumed to be 
+            then the unit is assumed to be
         """
         if from_units in Convert._SI_units:
             from_units = ' '
@@ -111,8 +111,8 @@ class Convert(object):
 
     @staticmethod
     def Ej_from_Lj(Lj, units_in='nH', units_out='MHz'):
-        ''' 
-            Josephson Junction energy from Josephson inductance. 
+        '''
+            Josephson Junction energy from Josephson inductance.
             Returns in MHz
 
             $E_j = \phi_0^2 / L_J$
@@ -124,8 +124,8 @@ class Convert(object):
 
     @staticmethod
     def Lj_from_Ej(Ej, units_in='MHz', units_out='nH'):
-        ''' 
-            Josephson Junction ind from Josephson energy in MHZ. 
+        '''
+            Josephson Junction ind from Josephson energy in MHZ.
             Returns in units of nano Henries by default
 
             $E_j = \phi_0^2 / L_J$
@@ -136,8 +136,8 @@ class Convert(object):
 
     @staticmethod
     def Ic_from_Lj(Lj, units_in='nH', units_out='nA'):
-        ''' 
-            Josephson Junction crit. curr from Josephson inductance. 
+        '''
+            Josephson Junction crit. curr from Josephson inductance.
 
             $E_j = \phi_0^2 / L_J = \phi_0 I_C $
         '''
@@ -147,8 +147,8 @@ class Convert(object):
 
     @staticmethod
     def Lj_from_Ic(Lj, units_in='nA', units_out='nH'):
-        ''' 
-            Josephson Junction crit. curr from Josephson inductance. 
+        '''
+            Josephson Junction crit. curr from Josephson inductance.
 
             $E_j = \phi_0^2 / L_J = \phi_0 I_C $
         '''
@@ -158,7 +158,7 @@ class Convert(object):
 
     @staticmethod
     def Ec_from_Cs(Cs,  units_in='fF', units_out='MHz'):
-        ''' 
+        '''
             Charging energy 4Ec n^2, where n=Q/2e
             Returns in MHz
 
@@ -171,7 +171,7 @@ class Convert(object):
 
     @staticmethod
     def Cs_from_Ec(Ec, units_in='MHz', units_out='fF'):
-        ''' 
+        '''
             Charging energy 4Ec n^2, where n=Q/2e
 
             Returns in SI units, in Farads.
@@ -188,7 +188,7 @@ class Convert(object):
         '''
             Input units assumed to be identical
 
-            Returns Phi ZPF in and Q_ZPF in NOT reduced units, but SI 
+            Returns Phi ZPF in and Q_ZPF in NOT reduced units, but SI
         '''
         Z = sqrt(L/C)
         return (sqrt(hbar*Z/2.), sqrt(hbar/(2.*Z)))  # Phi , Q
@@ -208,8 +208,8 @@ class Convert(object):
             Lj_units_in : Default 'H' for Henries. Can change here.
 
         Returns:
-            M x J matrix of reduced ZPF; i.e., scaled by reduced flux quantum. 
-            type: np.array 
+            M x J matrix of reduced ZPF; i.e., scaled by reduced flux quantum.
+            type: np.array
             and a tuple of matricies.
 
         Example use:
@@ -245,16 +245,16 @@ class Calcs_basic(object):
     @staticmethod
     def dispersiveH_params_PT_O1(Pmj, Ωm, Ej):
         """
-        First order PT on the 4th power of the JJ cosine. 
+        First order PT on the 4th power of the JJ cosine.
 
         Pmj : Matrix MxJ
         Ωm : GHz Matrix MxM
         Ej : GHz Matrix JxJ
 
         returns f_O1, χ_O1
-        χ_O1 has diagonal divided by 2 so as to give true anharmonicity. 
+        χ_O1 has diagonal divided by 2 so as to give true anharmonicity.
 
-        Example use: 
+        Example use:
         ..codeblock python
             f_O1, χ_O1 = Calc_basic.dispersiveH_params_PT_O1(Pmj, Ωm, Ej) # PT_01: Calculate 1st order PT results
         """
@@ -285,18 +285,18 @@ class Calcs_basic(object):
             All as matrices (numpy arrays)
             :Pnj: MxJ energy-participatuion-ratio matrix, p_mj
             :SJ: MxJ sign matrix, s_mj
-            :Ω: MxM diagonal matrix of frequencies (GHz, not radians, diagonal) 
+            :Ω: MxM diagonal matrix of frequencies (GHz, not radians, diagonal)
             :EJ: JxJ diagonal matrix matrix of Josephson energies (in same units as Om)
 
-        RETURNS: 
+        RETURNS:
             reduced zpf  (in units of $\phi_0$)
         '''
         (Pmj, SJ, Ω, EJ) = map(np.array, (Pmj, SJ, Ω, EJ))
 
         assert (Pmj > 0).any(), "ND -- p_{mj} are not all > 0; \n %s" % (Pmj)
 
-        ''' technically, there the equation is hbar omega / 2J, but here we assume 
-        that the hbar is absrobed in the units of omega, and omega and Ej have the same units. 
+        ''' technically, there the equation is hbar omega / 2J, but here we assume
+        that the hbar is absrobed in the units of omega, and omega and Ej have the same units.
         PHI=np.zeros((3,3))
         for m in range(3):
             for j in range(3):
@@ -349,7 +349,7 @@ class Calcs_basic(object):
             L_J               &=%.1f \mathrm{\ nH}       &  C_\Sigma &=%.1f \mathrm{\ fF}   \\
             E_J               &=%.2f \mathrm{\ GHz}      &  E_C      &=%.0f \mathrm{\ MHz}  \\
             \omega_0  &=2\pi\times %.2f \mathrm{\ GHz}   &  Z_0 &= %.0f \mathrm{\ \Omega}   \\
-            \phi_\mathrm{ZPF} &= %.2f \ \ \phi_0         &  n_\mathrm{ZPF} &=%.2f \ \ (2e)  \\ 
+            \phi_\mathrm{ZPF} &= %.2f \ \ \phi_0         &  n_\mathrm{ZPF} &=%.2f \ \ (2e)  \\
         \end{align}
         """ % (Lj_H*1E9, Cs_F*1E15, Ej/1E3, Ec,
                Omega_MHz / (2*pi)*1E-3, sqrt(Lj_H/Cs_F),

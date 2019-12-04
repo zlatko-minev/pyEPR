@@ -1,18 +1,18 @@
 '''
-pyEPR.hfss 
-    2014-present  
+pyEPR.hfss
+    2014-present
 
-Purpose: 
-    Handles HFSS interaction and control. 
-    
+Purpose:
+    Handles HFSS interaction and control.
+
 @authors:
     Originally contributed by Phil Reinhold.
-    Developed further by Zlatko Minev, Zaki Leghtas, and the pyEPR team. 
+    Developed further by Zlatko Minev, Zaki Leghtas, and the pyEPR team.
     For the base version of hfss.py, see https://github.com/PhilReinhold/pyHFSS
 '''
 
 from __future__ import division, print_function    # Python 2.7 and 3 compatibility
-  
+
 import os
 import re
 import time
@@ -36,8 +36,10 @@ try:
     import pythoncom
 except (ImportError, ModuleNotFoundError):
     pass
-    
+
 try:
+    # TODO: Replace `win32com` with Linux compatible package.
+    # See Ansys python files in IronPython internal.
     from win32com.client import Dispatch, CDispatch
 except (ImportError, ModuleNotFoundError):
     pass
@@ -48,7 +50,7 @@ try:
     Q    = ureg.Quantity
 except(ImportError, ModuleNotFoundError):
     ureg = "Pint module not installed. Please install."
-    
+
 
 ##############################################################################
 ###
@@ -60,7 +62,7 @@ BASIS_ORDER = {"Zero Order": 0,
 
 LENGTH_UNIT = 'meter'       # HFSS assumed default input units
 LENGTH_UNIT_ASSUMED = 'mm'  # USER UNITS: if a user inputs a blank number with no units in `parse_fix`,
-                            # we can assume the following using 
+                            # we can assume the following using
 
 def simplify_arith_expr(expr):
     try:
@@ -92,7 +94,7 @@ def extract_value_unit(expr, units):
             return float(expr)
         except Exception:
             return expr
-        
+
 def extract_value_dim(expr):
     """
     type expr: str
@@ -102,8 +104,8 @@ def extract_value_dim(expr):
 
 def parse_entry(entry, convert_to_unit = LENGTH_UNIT):
     '''
-        should take a list of tuple of list... of int, float or str...
-        For iterables, returns lists
+    Should take a list of tuple of list... of int, float or str...
+    For iterables, returns lists
     '''
     if not isinstance(entry, list) and not isinstance(entry, tuple):
         return extract_value_unit(entry, convert_to_unit)
@@ -113,16 +115,17 @@ def parse_entry(entry, convert_to_unit = LENGTH_UNIT):
         for entry in entries:
             _entry.append(parse_entry(entry, convert_to_unit=convert_to_unit))
         return _entry
-    
+
 
 def fix_units(x, unit_assumed=None):
-    ''' 
-        Convert all numbers to string and append the assumed units if needed. 
-        For an itterable, returns a list
+    '''
+    Convert all numbers to string and append the assumed units if needed.
+    For an itterable, returns a list
     '''
     unit_assumed = LENGTH_UNIT_ASSUMED if unit_assumed is None else unit_assumed
     if isinstance(x, str):
-        ## Check if there are already units defined, assume of form 2.46mm  or 2.0 or 4. 
+        ## Check if there are already units defined, assume of form 2.46mm  or 2.0 or 4.
+        x=x.strip()
         if x[-1].isdigit() or x[-1]=='.': # number
             return x + unit_assumed
         else: # units are already appleid
@@ -133,26 +136,26 @@ def fix_units(x, unit_assumed=None):
         return [fix_units(y, unit_assumed=unit_assumed) for y in x]
     else:
         return x
-    
+
 def parse_units(x):
     '''
-        Convert number, string, and lists/arrays/tuples to numbers scaled 
+        Convert number, string, and lists/arrays/tuples to numbers scaled
         in HFSS units.
-        
+
         Converts to                  LENGTH_UNIT = meters  [HFSS UNITS]
         Assumes input units  LENGTH_UNIT_ASSUMED = mm      [USER UNITS]
-        
+
         [USER UNITS] ----> [HFSS UNITS]
     '''
     return parse_entry(fix_units(x))
 
 def unparse_units(x):
     '''
-        Undo effect of parse_unit. 
-        
+        Undo effect of parse_unit.
+
         Converts to     LENGTH_UNIT_ASSUMED = mm     [USER UNITS]
         Assumes input units     LENGTH_UNIT = meters [HFSS UNITS]
-         
+
         [HFSS UNITS] ----> [USER UNITS]
     '''
     return parse_entry(fix_units(x, unit_assumed=LENGTH_UNIT), LENGTH_UNIT_ASSUMED)
@@ -215,7 +218,7 @@ def _add_release_fn(fn):
 
 def release():
     '''
-    Release COM connection to HFSS. 
+    Release COM connection to HFSS.
     '''
     global _release_fns
     for fn in _release_fns:
@@ -306,11 +309,11 @@ class HfssApp(COMWrapper):
          Connect to IDispatch-based COM object.
              Parameter is the ProgID or CLSID of the COM object.
              This is found in the regkey.
-             
+
          Version changes for Ansys HFSS for the main object
              v2016 - 'Ansoft.ElectronicsDesktop'
              v2017 and subsequent - 'AnsoftHfss.HfssScriptInterface'
-             
+
         '''
         super(HfssApp, self).__init__()
         self._app = Dispatch(ProgID)
@@ -350,7 +353,7 @@ class HfssDesktop(COMWrapper):
         Syntax:              GetMessages <ProjectName>, <DesignName>, <SeverityName>
         Return Value:    A simple array of strings.
 
-        Parameters:      
+        Parameters:
         <ProjectName>
             Type:<string>
             Name of the project for which to collect messages.
@@ -519,7 +522,7 @@ class HfssDesign(COMWrapper):
             # This funciton does not exist if the desing is not HFSS
             self.solution_type = design.GetSolutionType()
         except Exception as e:
-            logger.debug(f'Exception occured at design.GetSolutionType() {e}. Assuming Q3D design') 
+            logger.debug(f'Exception occured at design.GetSolutionType() {e}. Assuming Q3D design')
             self.solution_type ='Q3D'
 
         if design is None:
@@ -560,7 +563,7 @@ class HfssDesign(COMWrapper):
         """
         setups = self.get_setup_names()
         if not setups:
-            raise EnvironmentError("No Setups Present")
+            raise EnvironmentError(" *** No Setups Present ***")
         if name is None:
             name = setups[0]
         elif name not in setups:
@@ -622,15 +625,15 @@ class HfssDesign(COMWrapper):
         """
         DeleteFullVariation
         Use:                   Use to selectively make deletions or delete all solution data.
-        Command:         HFSS>Results>Clean Up Solutions...        
+        Command:         HFSS>Results>Clean Up Solutions...
         Syntax:              DeleteFullVariation Array(<parameters>), boolean
         Parameters:      All | <DataSpecifierArray>
-                        If, All, all data of existing variations is deleted. 
-                        Array(<DesignVariationKey>, )        
-                        <DesignVariationKey>        
+                        If, All, all data of existing variations is deleted.
+                        Array(<DesignVariationKey>, )
+                        <DesignVariationKey>
                             Type: <string>
                             Design variation string.
-                        <Boolean>        
+                        <Boolean>
                         Type: boolean
                         Whether to also delete linked data.
         """
@@ -664,18 +667,18 @@ class HfssDesign(COMWrapper):
         return VariableString(name)
 
     def get_variable_value(self, name):
-        """ Can only access the design variables, i.e., the local ones 
+        """ Can only access the design variables, i.e., the local ones
             Cannot access the project (global) variables, which start with $. """
         return self._design.GetVariableValue(name)
 
     def get_variable_names(self):
-        """ Returns the local design variables. 
+        """ Returns the local design variables.
             Does not return the project (global) variables, which start with $. """
         return [VariableString(s) for s in self._design.GetVariables()+self._design.GetPostProcessingVariables()]
 
     def get_variables(self):
-        """ Returns dictionary of local design variables and their values. 
-            Does not return the project (global) variables and their values, 
+        """ Returns dictionary of local design variables and their values.
+            Does not return the project (global) variables and their values,
             whose names start with $. """
         local_variables = self._design.GetVariables(
         )+self._design.GetPostProcessingVariables()
@@ -730,8 +733,8 @@ class HfssSetup(HfssPropertyObject):
         :type setup: Dispatch
 
         :COM Scripting Help: "Analysis Setup Module Script Commands"
-        
-        Get properties: 
+
+        Get properties:
             setup.parent._design.GetProperties("HfssTab",'AnalysisSetup:Setup1')
         """
         super(HfssSetup, self).__init__()
@@ -754,8 +757,8 @@ class HfssSetup(HfssPropertyObject):
         Parameters:      <setupName>
         Return Value:    None
         -----------------------------------------------------
-        
-        Will block the until the analysis is completly done. 
+
+        Will block the until the analysis is completly done.
         Will raise a com_error if analysis is aborted in HFSS.
         '''
         if name is None:
@@ -764,10 +767,10 @@ class HfssSetup(HfssPropertyObject):
 
     def solve(self, name=None):
         '''
-        Use:             Performs a blocking simulation. 
-                         The next script command will not be executed 
+        Use:             Performs a blocking simulation.
+                         The next script command will not be executed
                          until the simulation is complete.
-                         
+
         Command:         HFSS>Analyze
         Syntax:          Solve <SetupNameArray>
         Return Value:   Type: <int>
@@ -777,12 +780,12 @@ class HfssSetup(HfssPropertyObject):
            <SetupName>
         Type: <string>
         Name of the solution setup to solve.
-        Example:      
+        Example:
             return_status = oDesign.Solve Array("Setup1", "Setup2")
         -----------------------------------------------------
-        
-        HFSS abort: still returns 0 , since termination by user. 
-        
+
+        HFSS abort: still returns 0 , since termination by user.
+
         '''
         if name is None:
             name = self.name
@@ -882,7 +885,7 @@ class HfssSetup(HfssPropertyObject):
 
     def get_convergence(self, variation="", pre_fn_args=[], overwrite=True):
         '''
-        Returns converge as a dataframe 
+        Returns converge as a dataframe
             Variation should be in the form
             variation = "scale_factor='1.2001'" ...
         '''
@@ -891,18 +894,18 @@ class HfssSetup(HfssPropertyObject):
         temp.close()
         temp = temp.name + '.conv'
         self.parent._design.ExportConvergence(self.name, variation, *pre_fn_args, temp, overwrite)
-        
+
         # Read File
         temp = Path(temp)
         if not temp.is_file():
             logger.error(f'''ERROR!  Error in trying to read temporary convergence file.
                         `get_convergence` did not seem to have the file written {file}.
                         Perhaps there was no convergence?  Check to see if there is a CONV available for this current variation. If the nominal design is not solved, it will not have a CONV., but will show up as a variation
-                        Check for error messages in HFSS. 
+                        Check for error messages in HFSS.
                         Retuning None''')
-            return None, ''    
+            return None, ''
         text = temp.read_text()
-        
+
         # Parse file
         text2 = text.split(r'==================')
         if len(text) >=3:
@@ -1014,7 +1017,7 @@ class AnsysQ3DSetup(HfssSetup):
         '''
         Returns df
                     # Triangle   Delta %
-            Pass                      
+            Pass
             1            164       NaN
         '''
         return super().get_convergence(variation, pre_fn_args=['CG'])
@@ -1027,8 +1030,8 @@ class AnsysQ3DSetup(HfssSetup):
         '''
         Arguments:
         -----------
-            variation : an empty string returns nominal variation. 
-                        Otherwise need the list 
+            variation : an empty string returns nominal variation.
+                        Otherwise need the list
             frequency : in Hz
             soln_type = "C", "AC RL" and "DC RL"
             solution_kind = 'LastAdaptive' # AdaptivePass
@@ -1048,23 +1051,23 @@ class AnsysQ3DSetup(HfssSetup):
         path = temp.name+'.txt'
         # <FileName>, <SolnType>, <DesignVariationKey>, <Solution>, <Matrix>, <ResUnit>,
         # <IndUnit>, <CapUnit>, <CondUnit>, <Frequency>, <MatrixType>, <PassNumber>, <ACPlusDCResistance>
-        self.parent._design.ExportMatrixData(path, soln_type, variation, f'{self.name}:{solution_kind}', 
-                                            "Original", "ohm", "nH", "fF", "mSie", 
-                                            frequency, MatrixType, 
+        self.parent._design.ExportMatrixData(path, soln_type, variation, f'{self.name}:{solution_kind}',
+                                            "Original", "ohm", "nH", "fF", "mSie",
+                                            frequency, MatrixType,
                                             pass_number, ACPlusDCResistance)
 
         df_cmat, user_units, (df_cond, units_cond), design_variation = self.load_q3d_matrix(path)
         return df_cmat, user_units, (df_cond, units_cond), design_variation
-        
+
     @staticmethod
     def _readin_Q3D_matrix(path):
         """
         Read in the txt file created from q3d export
         and output the capacitance matrix
-        
+
         When exporting pick "save as type: data table"
 
-        See Zlatko 
+        See Zlatko
 
         RETURNS: Dataframe
 
@@ -1078,32 +1081,32 @@ class AnsysQ3DSetup(HfssSetup):
         Frequency: 5.5E+09 Hz
 
         Capacitance Matrix
-            ground_plane	Q1_bus_Q0_connector_pad	Q1_bus_Q2_connector_pad	Q1_pad_bot	Q1_pad_top1	Q1_readout_connector_pad	
-        ground_plane	2.8829E-13	-3.254E-14	-3.1978E-14	-4.0063E-14	-4.3842E-14	-3.0053E-14	
-        Q1_bus_Q0_connector_pad	-3.254E-14	4.7257E-14	-2.2765E-16	-1.269E-14	-1.3351E-15	-1.451E-16	
-        Q1_bus_Q2_connector_pad	-3.1978E-14	-2.2765E-16	4.5327E-14	-1.218E-15	-1.1552E-14	-5.0414E-17	
-        Q1_pad_bot	-4.0063E-14	-1.269E-14	-1.218E-15	9.5831E-14	-3.2415E-14	-8.3665E-15	
-        Q1_pad_top1	-4.3842E-14	-1.3351E-15	-1.1552E-14	-3.2415E-14	9.132E-14	-1.0199E-15	
-        Q1_readout_connector_pad	-3.0053E-14	-1.451E-16	-5.0414E-17	-8.3665E-15	-1.0199E-15	3.9884E-14	
+            ground_plane	Q1_bus_Q0_connector_pad	Q1_bus_Q2_connector_pad	Q1_pad_bot	Q1_pad_top1	Q1_readout_connector_pad
+        ground_plane	2.8829E-13	-3.254E-14	-3.1978E-14	-4.0063E-14	-4.3842E-14	-3.0053E-14
+        Q1_bus_Q0_connector_pad	-3.254E-14	4.7257E-14	-2.2765E-16	-1.269E-14	-1.3351E-15	-1.451E-16
+        Q1_bus_Q2_connector_pad	-3.1978E-14	-2.2765E-16	4.5327E-14	-1.218E-15	-1.1552E-14	-5.0414E-17
+        Q1_pad_bot	-4.0063E-14	-1.269E-14	-1.218E-15	9.5831E-14	-3.2415E-14	-8.3665E-15
+        Q1_pad_top1	-4.3842E-14	-1.3351E-15	-1.1552E-14	-3.2415E-14	9.132E-14	-1.0199E-15
+        Q1_readout_connector_pad	-3.0053E-14	-1.451E-16	-5.0414E-17	-8.3665E-15	-1.0199E-15	3.9884E-14
 
         Conductance Matrix
-            ground_plane	Q1_bus_Q0_connector_pad	Q1_bus_Q2_connector_pad	Q1_pad_bot	Q1_pad_top1	Q1_readout_connector_pad	
-        ground_plane	0	0	0	0	0	0	
-        Q1_bus_Q0_connector_pad	0	0	0	0	0	0	
-        Q1_bus_Q2_connector_pad	0	0	0	0	0	0	
-        Q1_pad_bot	0	0	0	0	0	0	
-        Q1_pad_top1	0	0	0	0	0	0	
-        Q1_readout_connector_pad	0	0	0	0	0	0	
+            ground_plane	Q1_bus_Q0_connector_pad	Q1_bus_Q2_connector_pad	Q1_pad_bot	Q1_pad_top1	Q1_readout_connector_pad
+        ground_plane	0	0	0	0	0	0
+        Q1_bus_Q0_connector_pad	0	0	0	0	0	0
+        Q1_bus_Q2_connector_pad	0	0	0	0	0	0
+        Q1_pad_bot	0	0	0	0	0	0
+        Q1_pad_top1	0	0	0	0	0	0
+        Q1_readout_connector_pad	0	0	0	0	0	0
         ```
         """
 
         text = Path(path).read_text()
-        
+
         s1 = text.split('Capacitance Matrix')
         assert len(s1) == 2, "Copuld not split text to `Capacitance Matrix`"
-        
+
         s2 = s1[1].split('Conductance Matrix')
-        
+
         df_cmat = pd.read_csv(pd.compat.StringIO(s2[0].strip()), delim_whitespace=True, skipinitialspace=True, index_col=0)
         units = re.findall(r'C Units:(.*?),', text)[0]
 
@@ -1113,23 +1116,23 @@ class AnsysQ3DSetup(HfssSetup):
         else:
             df_cond = None
 
-        
+
         design_variation = re.findall(r'DesignVariation:(.*?)\n', text)[0]
-        
+
         return df_cmat, units, design_variation, df_cond, units_cond
 
     @staticmethod
     def load_q3d_matrix(path, user_units = 'fF'):
         """Load Q3D capcitance file exported as Maxwell matrix.
         Exports also conductance conductance.
-        Units are read in automatically and converted to user units. 
-        
+        Units are read in automatically and converted to user units.
+
         Arguments:
             path {[str or Path]} -- [path to file text with matrix]
-        
+
         Returns:
             df_cmat, user_units, (df_cond, units_cond), design_variation
-            
+
             dataframes: df_cmat, df_cond
         """
         df_cmat, Cunits, design_variation, df_cond, units_cond = AnsysQ3DSetup._readin_Q3D_matrix(path)
@@ -1137,7 +1140,7 @@ class AnsysQ3DSetup(HfssSetup):
         # Unit convert
         q = ureg.parse_expression(Cunits).to(user_units)
         df_cmat = df_cmat * q.magnitude # scale to user units
-        
+
         #print("Imported capacitance matrix with UNITS: [%s] now converted to USER UNITS:[%s] from file:\n\t%s"%(Cunits, user_units, path))
 
         return df_cmat, user_units, (df_cond, units_cond), design_variation
@@ -1191,8 +1194,8 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
         return freqs, kappa_over_2pis
 
     """
-    Export eigenmodes vs pass number 
-    Did not figre out how to set pass number in a hurry. 
+    Export eigenmodes vs pass number
+    Did not figre out how to set pass number in a hurry.
 
 
     import tempfile
@@ -1200,11 +1203,11 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
 
     '''
     HFSS: Exports a tab delimited table of Eigenmodes in HFSS. Not in HFSS-IE.
-    <setupName> <solutionName> <DesignVariationKey> 
+    <setupName> <solutionName> <DesignVariationKey>
     <filename>
     Return Value:    None
 
-    Parameters:       
+    Parameters:
         <SolutionName>
             Type: <string>
             Name of the solutions within the solution setup.
@@ -1235,7 +1238,7 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
         No error is thorwn if a number exceeding number of modes is set
         '''
         n_modes = int(self.parent.n_modes)
-        
+
         if n < 1:
             err = f'ERROR: You tried to set a mode < 1. {n}/{n_modes}'
             logger.error(err)
@@ -1275,22 +1278,22 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
         '''
         pass_name: AdaptivePass, LastAdaptive
 
-        Example 
+        Example
         ------------------------------------------------------
         Exammple plot for a single vareiation all pass converge of mode freq
         .. code-block python
-            ycomp = [f"re(Mode({i}))" for i in range(1,1+epr_hfss.nmodes)] 
+            ycomp = [f"re(Mode({i}))" for i in range(1,1+epr_hfss.nmodes)]
             params = ["Pass:=", ["All"]]+variation
             setup.create_report("Freq. vs. pass", "Pass", ycomp, params, pass_name='AdaptivePass')
         '''
         assert isinstance(ycomp, list)
         assert isinstance(params, list)
-        
+
         setup = self.parent
         reporter = setup._reporter
         return reporter.CreateReport(plot_name, "Eigenmode Parameters", "Rectangular Plot", f"{setup.name} : {pass_name}", [],
-                            params, 
-                            ["X Component:=", xcomp, 
+                            params,
+                            ["X Component:=", xcomp,
                             "Y Component:=", ycomp],[])
 
 
@@ -1489,7 +1492,7 @@ class HfssModeler(COMWrapper):
                 arr += [key+':=', str(val)]
             else:
                 logger.error('KEY `{key}` NOT IN ops!')
-        
+
         self._mesh.AssignLengthOp(arr)
 
     def mesh_reassign(self, name_mesh, objects:list):
@@ -1529,8 +1532,8 @@ class HfssModeler(COMWrapper):
 
     def draw_polyline(self, points, closed=True, **kwargs):
         """
-            Draws a closed or open polyline. 
-            If closed = True, then will make into a sheet. 
+            Draws a closed or open polyline.
+            If closed = True, then will make into a sheet.
             points : need to be in the correct units
         """
         pointsStr = ["NAME:PolylinePoints"]
@@ -1612,16 +1615,16 @@ class HfssModeler(COMWrapper):
         edge_pos = copy(pos)
         edge_pos[axis_idx] = var(pos[axis_idx]) - var(height)/2
         return self.draw_cylinder(edge_pos, radius, height, axis, **kwargs)
-    
+
     def draw_wirebond(self, pos, ori, width, height='0.1mm', z=0,
                       wire_diameter = "0.02mm", NumSides=6,
-                      **kwargs): 
+                      **kwargs):
         '''
             Args:
                 pos: 2D positon vector  (specify center point)
                 ori: should be normed
                 z: z postion
-            
+
             # TODO create Wirebond class
             psoition is the origin of one point
             ori is the orientation vector, which gets normalized
@@ -1647,7 +1650,7 @@ class HfssModeler(COMWrapper):
                                              "WhichAxis:=", "Z"],
                                             self._attributes_array(**kwargs))
 
-        return name 
+        return name
 
     def draw_region(self, Padding, PaddingType="Percentage Offset", name='Region',
                     material="\"vacuum\""):
@@ -1667,7 +1670,7 @@ class HfssModeler(COMWrapper):
             "MaterialValue:="	, material,
             "SolveInside:="		, True
         ]
-        
+
         self._modeler.CreateRegion(
             [
                 "NAME:RegionParameters",
@@ -1683,7 +1686,7 @@ class HfssModeler(COMWrapper):
                 "+ZPadding:="		, Padding[2][0],
                 "-ZPaddingType:="	, PaddingType,
                 "-ZPadding:="		, Padding[2][1]
-            ], 
+            ],
             RegionAttributes)
 
     def unite(self, names, keep_originals=False):
@@ -1718,8 +1721,8 @@ class HfssModeler(COMWrapper):
 
     def append_PerfE_assignment(self, boundary_name: str, object_names: list):
         '''
-            This will create a new boundary if need, and will 
-            otherwise append given names to an exisiting boundary 
+            This will create a new boundary if need, and will
+            otherwise append given names to an exisiting boundary
         '''
         # enforce
         boundary_name = str(boundary_name)
@@ -1740,8 +1743,8 @@ class HfssModeler(COMWrapper):
     def append_mesh(self, mesh_name: str, object_names: list, old_objs:list,
                     **kwargs):
         '''
-        This will create a new boundary if need, and will 
-        otherwise append given names to an exisiting boundary 
+        This will create a new boundary if need, and will
+        otherwise append given names to an exisiting boundary
         old_obj = circ._mesh_assign
         '''
         mesh_name = str(mesh_name)
@@ -1761,7 +1764,7 @@ class HfssModeler(COMWrapper):
     def assign_perfect_E(self, obj, name='PerfE'):
         '''
             Takes a name of an object or a list of object names.
-            If `name` is not specified `PerfE` is appended to object name for the name. 
+            If `name` is not specified `PerfE` is appended to object name for the name.
         '''
         if not isinstance(obj, list):
             obj = [obj]
@@ -1827,9 +1830,9 @@ class HfssModeler(COMWrapper):
         """
         Use:              Returns the objects for the specified group.
         Return Value:    The objects in the group.
-        Parameters:      <groupName>  Type: <string>        
-        One of  <materialName>, <assignmentName>, "Non Model", 
-                "Solids", "Unclassi­fied", "Sheets", "Lines" 
+        Parameters:      <groupName>  Type: <string>
+        One of  <materialName>, <assignmentName>, "Non Model",
+                "Solids", "Unclassi­fied", "Sheets", "Lines"
         """
         return list(self._modeler.GetObjectsInGroup(group))
 
@@ -1854,14 +1857,14 @@ class HfssModeler(COMWrapper):
         Command: Modeler>Coordinate System>Create>Relative CS->Offset
         Modeler>Coordinate System>Create>Relative CS->Rotated
         Modeler>Coordinate System>Create>Relative CS->Both
-        
-        Current cooridnate system is set right after this. 
+
+        Current cooridnate system is set right after this.
 
         cs_name : name of coord. sys
-            If the name already exists, then a new coordinate system with _1 is created. 
+            If the name already exists, then a new coordinate system with _1 is created.
 
-        origin, XAxisVec, YAxisVec: 3-vectors 
-            You can also pass in params such as origin = [0,1,0] rather than ["0um","1um","0um"], but these will be interpreted in default units, so it is safer to be explicit. Explicit over implicit. 
+        origin, XAxisVec, YAxisVec: 3-vectors
+            You can also pass in params such as origin = [0,1,0] rather than ["0um","1um","0um"], but these will be interpreted in default units, so it is safer to be explicit. Explicit over implicit.
         """
         self._modeler.CreateRelativeCS(
             [
@@ -2049,7 +2052,7 @@ class Rect(ModelEntity):
 
 
 class Polyline(ModelEntity):
-    ''' 
+    '''
         Assume closed polyline, which creates a polygon.
     '''
 
@@ -2113,7 +2116,7 @@ class Polyline(ModelEntity):
         '''
             Warning: The  increment_name only works if the sheet has not been stracted or used as a tool elsewher.
             These names are not checked - They require modifying get_objects_in_group
-            
+
         '''
         new_name = increment_name(new_name, self.modeler.get_objects_in_group(
             "Sheets"))  # this is for a clsoed polyline
@@ -2154,7 +2157,7 @@ class OpenPolyline(ModelEntity):  # Assume closed polyline
 
     def fillets(self, radius, do_not_fillet=[]):
         '''
-            do_not_fillet : Index list of verteces to not fillete 
+            do_not_fillet : Index list of verteces to not fillete
         '''
         raw_list_vertices = self.modeler.get_vertex_ids(self)
         list_vertices = []
@@ -2455,7 +2458,7 @@ def get_report_arrays(name):
 
 
 def load_ansys_project(proj_name, project_path = None, extension='.aedt'):
-    ''' 
+    '''
     proj_name : None  --> get active.
     (make sure 2 run as admin)
 
