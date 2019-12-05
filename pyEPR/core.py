@@ -228,7 +228,7 @@ class Project_Info(object):
                  logger.error(f"Could not retrieve setup: {self.setup_name}\n \
                      Did you give the right name? Does it exist?")
             self.setup_name = self.setup.name
-            logger.info(f'\tOpened setup: {self.setup_name} [{type(self.setup)}]')
+            logger.info(f'\tOpened setup: name={self.setup_name}  type={type(self.setup)}')
             return self.setup
         
 
@@ -1188,12 +1188,14 @@ class pyEPR_HFSS(object):
         variations = ['0','1','2'] or [] for empty
         '''
         if self.setup:
-            self.nmodes           = int(self.setup.n_modes)
             self.listvariations   = self.design._solutions.ListVariations(str(self.setup.solution_name))
             self.nominalvariation = self.design.get_nominal_variation()
             self.nvariations      = np.size(self.listvariations)
             self.variations       = [str(i) for i in range(self.nvariations)]
-
+            if self.design.solution_type == 'Eigenmode':
+                self.nmodes       = int(self.setup.n_modes)
+            else:
+                self.nmodes       = 0
     def has_fields(self, variation=None):
         '''
         Determine if fields exist for a particular solution.
