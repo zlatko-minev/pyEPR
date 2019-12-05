@@ -193,12 +193,12 @@ class Project_Info(object):
                 logger.warning('\tNo design setup detected.')
                 if self.design.solution_type == 'Eigenmode':
                     logger.warning('\tCreating eigenmode default setup one.')
-                    self.design.create_em_setup()
-                    self.setup_name = 'Setup'
-            else:
-                self.setup = self.design.get_setup(name=self.setup_name)
-                self.setup_name = self.setup.name
-                logger.info(f'\tOpened setup: {self.setup_name} [{type(self.setup)}]')
+                    setup = self.design.create_em_setup()
+                    self.setup_name = setup.name
+                elif self.design.solution_type == 'DrivenModal':
+                    setup = self.design.create_dm_setup() # adding a driven modal design
+                    self.setup_name = setup.name
+            self.get_setup(self.setup_name) # get the actual setup if there is one
 
         except Exception as e:
             tb = sys.exc_info()[2]
@@ -212,6 +212,25 @@ class Project_Info(object):
         logger.info('\tConnected successfully.\t :)\t :)\t :)\t\n')
 
         return self
+
+    def get_setup(self, name):
+        """
+        Connects to a specific setup for the design. 
+        Sets  self.setup and self.setup_name.
+        If Name is 
+        """
+
+        if name is None:
+            return None
+        else:
+            self.setup = self.design.get_setup(name=self.setup_name)
+            if self.setup is None:
+                 logger.error(f"Could not retrieve setup: {self.setup_name}\n \
+                     Did you give the right name? Does it exist?")
+            self.setup_name = self.setup.name
+            logger.info(f'\tOpened setup: {self.setup_name} [{type(self.setup)}]')
+            return self.setup
+        
 
     def check_connected(self):
         """Checks if fully connected including setup
@@ -956,7 +975,7 @@ class pyEPR_HFSS(object):
             time.sleep(0.4)
 
             if self.has_fields() == False:
-                logger.error(f" Error: HFSS does not have field solution for mode={mode}.\
+                logger.error(f" Error: HFSS does not have field solution for mode={ii}.\
                                 Skipping this mode in the analysis")
                 continue
 
