@@ -103,3 +103,4 @@ ENV/
 # exclude config
 pyEPR/config.py
 __src__not_incl/
+pyEPR/.vscode/

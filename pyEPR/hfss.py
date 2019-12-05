@@ -11,27 +11,28 @@ Purpose:
     For the base version of hfss.py, see https://github.com/PhilReinhold/pyHFSS
 '''
 
-from __future__ import division, print_function    # Python 2.7 and 3 compatibility
+# Python 2.7 and 3 compatibility
+from __future__ import division, print_function
 
 import os
 import re
 import time
 import types
-import numpy       as np
+import numpy as np
 import atexit
 import signal
-import pandas      as pd
+import pandas as pd
 import tempfile
 
-from .             import logger
-from copy          import copy
-from pathlib       import Path
-from numbers       import Number
+from . import logger
+from copy import copy
+from pathlib import Path
+from numbers import Number
 from sympy.parsing import sympy_parser
 from collections.abc import Iterable
 
 
-### A few usually troublesome packages
+# A few usually troublesome packages
 try:
     import pythoncom
 except (ImportError, ModuleNotFoundError):
@@ -45,9 +46,9 @@ except (ImportError, ModuleNotFoundError):
     pass
 
 try:
-    from pint          import UnitRegistry
+    from pint import UnitRegistry
     ureg = UnitRegistry()
-    Q    = ureg.Quantity
+    Q = ureg.Quantity
 except(ImportError, ModuleNotFoundError):
     ureg = "Pint module not installed. Please install."
 
@@ -61,8 +62,10 @@ BASIS_ORDER = {"Zero Order": 0,
                "Mixed Order": -1}
 
 LENGTH_UNIT = 'meter'       # HFSS assumed default input units
-LENGTH_UNIT_ASSUMED = 'mm'  # USER UNITS: if a user inputs a blank number with no units in `parse_fix`,
-                            # we can assume the following using
+# USER UNITS: if a user inputs a blank number with no units in `parse_fix`,
+LENGTH_UNIT_ASSUMED = 'mm'
+# we can assume the following using
+
 
 def simplify_arith_expr(expr):
     try:
@@ -72,14 +75,16 @@ def simplify_arith_expr(expr):
         print("Couldn't parse", expr)
         raise
 
+
 def increment_name(base, existing):
     if not base in existing:
         return base
     n = 1
-    make_name = lambda: base + str(n)
+    def make_name(): return base + str(n)
     while make_name() in existing:
         n += 1
     return make_name()
+
 
 def extract_value_unit(expr, units):
     """
@@ -95,6 +100,7 @@ def extract_value_unit(expr, units):
         except Exception:
             return expr
 
+
 def extract_value_dim(expr):
     """
     type expr: str
@@ -102,7 +108,7 @@ def extract_value_dim(expr):
     return str(Q(expr).dimensionality)
 
 
-def parse_entry(entry, convert_to_unit = LENGTH_UNIT):
+def parse_entry(entry, convert_to_unit=LENGTH_UNIT):
     '''
     Should take a list of tuple of list... of int, float or str...
     For iterables, returns lists
@@ -124,18 +130,19 @@ def fix_units(x, unit_assumed=None):
     '''
     unit_assumed = LENGTH_UNIT_ASSUMED if unit_assumed is None else unit_assumed
     if isinstance(x, str):
-        ## Check if there are already units defined, assume of form 2.46mm  or 2.0 or 4.
-        x=x.strip()
-        if x[-1].isdigit() or x[-1]=='.': # number
+        # Check if there are already units defined, assume of form 2.46mm  or 2.0 or 4.
+        x = x.strip()
+        if x[-1].isdigit() or x[-1] == '.':  # number
             return x + unit_assumed
-        else: # units are already appleid
+        else:  # units are already appleid
             return x
     elif isinstance(x, Number):
         return fix_units(str(x)+unit_assumed, unit_assumed=unit_assumed)
-    elif isinstance(x, Iterable): #hasattr(x, '__iter__'):
+    elif isinstance(x, Iterable):  # hasattr(x, '__iter__'):
         return [fix_units(y, unit_assumed=unit_assumed) for y in x]
     else:
         return x
+
 
 def parse_units(x):
     '''
@@ -149,6 +156,7 @@ def parse_units(x):
     '''
     return parse_entry(fix_units(x))
 
+
 def unparse_units(x):
     '''
         Undo effect of parse_unit.
@@ -160,41 +168,55 @@ def unparse_units(x):
     '''
     return parse_entry(fix_units(x, unit_assumed=LENGTH_UNIT), LENGTH_UNIT_ASSUMED)
 
+
 def parse_units_user(x):
     '''
         Convert from user assuemd units to user assumed units
         [USER UNITS] ----> [USER UNITS]
     '''
-    return parse_entry(fix_units(x, LENGTH_UNIT_ASSUMED),LENGTH_UNIT_ASSUMED)
+    return parse_entry(fix_units(x, LENGTH_UNIT_ASSUMED), LENGTH_UNIT_ASSUMED)
 
 
 class VariableString(str):
     def __add__(self, other):
         return var("(%s) + (%s)" % (self, other))
+
     def __radd__(self, other):
         return var("(%s) + (%s)" % (other, self))
+
     def __sub__(self, other):
         return var("(%s) - (%s)" % (self, other))
+
     def __rsub__(self, other):
         return var("(%s) - (%s)" % (other, self))
+
     def __mul__(self, other):
         return var("(%s) * (%s)" % (self, other))
+
     def __rmul__(self, other):
         return var("(%s) * (%s)" % (other, self))
+
     def __div__(self, other):
         return var("(%s) / (%s)" % (self, other))
+
     def __rdiv__(self, other):
         return var("(%s) / (%s)" % (other, self))
+
     def __truediv__(self, other):
         return var("(%s) / (%s)" % (self, other))
+
     def __rtruediv__(self, other):
         return var("(%s) / (%s)" % (other, self))
+
     def __pow__(self, other):
         return var("(%s) ^ (%s)" % (self, other))
+
     def __rpow__(self, other):
         return var("(%s) ^ (%s)" % (other, self))
+
     def __neg__(self):
         return var("-(%s)" % self)
+
     def __abs__(self):
         return var("abs(%s)" % self)
 
@@ -225,7 +247,7 @@ def release():
         fn()
     time.sleep(0.1)
 
-    refcount = pythoncom._GetInterfaceCount() # _GetInterfaceCount is a memeber
+    refcount = pythoncom._GetInterfaceCount()  # _GetInterfaceCount is a memeber
     if refcount > 0:
         print("Warning! %d COM references still alive" % (refcount))
         print("HFSS will likely refuse to shut down")
@@ -288,7 +310,6 @@ def make_prop(name, prop_tab=None, prop_server=None, prop_args=None):
     return property(get_prop, set_prop)
 
 
-
 def set_property(prop_holder, prop_tab, prop_server, name, value, prop_args=[]):
     '''
     More general non obj oriented, functionatl verison
@@ -296,11 +317,11 @@ def set_property(prop_holder, prop_tab, prop_server, name, value, prop_args=[]):
     if not isinstance(prop_server, list):
         prop_server = [prop_server]
     return prop_holder.ChangeProperty(
-            ["NAME:AllTabs",
-             ["NAME:"+prop_tab,
-              ["NAME:PropServers", *prop_server],
-              ["NAME:ChangedProps",
-               ["NAME:"+name, "Value:=", value] + prop_args]]])
+        ["NAME:AllTabs",
+         ["NAME:"+prop_tab,
+          ["NAME:PropServers", *prop_server],
+          ["NAME:ChangedProps",
+           ["NAME:"+name, "Value:=", value] + prop_args]]])
 
 
 class HfssApp(COMWrapper):
@@ -332,6 +353,10 @@ class HfssDesktop(COMWrapper):
         super(HfssDesktop, self).__init__()
         self.parent = app
         self._desktop = desktop
+
+        # ansys version, needed to check for command changes,
+        # since some commands have changed over the years
+        self.version = self.get_version()
 
     def close_all_windows(self):
         self._desktop.CloseAllWindows()
@@ -424,6 +449,7 @@ class HfssProject(COMWrapper):
         self.parent = desktop
         self._project = project
         #self.name = project.GetName()
+        self._ansys_version = self.parent.version
 
     def close(self):
         self._project.Close()
@@ -518,12 +544,15 @@ class HfssDesign(COMWrapper):
         self.parent = project
         self._design = design
         self.name = design.GetName()
+        self._ansys_version = self.parent._ansys_version
+
         try:
             # This funciton does not exist if the desing is not HFSS
             self.solution_type = design.GetSolutionType()
         except Exception as e:
-            logger.debug(f'Exception occured at design.GetSolutionType() {e}. Assuming Q3D design')
-            self.solution_type ='Q3D'
+            logger.debug(
+                f'Exception occured at design.GetSolutionType() {e}. Assuming Q3D design')
+            self.solution_type = 'Q3D'
 
         if design is None:
             return
@@ -536,7 +565,8 @@ class HfssDesign(COMWrapper):
         self._modeler = design.SetActiveEditor("3D Modeler")
         self._optimetrics = design.GetModule("Optimetrics")
         self._mesh = design.GetModule("MeshSetup")
-        self.modeler = HfssModeler(self, self._modeler, self._boundaries, self._mesh)
+        self.modeler = HfssModeler(
+            self, self._modeler, self._boundaries, self._mesh)
 
     def rename_design(self, name):
         old_name = self._design.GetName()
@@ -748,6 +778,7 @@ class HfssSetup(HfssPropertyObject):
         #self.solution_name_pass = setup + " : AdaptivePass"
         self.prop_server = "AnalysisSetup:" + setup
         self.expression_cache_items = []
+        self._ansys_version = self.parent._ansys_version
 
     def analyze(self, name=None):
         '''
@@ -793,31 +824,56 @@ class HfssSetup(HfssPropertyObject):
 
     def insert_sweep(self, start_ghz, stop_ghz, count=None, step_ghz=None,
                      name="Sweep", type="Fast", save_fields=False):
-        if (count is None) == (step_ghz is None):
-            raise ValueError(
-                "Exactly one of 'points' and 'delta' must be specified")
+
+        if not type in ['Fast', 'Interpolating', 'Discrete']:
+            logger.error(
+                "insert_sweep: Error type was not in  ['Fast', 'Interpolating', 'Discrete']")
+
         name = increment_name(name, self.get_sweep_names())
         params = [
             "NAME:"+name,
             "IsEnabled:=", True,
-            "StartValue:=", "%fGHz" % start_ghz,
-            "StopValue:=", "%fGHz" % stop_ghz,
             "Type:=", type,
             "SaveFields:=", save_fields,
+            "SaveRadFields:=", False,
+            # "GenerateFieldsForAllFreqs:="
             "ExtrapToDC:=", False,
         ]
-        if step_ghz is not None:
-            params.extend([
-                "SetupType:=", "LinearSetup",
-                "StepSize:=", "%fGHz" % step_ghz,
-            ])
+
+        # not sure hwen extacyl this changed between 2016 and 2019
+        if self._ansys_version >= '2019':
+            if count:
+                params.extend([
+                    "RangeType:=",  'LinearCount',
+                    "RangeStart:=", f"{start_ghz:f}GHz",
+                    "RangeEnd:=",   f"{stop_ghz:f}GHz",
+                    "RangeCount:=", count])
+            if step_ghz:
+                params.extend([
+                    "RangeType:=",  'LinearStep',
+                    "RangeStart:=", f"{start_ghz:f}GHz",
+                    "RangeEnd:=",   f"{stop_ghz:f}GHz",
+                    "RangeStep:=", step_ghz])
+
+            if (count and step_ghz) or ((not count) and (not step_ghz)):
+                logger.error('ERROR: you should provide either step_ghz or count \
+                    when inserting an HFSS driven model freq sweep. \
+                    YOu either provided both or neither! See insert_sweep.')
         else:
             params.extend([
-                "SetupType:=", "LinearCount",
-                "Count:=", count,
-            ])
+                "StartValue:=", "%fGHz" % start_ghz,
+                "StopValue:=", "%fGHz" % stop_ghz])
+            if step_ghz is not None:
+                params.extend([
+                    "SetupType:=", "LinearSetup",
+                    "StepSize:=", "%fGHz" % step_ghz])
+            else:
+                params.extend([
+                    "SetupType:=", "LinearCount",
+                    "Count:=", count])
 
         self._setup_module.InsertFrequencySweep(self.name, params)
+
         return HfssFrequencySweep(self, name)
 
     def delete_sweep(self, name):
@@ -893,13 +949,14 @@ class HfssSetup(HfssPropertyObject):
         temp = tempfile.NamedTemporaryFile()
         temp.close()
         temp = temp.name + '.conv'
-        self.parent._design.ExportConvergence(self.name, variation, *pre_fn_args, temp, overwrite)
+        self.parent._design.ExportConvergence(
+            self.name, variation, *pre_fn_args, temp, overwrite)
 
         # Read File
         temp = Path(temp)
         if not temp.is_file():
             logger.error(f'''ERROR!  Error in trying to read temporary convergence file.
-                        `get_convergence` did not seem to have the file written {file}.
+                        `get_convergence` did not seem to have the file written {str(temp)}.
                         Perhaps there was no convergence?  Check to see if there is a CONV available for this current variation. If the nominal design is not solved, it will not have a CONV., but will show up as a variation
                         Check for error messages in HFSS.
                         Retuning None''')
@@ -908,12 +965,13 @@ class HfssSetup(HfssPropertyObject):
 
         # Parse file
         text2 = text.split(r'==================')
-        if len(text) >=3:
-            df = pd.read_csv(pd.compat.StringIO(text2[3].strip()), sep='|', skipinitialspace=True, index_col=0)
+        if len(text) >= 3:
+            df = pd.read_csv(pd.compat.StringIO(
+                text2[3].strip()), sep='|', skipinitialspace=True, index_col=0)
             df = df.drop('Unnamed: 3', 1)
         else:
             logger.error(f'ERROR IN reading in {temp}:\n{text}')
-            df= None
+            df = None
 
         return df, text
 
@@ -923,7 +981,7 @@ class HfssSetup(HfssPropertyObject):
         '''
         temp = tempfile.NamedTemporaryFile()
         temp.close()
-        #print(temp.name0
+        # print(temp.name0
         # seems broken in 2016 because of extra text added to the top of the file
         self.parent._design.ExportMeshStats(
             self.name, variation, temp.name + '.mesh', True)
@@ -1004,8 +1062,8 @@ class AnsysQ3DSetup(HfssSetup):
     max_pass = make_int_prop("Max. Number of Passes")
     max_pass = make_int_prop("Min. Number of Passes")
     pct_error = make_int_prop("Percent Error")
-    frequency = make_str_prop("Adaptive Freq", 'General') # e.g., '5GHz'
-    n_modes = 0 # for compatability with eigenmode
+    frequency = make_str_prop("Adaptive Freq", 'General')  # e.g., '5GHz'
+    n_modes = 0  # for compatability with eigenmode
 
     def get_frequency_Hz(self):
         return int(ureg(self.frequency).to('Hz').magnitude)
@@ -1023,10 +1081,10 @@ class AnsysQ3DSetup(HfssSetup):
         return super().get_convergence(variation, pre_fn_args=['CG'])
 
     def get_matrix(self, variation='', pass_number=0, frequency=None,
-                    MatrixType = 'Maxwell',
-                    solution_kind = 'LastAdaptive', # AdpativePass
-                    ACPlusDCResistance = False,
-                    soln_type = "C"):
+                   MatrixType='Maxwell',
+                   solution_kind='LastAdaptive',  # AdpativePass
+                   ACPlusDCResistance=False,
+                   soln_type="C"):
         '''
         Arguments:
         -----------
@@ -1052,11 +1110,12 @@ class AnsysQ3DSetup(HfssSetup):
         # <FileName>, <SolnType>, <DesignVariationKey>, <Solution>, <Matrix>, <ResUnit>,
         # <IndUnit>, <CapUnit>, <CondUnit>, <Frequency>, <MatrixType>, <PassNumber>, <ACPlusDCResistance>
         self.parent._design.ExportMatrixData(path, soln_type, variation, f'{self.name}:{solution_kind}',
-                                            "Original", "ohm", "nH", "fF", "mSie",
-                                            frequency, MatrixType,
-                                            pass_number, ACPlusDCResistance)
+                                             "Original", "ohm", "nH", "fF", "mSie",
+                                             frequency, MatrixType,
+                                             pass_number, ACPlusDCResistance)
 
-        df_cmat, user_units, (df_cond, units_cond), design_variation = self.load_q3d_matrix(path)
+        df_cmat, user_units, (df_cond, units_cond), design_variation = self.load_q3d_matrix(
+            path)
         return df_cmat, user_units, (df_cond, units_cond), design_variation
 
     @staticmethod
@@ -1107,22 +1166,23 @@ class AnsysQ3DSetup(HfssSetup):
 
         s2 = s1[1].split('Conductance Matrix')
 
-        df_cmat = pd.read_csv(pd.compat.StringIO(s2[0].strip()), delim_whitespace=True, skipinitialspace=True, index_col=0)
+        df_cmat = pd.read_csv(pd.compat.StringIO(
+            s2[0].strip()), delim_whitespace=True, skipinitialspace=True, index_col=0)
         units = re.findall(r'C Units:(.*?),', text)[0]
 
-        if len(s2)>1:
-            df_cond = pd.read_csv(pd.compat.StringIO(s2[1].strip()), delim_whitespace=True, skipinitialspace=True, index_col=0)
+        if len(s2) > 1:
+            df_cond = pd.read_csv(pd.compat.StringIO(
+                s2[1].strip()), delim_whitespace=True, skipinitialspace=True, index_col=0)
             units_cond = re.findall(r'G Units:(.*?)\n', text)[0]
         else:
             df_cond = None
-
 
         design_variation = re.findall(r'DesignVariation:(.*?)\n', text)[0]
 
         return df_cmat, units, design_variation, df_cond, units_cond
 
     @staticmethod
-    def load_q3d_matrix(path, user_units = 'fF'):
+    def load_q3d_matrix(path, user_units='fF'):
         """Load Q3D capcitance file exported as Maxwell matrix.
         Exports also conductance conductance.
         Units are read in automatically and converted to user units.
@@ -1135,16 +1195,16 @@ class AnsysQ3DSetup(HfssSetup):
 
             dataframes: df_cmat, df_cond
         """
-        df_cmat, Cunits, design_variation, df_cond, units_cond = AnsysQ3DSetup._readin_Q3D_matrix(path)
+        df_cmat, Cunits, design_variation, df_cond, units_cond = AnsysQ3DSetup._readin_Q3D_matrix(
+            path)
 
         # Unit convert
         q = ureg.parse_expression(Cunits).to(user_units)
-        df_cmat = df_cmat * q.magnitude # scale to user units
+        df_cmat = df_cmat * q.magnitude  # scale to user units
 
         #print("Imported capacitance matrix with UNITS: [%s] now converted to USER UNITS:[%s] from file:\n\t%s"%(Cunits, user_units, path))
 
         return df_cmat, user_units, (df_cond, units_cond), design_variation
-
 
 
 class HfssDesignSolutions(COMWrapper):
@@ -1155,6 +1215,7 @@ class HfssDesignSolutions(COMWrapper):
         super(HfssDesignSolutions, self).__init__()
         self.parent = setup
         self._solutions = solutions
+        self._ansys_version = self.parent._ansys_version
 
     def get_valid_solution_list(self):
         '''
@@ -1163,6 +1224,7 @@ class HfssDesignSolutions(COMWrapper):
             ('Setup1 : AdaptivePass', 'Setup1 : LastAdaptive')
         '''
         return self._solutions.GetValidISolutionList()
+
 
 class HfssEMDesignSolutions(HfssDesignSolutions):
 
@@ -1189,7 +1251,7 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
         else:
             kappa_over_2pis = None
 
-        #print(data[:,1])
+        # print(data[:,1])
         freqs = [float(ii) for ii in data[:, 1]]
         return freqs, kappa_over_2pis
 
@@ -1249,7 +1311,6 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
             logger.error(err)
             raise Exception(err)
 
-
         self._solutions.EditSources(
             "EigenStoredEnergy",
             ["NAME:SourceNames", "EigenMode"],
@@ -1292,17 +1353,18 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
         setup = self.parent
         reporter = setup._reporter
         return reporter.CreateReport(plot_name, "Eigenmode Parameters", "Rectangular Plot", f"{setup.name} : {pass_name}", [],
-                            params,
-                            ["X Component:=", xcomp,
-                            "Y Component:=", ycomp],[])
-
+                                     params,
+                                     ["X Component:=", xcomp,
+                                      "Y Component:=", ycomp], [])
 
 
 class HfssDMDesignSolutions(HfssDesignSolutions):
     pass
 
+
 class HfssQ3DDesignSolutions(HfssDesignSolutions):
     pass
+
 
 class HfssFrequencySweep(COMWrapper):
     prop_tab = "HfssTab"
@@ -1323,6 +1385,7 @@ class HfssFrequencySweep(COMWrapper):
         self.solution_name = self.parent.name + " : " + name
         self.prop_holder = self.parent.prop_holder
         self.prop_server = self.parent.prop_server + ":" + name
+        self._ansys_version = self.parent._ansys_version
 
     def analyze_sweep(self):
         self.parent.analyze(self.solution_name)
@@ -1413,7 +1476,7 @@ class HfssModeler(COMWrapper):
         self.parent = design
         self._modeler = modeler
         self._boundaries = boundaries
-        self._mesh = mesh # Mesh module
+        self._mesh = mesh  # Mesh module
 
     def set_units(self, units, rescale=True):
         self._modeler.SetModelUnits(
@@ -1441,8 +1504,8 @@ class HfssModeler(COMWrapper):
                           wireframe=False,
                           color=None,
                           transparency=0.9,
-                          material=None, #str
-                          solve_inside=None, # bool
+                          material=None,  # str
+                          solve_inside=None,  # bool
                           coordinate_system="Global"):
         arr = ["NAME:Attributes", "PartCoordinateSystem:=", coordinate_system]
         if name is not None:
@@ -1469,7 +1532,7 @@ class HfssModeler(COMWrapper):
     def _selections_array(self, *names):
         return ["NAME:Selections", "Selections:=", ",".join(names)]
 
-    def mesh_length(self, name_mesh, objects:list, MaxLength='0.1mm',**kwargs):
+    def mesh_length(self, name_mesh, objects: list, MaxLength='0.1mm', **kwargs):
         '''
         "RefineInside:="	, False,
         "Enabled:="		, True,
@@ -1484,9 +1547,10 @@ class HfssModeler(COMWrapper):
         assert isinstance(objects, list)
 
         arr = [f"NAME:{name_mesh}",
-            "Objects:=", objects,
-            'MaxLength:=',MaxLength]
-        ops = ['RefineInside', 'Enabled', 'RestrictElem', 'NumMaxElem', 'RestrictLength']
+               "Objects:=", objects,
+               'MaxLength:=', MaxLength]
+        ops = ['RefineInside', 'Enabled', 'RestrictElem',
+               'NumMaxElem', 'RestrictLength']
         for key, val in kwargs.items():
             if key in ops:
                 arr += [key+':=', str(val)]
@@ -1495,22 +1559,24 @@ class HfssModeler(COMWrapper):
 
         self._mesh.AssignLengthOp(arr)
 
-    def mesh_reassign(self, name_mesh, objects:list):
+    def mesh_reassign(self, name_mesh, objects: list):
         assert isinstance(objects, list)
-        self._mesh.ReassignOp(name_mesh, ["Objects:=",objects])
+        self._mesh.ReassignOp(name_mesh, ["Objects:=", objects])
 
     def mesh_get_names(self, kind="Length Based"):
         ''' "Length Based", "Skin Depth Based", ...'''
         return list(self._mesh.GetOperationNames(kind))
 
     def mesh_get_all_props(self, mesh_name):
-        #TODO: make mesh tis own  class with preperties
-        prop_tab='MeshSetupTab'
-        prop_server=f'MeshSetup:{mesh_name}'
-        prop_names = self.parent._design.GetProperties('MeshSetupTab', prop_server)
-        dic={}
+        # TODO: make mesh tis own  class with preperties
+        prop_tab = 'MeshSetupTab'
+        prop_server = f'MeshSetup:{mesh_name}'
+        prop_names = self.parent._design.GetProperties(
+            'MeshSetupTab', prop_server)
+        dic = {}
         for name in prop_names:
-            dic[name] = self._modeler.GetPropertyValue(prop_tab, prop_server, name)
+            dic[name] = self._modeler.GetPropertyValue(
+                prop_tab, prop_server, name)
         return dic
 
     def draw_box_corner(self, pos, size, **kwargs):
@@ -1617,7 +1683,7 @@ class HfssModeler(COMWrapper):
         return self.draw_cylinder(edge_pos, radius, height, axis, **kwargs)
 
     def draw_wirebond(self, pos, ori, width, height='0.1mm', z=0,
-                      wire_diameter = "0.02mm", NumSides=6,
+                      wire_diameter="0.02mm", NumSides=6,
                       **kwargs):
         '''
             Args:
@@ -1657,7 +1723,7 @@ class HfssModeler(COMWrapper):
         """
             PaddingType : 'Absolute Offset', "Percentage Offset"
         """
-        #TODO: Add option to modify these
+        # TODO: Add option to modify these
         RegionAttributes = [
             "NAME:Attributes",
             "Name:="		, name,
@@ -1740,7 +1806,7 @@ class HfssModeler(COMWrapper):
             self._boundaries.ReassignBoundary(["NAME:" + boundary_name,
                                                "Objects:=", list(set(objects + object_names))])
 
-    def append_mesh(self, mesh_name: str, object_names: list, old_objs:list,
+    def append_mesh(self, mesh_name: str, object_names: list, old_objs: list,
                     **kwargs):
         '''
         This will create a new boundary if need, and will
@@ -1755,8 +1821,8 @@ class HfssModeler(COMWrapper):
         if mesh_name not in self.mesh_get_names():  # need to make a new boundary
             objs = object_names
             self.mesh_length(mesh_name, object_names, **kwargs)
-        else: # need to append
-            objs=list(set(old_objs + object_names))
+        else:  # need to append
+            objs = list(set(old_objs + object_names))
             self.mesh_reassign(mesh_name, objs)
 
         return objs
@@ -1779,7 +1845,7 @@ class HfssModeler(COMWrapper):
         params = ["NAME:"+name]
         params += obj_arr
         params.append(["NAME:CurrentLine",
-                       # for some reason here it seems to swtich to use thje model units, rather than meters
+                       # for some reason here it seems to swtich to use the model units, rather than meters
                        "Start:=", fix_units(start, unit_assumed=LENGTH_UNIT),
                        "End:=",   fix_units(end, unit_assumed=LENGTH_UNIT)])
         params += ["UseResist:=", r != 0, "Resistance:=", r,
@@ -1788,6 +1854,9 @@ class HfssModeler(COMWrapper):
         self._boundaries.AssignLumpedRLC(params)
 
     def _make_lumped_port(self, start, end, obj_arr, z0="50ohm", name="LumpPort"):
+        start = fix_units(start, unit_assumed=LENGTH_UNIT)
+        end = fix_units(end, unit_assumed=LENGTH_UNIT)
+
         name = increment_name(name, self._boundaries.GetBoundaries())
         params = ["NAME:"+name]
         params += obj_arr
@@ -1796,9 +1865,8 @@ class HfssModeler(COMWrapper):
                                    "ModeNum:=", 1,
                                    "UseIntLine:=", True,
                                    ["NAME:IntLine",
-                                    "Start:=", fix_units(
-                                        start, unit_assumed=LENGTH_UNIT),
-                                    "End:=",   fix_units(start, unit_assumed=LENGTH_UNIT)],
+                                    "Start:=", start,
+                                    "End:=",   end],
                                    "CharImp:=", "Zpi",
                                    "AlignmentGroup:=", 0,
                                    "RenormImp:=", "50ohm"]],
@@ -1960,9 +2028,9 @@ class HfssModeler(COMWrapper):
 
     def rename_obj(self, obj, name):
         self._modeler.ChangeProperty(["NAME:AllTabs",
-                                    		["NAME:Geometry3DAttributeTab",
-                                    			["NAME:PropServers", str(obj)],
-                                    			["NAME:ChangedProps", ["NAME:Name", "Value:=", str(name)]]]])
+                                      ["NAME:Geometry3DAttributeTab",
+                                       ["NAME:PropServers", str(obj)],
+                                       ["NAME:ChangedProps", ["NAME:Name", "Value:=", str(name)]]]])
         return name
 
 
@@ -2019,6 +2087,8 @@ class Box(ModelEntity):
 
 class Rect(ModelEntity):
     model_command = "CreateRectangle"
+    # TODO: Add a rotated rectangle object.
+    # Will need to first create rect, then apply rotate operation.
 
     def __init__(self, name, modeler, corner, size):
         super(Rect, self).__init__(name, modeler)
@@ -2080,7 +2150,7 @@ class Polyline(ModelEntity):
         return Polyline(union, self.modeler)
 
     def make_center_line(self, axis):  # Expects to act on a rectangle...
-        #first : find center and size
+        # first : find center and size
         center = [0, 0, 0]
 
         for point in self.points:
@@ -2316,7 +2386,7 @@ class CalcObject(COMWrapper):
     def norm_2(self):
 
         return (self.__mag__()).__pow__(2)
-        #return self._unary_op("ScalarX")**2+self._unary_op("ScalarY")**2+self._unary_op("ScalarZ")**2
+        # return self._unary_op("ScalarX")**2+self._unary_op("ScalarY")**2+self._unary_op("ScalarZ")**2
 
     def real(self):
         return self._unary_op("Real")
@@ -2394,9 +2464,9 @@ class CalcObject(COMWrapper):
         setup_name = self.setup.solution_name
 
         if lv is not None:
-           args = lv
+            args = lv
         else:
-           args = []
+            args = []
 
         args.append("Phase:=")
         args.append(str(int(phase)) + "deg")
@@ -2457,7 +2527,7 @@ def get_report_arrays(name):
     return r.get_arrays()
 
 
-def load_ansys_project(proj_name, project_path = None, extension='.aedt'):
+def load_ansys_project(proj_name, project_path=None, extension='.aedt'):
     '''
     proj_name : None  --> get active.
     (make sure 2 run as admin)
@@ -2465,7 +2535,8 @@ def load_ansys_project(proj_name, project_path = None, extension='.aedt'):
     extension : `aedt` is for 2016 version and newer
     '''
     if project_path:
-        project_path = Path(project_path)  # convert slashes correctly for system
+        # convert slashes correctly for system
+        project_path = Path(project_path)
 
         # Checks
         assert project_path.is_dir(
@@ -2497,6 +2568,7 @@ def load_ansys_project(proj_name, project_path = None, extension='.aedt'):
             project = desktop.open_project(str(project_path))
     else:
         project = desktop.get_active_project()
-    logger.info(f"\tOpened Ansys Project\n\tFolder:    {project.get_path()}\n\tProject:   {project.name}")
+    logger.info(
+        f"\tOpened Ansys Project\n\tFolder:    {project.get_path()}\n\tProject:   {project.name}")
 
     return app, desktop, project
