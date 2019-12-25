@@ -115,12 +115,12 @@ class Project_Info(object):
             self.seams               = None
 
     def __init__(self, project_path=None, project_name=None, design_name=None,
-                 do_connect = True):
+                setup_name=None, do_connect = True):
 
         self.project_path  = str(Path(project_path)) if not (project_path is None) else None # Path: format path correctly to system convention
         self.project_name  = project_name
         self.design_name   = design_name
-        self.setup_name    = None
+        self.setup_name    = setup_name
 
         ## HFSS desgin: describe junction parameters
         # TODO: introduce modal labels
