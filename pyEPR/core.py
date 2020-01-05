@@ -11,7 +11,7 @@ import shutil
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-
+import warnings
 # Standard imports
 from numpy        import pi
 from numpy.linalg import inv
@@ -115,12 +115,12 @@ class Project_Info(object):
             self.seams               = None
 
     def __init__(self, project_path=None, project_name=None, design_name=None,
-                 do_connect = True):
+                 setup_name= None, do_connect = True):
 
         self.project_path  = str(Path(project_path)) if not (project_path is None) else None # Path: format path correctly to system convention
         self.project_name  = project_name
         self.design_name   = design_name
-        self.setup_name    = None
+        self.setup_name    =  setup_name
 
         ## HFSS desgin: describe junction parameters
         # TODO: introduce modal labels
@@ -1008,28 +1008,38 @@ class pyEPR_HFSS(object):
             for mode in modes:  # integer of mode number [0,1,2,3,..]
 
                 # Mode setup & load fields
-                print(f'  Mode {mode} [{mode+1}/{self.nmodes}]')
+                
                 self.set_mode(mode)
 
                 #  Get hfss solved frequencie
                 _Om = pd.Series({})
-                _Om['freq_GHz'] = freqs_bare_GHz[mode]  # freq
+                temp_freq = freqs_bare_GHz[mode]
+                _Om['freq_GHz'] = temp_freq  # freq
                 Om[mode] = _Om
-
+                print(f'  Mode {mode} = {"%.2f" % temp_freq} GHz   [{mode+1}/{self.nmodes}]')
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                 # EPR Hamiltonian calculations
 
                 # Calculation global energies  and report
-                print('    Calculating ℰ_electric', end=',')
+                print('    Calculating ℰ_magnetic', end=',')
                 try:
-                    self.U_E = self.calc_energy_electric(variation)
+                    self.U_H = self.calc_energy_magnetic(variation)
+                  #  self.U_E = self.calc_energy_electric(variation)
                 except Exception as e:
                     tb = sys.exc_info()[2]
                     print("\n\nError:\n", e)
                     raise(Exception(' Did you save the field solutions?\n  Failed during calculation of the total magnetic energy. This is the first calculation step, and is indicative that there are no field solutions saved. ').with_traceback(tb))
-
-                print(' ℰ_magnetic')
-                self.U_H = self.calc_energy_magnetic(variation)
+         #       print('\n \n U_E = {} \n \n'.format(self.U_E))
+            #    time.sleep(2.0)
+                print('ℰ_electric')
+                self.U_E = self.calc_energy_electric(variation)
+                #try:
+                #except Exception as e:
+                 #   tb = sys.exc_info()[2]
+                  #  print("\n\nError:\n", e)
+                   # raise(Exception(' Did you save the field solutions?\n  Failed during calculation of the total magnetic energy. This is the first calculation step, and is indicative that there are no field solutions saved. ').with_traceback(tb))
+          #      print('\n \n U_H = {} \n \n'.format(self.U_H))
+                
                 sol = Series({'U_H': self.U_H, 'U_E': self.U_E})
 
                 print(f"""     {'(ℰ_E-ℰ_H)/ℰ_E':>15s} {'ℰ_E':>9s} {'ℰ_H':>9s}
@@ -1175,7 +1185,11 @@ class pyEPR_HFSS(object):
 
     def get_variation_nominal(self):
         return self.design.get_nominal_variation()
-
+    def get_num_variation_nominal(self):
+        try:
+            return str(self.listvariations.index(self.nominalvariation))
+        except:
+            return '0'
     def get_variations_all(self):
         self.update_variation_information()
         return self.listvariations
@@ -1192,6 +1206,7 @@ class pyEPR_HFSS(object):
             self.nominalvariation = self.design.get_nominal_variation()
             self.nvariations      = np.size(self.listvariations)
             self.variations       = [str(i) for i in range(self.nvariations)]
+            self.num_variation_nominal = self.get_num_variation_nominal()
             if self.design.solution_type == 'Eigenmode':
                 self.nmodes       = int(self.setup.n_modes)
             else:
@@ -1327,9 +1342,58 @@ class Results_Hamiltonian(OrderedDict):
     '''
          Class to store and process results from the analysis of H_nl.
     '''
+        
+    def __init__(self, dict_file=None,Data_dir=None):
+   """ input: 
+           dict file - 1. ethier None to create an empty results hamilitoninan as 
+                       as was done in the original code
+                          
+                       2. or a string with the name of the file where the file ofthe
+                       previously saved Results_Hamiltonian instatnce we wish
+                       to load 
+                      
+                       3. or an existing instance of a dict class which will be 
+                       upgraded to the Results_Hamiltonian class
+            Data_dir -  the directory in which the file is to be saved or loaded 
+                        from, defults to the config.root_dir
+   """
+        super().__init__()
+        
+        if Data_dir is None:
+            Data_dir = Path(config.root_dir)
+        
+        if dict_file is None:    
+            self.file_name = str(Data_dir)+'\\Results_Hamiltonian.npz'
+            
+        elif isinstance(dict_file,str): 
+            try:
+                self.file_name = str(Data_dir)+'\\' +dict_file
+                self.load_from_npz()
+            except:
+                self.file_name = dict_file
+                self.load_from_npz()
+        
+        elif isinstance(dict_file,dict):
+            self.inject_dic(dict_file)
+            self.file_name = str(Data_dir)+'\\Results_Hamiltonian.npz'
+        else:
+            raise ValueError('type dict_file is {}'.format(type(dict_file)))
+                #load file
     #TODO: make this savable and loadable
-
-    def get_vs_variation(self, quantity):
+    def save_to_npz(self):
+        np.savez(self.file_name, Res_Hamil=dict(self))
+    
+    def load_from_npz(self):
+        self.inject_dic(extract_dic(file_name=self.file_name)[0])
+    
+    def inject_dic(self,add_dic):
+        for key,val in add_dic.items():
+            
+            #if key in self.keys():
+                #raise ValueError('trying to overwrite an exsiting varation')
+            self[key] = val
+    
+    def get_vs_variation(self, quantity,):
         res = OrderedDict()
         for k, r in self.items():
             res[k] = r[quantity]
@@ -1367,10 +1431,10 @@ class pyEPR_Analysis(object):
         Defines an analysis object which loads and plots data from a h5 file
         This data is obtained using pyEPR_HFSS
     '''
-    def __init__(self, data_filename, variations=None, do_print_info = True):
+    def __init__(self, data_filename, variations=None, do_print_info = True, Res_hamil_filename= None):
 
         self.data_filename = data_filename
-        self.results       = Results_Hamiltonian()
+        self.results       = Results_Hamiltonian(dict_file=Res_hamil_filename)
 
         with HDFStore(data_filename, mode = 'r') as hdf:  # = h5py.File(data_filename, 'r')
 
@@ -1434,11 +1498,62 @@ class pyEPR_Analysis(object):
                 print(self.hfss_variables[self.hfss_vars_diff_idx])
             print('\n')
 
-    def get_variable_vs(self, swpvar):
+    def get_variable_vs(self, swpvar,lv=None):
+        """ lv is list of variations (example ['0', '1']), if None it takes all variations
+            swpvar is the variable by which to orginize
+            
+            return:
+            ret -ordered dicitonary of key which is the variation number and the magnitude of swaver as the item
+        """
         ret = OrderedDict()
-        for key, varz in self.hfss_variables.items():
-            ret[key] = ureg.Quantity(varz['_'+swpvar]).magnitude
+        if lv is None:
+            for key, varz in self.hfss_variables.items():
+                ret[key] = ureg.Quantity(varz['_'+swpvar]).magnitude
+        else:
+            try:
+                for key in lv:
+                    ret[key] = ureg.Quantity(self.hfss_variables[key]['_'+swpvar]).magnitude
+            except:
+                print(' No such variation as ' +key)
         return ret
+    
+    def get_variations_of_variable_value(self, swpvar,value,lv =None):
+        """A function to return all the variations in which one of the variables has a specific value
+            lv is list of variations (example ['0', '1']), if None it takes all variations
+            swpvar is a string and the name of the variable we wish to filter
+            value is the value of swapvr in which we are intrested
+            
+            returns lv - a list of the variations for which swavr==value
+            """
+            
+        if lv is None: lv = self.variations
+        
+        ret = self.get_variable_vs(swpvar,lv=lv)
+        
+        lv = np.array(list(ret.keys()))[np.array(list(ret.values()))==value] 
+        
+        #lv = lv_temp if not len(lv_temp) else lv
+        if  not (len(lv)):
+            raise ValueError('No variations have the variable-' +swpvar +'= {}'.format(value))
+            
+        return lv    
+            
+    def get_variation_of_multiple_variables_value(self, Var_dic,lv =None):
+        """
+                SEE get_variations_of_variable_value
+            A function to return all the variations in which one of the variables has a specific value
+            lv is list of variations (example ['0', '1']), if None it takes all variations
+            Var_dic is a dic with the name of the variable as key and the value to filter as item
+            """
+            
+        if lv is None: lv = self.variations
+        
+        for key, var in Var_dic.items():
+            lv = self.get_variations_of_variable_value(key,var,lv)
+        
+        return lv       
+        
+        
 
     def get_convergences_Max_Tets(self):
         ''' Index([u'Pass Number', u'Solved Elements', u'Max Delta Freq. %' ])  '''
@@ -1500,18 +1615,15 @@ class pyEPR_Analysis(object):
         return Ejs
 
     def analyze_all_variations(self,
-                               cos_trunc     = None,
-                               fock_trunc    = None,
-                               print_result  = True):
+                               variations =None,#None returns all_variations otherwis this is a list with number as strings ['0', '1']
+                               **kwargs):
         '''
             See analyze_variation
         '''
         result = OrderedDict()
-        for variation in self.variations:
-            result[variation] = self.analyze_variation(variation=variation,
-                                                        cos_trunc=cos_trunc,
-                                                        fock_trunc=fock_trunc,
-                                                        print_result=print_result)
+        if variations is None:  variations = self.variations
+        for variation in variations:
+            result[variation] = self.analyze_variation(variation,**kwargs)
         return result
 
     def get_Pmj(self, variation, _renorm_pj=None, print_=False):
@@ -1580,7 +1692,7 @@ class pyEPR_Analysis(object):
                           print_result  = True,
                           junctions     = None,
                           modes         = None):
-
+##TODO avoide analyzing a previously analyzed variation
         '''
         Can also print results neatly.
         Args:
@@ -1791,3 +1903,13 @@ class pyEPR_Analysis(object):
         ax.set_ylabel('Max $\\Delta f$')
         ax.set_title('$f_\\mathrm{lin}$ convergence vs. pass number')
         legend_translucent(ax)
+
+
+def extract_dic(name=None, file_name=None):
+    """#name is the name of the dictionry as saved in the npz file if it is None, 
+    the function will return a list of all dictionaries in the npz file
+    file name is the name of the npz file"""
+    with np.load(file_name,allow_pickle=True) as f:
+        if name is None:
+            return  [f[i][()] for i in f.keys()]
+        return [f[name][()]]
