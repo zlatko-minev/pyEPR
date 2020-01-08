@@ -7,6 +7,11 @@ When using this packed directly, the directory containing this folder should be 
 ##### core.py
 Contains the core analysis and run functions.
 
+
+##### toolbox_circuits.py
+Contains conversion functions for Lj to Ej, Cj to Ej, and such.
+Creates matricies, etc.
+
 ##### toolbox.py
 Auxillary function used throught the package, and also useful in visualizaiton and analysis.
 

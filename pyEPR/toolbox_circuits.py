@@ -1,32 +1,38 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Unit and variable conversions.
+Module containing useful convesion functions between variables with units,
+such as Ej, Cj, Lj, Cj, etc. and matrix operations used in pyEPR.
 
 @author: Zlatko K. Minev
 """
+# pylint: disable=invalid-name
 
 # Python 2.7 and 3 compatibility
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
+
 import numpy as np
+from numpy import sqrt, inv
 import pandas as pd
-#from collections import OrderedDict
-
-from numpy import sqrt
-from .toolbox import ϕ0, fluxQ, Planck, hbar, e_el, pi, ħ, elementary_charge, π,\
-    divide_diagonal_by_2
-#from scipy.constants import hbar, Planck, e as e_el, epsilon_0, pi
-
-
-from pyEPR.toolbox_circuits import *
 import pint
+
+from .toolbox import (Planck, divide_diagonal_by_2, e_el, elementary_charge,  # pylint: disable=unused-import
+                      fluxQ, hbar, pi, ħ, π, ϕ0)
+
+####################################################################################
+# UNIT Registry local to module
 ureg = pint.UnitRegistry()
 ureg.enable_contexts('spectroscopy')
 ureg.ϕ0 = ϕ0
 #_c_jj = pint.Context('jj')
-#_c_jj.add_transformation('([length] ** 2 * [mass] / [current] ** 2 / [time] ** 2)', '[current]', lambda ureg, x, **kw: ureg.ϕ0 / x)
-#ureg.add_context(_c_jj)
-#ureg.enable_contexts('jj')
+# _c_jj.add_transformation('([length] ** 2 * [mass] / [current] ** 2 / [time] ** 2)',
+#                         '[current]', lambda ureg, x, **kw: ureg.ϕ0 / x)
+# ureg.add_context(_c_jj)
+# ureg.enable_contexts('jj')
+
+
+####################################################################################
+# Conversion main class
 
 class Convert(object):
     '''
@@ -95,6 +101,15 @@ class Convert(object):
 
     @staticmethod
     def fromSI(number, from_units: str):
+        """Convert a number with SI units, such as fF to F.
+
+        Arguments:
+            number {[numeric]} -- number
+            from_units {str} -- string
+
+        Returns:
+            numeric number, with units expanded
+        """
         if from_units in Convert._SI_units:
             from_units = ' '
         # else: we assume that the first letter is a prefix
@@ -111,12 +126,12 @@ class Convert(object):
 
     @staticmethod
     def Ej_from_Lj(Lj, units_in='nH', units_out='MHz'):
-        '''
-            Josephson Junction energy from Josephson inductance.
-            Returns in MHz
+        r"""
+        Josephson Junction energy from Josephson inductance.
+        Returns in MHz
 
-            $E_j = \phi_0^2 / L_J$
-        '''
+        $E_j = \phi_0^2 / L_J$
+        """
         return Convert._convert_num(
             # Plank to go from Joules to Hz
             lambda _Lj: Planck**-1 * (ϕ0**2)/_Lj,
@@ -124,11 +139,11 @@ class Convert(object):
 
     @staticmethod
     def Lj_from_Ej(Ej, units_in='MHz', units_out='nH'):
-        '''
-            Josephson Junction ind from Josephson energy in MHZ.
-            Returns in units of nano Henries by default
+        r'''
+        Josephson Junction ind from Josephson energy in MHZ.
+        Returns in units of nano Henries by default
 
-            $E_j = \phi_0^2 / L_J$
+        $E_j = \phi_0^2 / L_J$
         '''
         return Convert._convert_num(
             lambda _x: (ϕ0**2.)/(_x*Planck),  # Plank to go from Joules to Hz
@@ -136,10 +151,10 @@ class Convert(object):
 
     @staticmethod
     def Ic_from_Lj(Lj, units_in='nH', units_out='nA'):
-        '''
-            Josephson Junction crit. curr from Josephson inductance.
+        r'''
+        Josephson Junction crit. curr from Josephson inductance.
 
-            $E_j = \phi_0^2 / L_J = \phi_0 I_C $
+        $E_j = \phi_0^2 / L_J = \phi_0 I_C $
         '''
         return Convert._convert_num(
             lambda _x: ϕ0/_x,  # Plank to go from Joules to Hz
@@ -147,10 +162,10 @@ class Convert(object):
 
     @staticmethod
     def Lj_from_Ic(Lj, units_in='nA', units_out='nH'):
-        '''
-            Josephson Junction crit. curr from Josephson inductance.
+        r'''
+        Josephson Junction crit. curr from Josephson inductance.
 
-            $E_j = \phi_0^2 / L_J = \phi_0 I_C $
+        $E_j = \phi_0^2 / L_J = \phi_0 I_C $
         '''
         return Convert._convert_num(
             lambda _x: ϕ0/_x,  # Plank to go from Joules to Hz
@@ -158,11 +173,11 @@ class Convert(object):
 
     @staticmethod
     def Ec_from_Cs(Cs,  units_in='fF', units_out='MHz'):
-        '''
-            Charging energy 4Ec n^2, where n=Q/2e
-            Returns in MHz
+        r'''
+        Charging energy 4Ec n^2, where n=Q/2e
+        Returns in MHz
 
-            $E_{C}=\frac{e^{2}}{2C}J$
+        $E_{C}=\frac{e^{2}}{2C}J$
         '''
         return Convert._convert_num(
             # Plank to go from Joules to Hz
@@ -171,12 +186,12 @@ class Convert(object):
 
     @staticmethod
     def Cs_from_Ec(Ec, units_in='MHz', units_out='fF'):
-        '''
-            Charging energy 4Ec n^2, where n=Q/2e
+        r'''
+        Charging energy 4Ec n^2, where n=Q/2e
 
-            Returns in SI units, in Farads.
+        Returns in SI units, in Farads.
 
-            $E_{C}=\frac{e^{2}}{2C}J$
+        $E_{C}=\frac{e^{2}}{2C}J$
         '''
         return Convert._convert_num(
             # Plank to go from Joules to Hz
@@ -185,10 +200,10 @@ class Convert(object):
 
     @staticmethod
     def ZPF_from_LC(L, C):
-        '''
-            Input units assumed to be identical
+        r'''
+        Input units assumed to be identical
 
-            Returns Phi ZPF in and Q_ZPF in NOT reduced units, but SI
+        Returns Phi ZPF in and Q_ZPF in NOT reduced units, but SI
         '''
         Z = sqrt(L/C)
         return (sqrt(hbar*Z/2.), sqrt(hbar/(2.*Z)))  # Phi , Q
@@ -196,11 +211,12 @@ class Convert(object):
     @staticmethod
     def ZPF_from_EPR(hfss_freqs, hfss_epr_, hfss_signs, hfss_Ljs,
                      Lj_units_in='H', to_df=False):
-        """
+        r"""
         Parameters:
             Can be either Pandas or numpy arrays.
 
-            hfss_freqs : HFSS Freqs. (standard units: GHz, but these will cancel with Ejs) (list/Series)
+            hfss_freqs : HFSS Freqs. (standard units: GHz, but these will cancel
+                        with Ejs (list/Series)
             hfss_epr : EPR ratio matrix, dim = M x J (2D array/DataFrame)
             hfss_signs : Sign matrix, dim = M x J  (2D array/DataFrame)
             hfss_Ljs : Assumed in Henries (see Lj_units_in). (list/Series)
@@ -213,7 +229,8 @@ class Convert(object):
             and a tuple of matricies.
 
         Example use:
-            ϕzpf, (Ωm, Ej, Pmj, Smj) = Convert.ZPF_from_EPR(hfss_freqs, hfss_epr, hfss_signs, hfss_Ljs, to_df=True)
+            ϕzpf, (Ωm, Ej, Pmj, Smj) = Convert.ZPF_from_EPR(hfss_freqs, hfss_epr, \
+                                        hfss_signs, hfss_Ljs, to_df=True)
         """
 
         hfss_freqs, hfss_epr, hfss_signs, hfss_Ljs = map(
@@ -241,6 +258,11 @@ class Convert(object):
 
 
 class Calcs_basic(object):
+    """Basic Calculations used in pyEPR, such as performing
+     1st order pertubation theory on a Hamiltonian.
+
+    Container class.
+    """
 
     @staticmethod
     def dispersiveH_params_PT_O1(Pmj, Ωm, Ej):
@@ -256,9 +278,9 @@ class Calcs_basic(object):
 
         Example use:
         ..codeblock python
-            f_O1, χ_O1 = Calc_basic.dispersiveH_params_PT_O1(Pmj, Ωm, Ej) # PT_01: Calculate 1st order PT results
+            # PT_01: Calculate 1st order PT results
+            f_O1, χ_O1 = Calc_basic.dispersiveH_params_PT_O1(Pmj, Ωm, Ej)
         """
-        from numpy.linalg import inv
 
         Pmj, Ωm, Ej = map(np.array, (Pmj, Ωm, Ej))
 
@@ -279,8 +301,9 @@ class Calcs_basic(object):
 
         return f_O1, χ_O1
 
+    @staticmethod
     def epr_to_zpf(Pmj, SJ, Ω, EJ):
-        '''
+        r'''
         INPUTS:
             All as matrices (numpy arrays)
             :Pnj: MxJ energy-participatuion-ratio matrix, p_mj
@@ -295,14 +318,14 @@ class Calcs_basic(object):
 
         assert (Pmj > 0).any(), "ND -- p_{mj} are not all > 0; \n %s" % (Pmj)
 
-        ''' technically, there the equation is hbar omega / 2J, but here we assume
-        that the hbar is absrobed in the units of omega, and omega and Ej have the same units.
-        PHI=np.zeros((3,3))
-        for m in range(3):
-            for j in range(3):
-                PHI[m,j] = SJ[m,j]*sqrt(PJ[m,j]*Om[m,m]/(2.*EJ[j,j]))
-        '''
-        return SJ * sqrt(0.5 * Ω @ Pmj @ np.linalg.inv(EJ))
+        # Technically, there the equation is hbar omega / 2J, but here we assume
+        # that the hbar is absrobed in the units of omega, and omega and Ej have the same units.
+        # PHI=np.zeros((3,3))
+        # for m in range(3):
+        #     for j in range(3):
+        #         PHI[m,j] = SJ[m,j]*sqrt(PJ[m,j]*Om[m,m]/(2.*EJ[j,j]))
+
+        return SJ * sqrt(0.5 * Ω @ Pmj @ inv(EJ))
 
     @staticmethod
     def transmon_get_all_params(Ej_MHz, Ec_MHz):
@@ -362,7 +385,18 @@ class Calcs_basic(object):
 
 
 class Matrix_Operations(object):
+    """
+    Container static class to handle general matrix operations used in pyEPR
+    """
 
     @staticmethod
     def to_cos(op_cos_arg):
+        """Convert to matric operator.
+
+        Arguments:
+            op_cos_arg {qutip unitary} -- the argument of the cosine
+
+        Returns:
+            qutip matrix array
+        """
         return 0.5*((1j*op_cos_arg).expm() + (-1j*op_cos_arg).expm())
