@@ -10,6 +10,7 @@ Purpose:
     Developed further by Zlatko Minev, Zaki Leghtas, and the pyEPR team.
     For the base version of hfss.py, see https://github.com/PhilReinhold/pyHFSS
 '''
+# TODO: Rename module to ansys, to specify its broader use
 
 from __future__ import division, print_function    # Python 2.7 and 3 compatibility
 
@@ -31,7 +32,8 @@ from sympy.parsing import sympy_parser
 from collections.abc import Iterable
 
 
-# A few usually troublesome packages
+# Handle a  few usually troublesome to import packages, which the use may not have
+# installed yet
 try:
     import pythoncom
 except (ImportError, ModuleNotFoundError):
@@ -316,9 +318,10 @@ def make_prop(name, prop_tab=None, prop_server=None, prop_args=None):
     return property(get_prop, set_prop)
 
 
-def set_property(prop_holder, prop_tab, prop_server, name, value, prop_args=[]):
+def set_property(prop_holder, prop_tab, prop_server, name, value, prop_args=None):
     '''
     More general non obj oriented, functionatl verison
+    prop_args = [] by default
     '''
     if not isinstance(prop_server, list):
         prop_server = [prop_server]
@@ -327,7 +330,7 @@ def set_property(prop_holder, prop_tab, prop_server, name, value, prop_args=[]):
          ["NAME:"+prop_tab,
           ["NAME:PropServers", *prop_server],
           ["NAME:ChangedProps",
-           ["NAME:"+name, "Value:=", value] + prop_args]]])
+           ["NAME:"+name, "Value:=", value] + (prop_args or [])]]])
 
 
 class HfssApp(COMWrapper):
@@ -635,8 +638,8 @@ class HfssDesign(COMWrapper):
             ])
         return HfssDMSetup(self, name)
 
-    def create_em_setup(self, name="Setup", min_freq_ghz=1, n_modes=1, max_delta_f=0.1, max_passes=10,
-                        min_passes=1, min_converged=1, pct_refinement=30,
+    def create_em_setup(self, name="Setup", min_freq_ghz=1, n_modes=1, max_delta_f=0.1,
+                        max_passes=10, min_passes=1, min_converged=1, pct_refinement=30,
                         basis_order=-1):
 
         name = increment_name(name, self.get_setup_names())
@@ -713,7 +716,8 @@ class HfssDesign(COMWrapper):
     def get_variable_names(self):
         """ Returns the local design variables.
             Does not return the project (global) variables, which start with $. """
-        return [VariableString(s) for s in self._design.GetVariables()+self._design.GetPostProcessingVariables()]
+        return [VariableString(s) for s in
+                self._design.GetVariables()+self._design.GetPostProcessingVariables()]
 
     def get_variables(self):
         """ Returns dictionary of local design variables and their values.
@@ -746,9 +750,11 @@ class HfssDesign(COMWrapper):
         except SyntaxError:
             return Q(expr).to(units).magnitude
 
-        sub_exprs = {fs: self.get_variable_value(
-            fs.name) for fs in sexp.free_symbols}
-        return float(sexp.subs({fs: self._evaluate_variable_expression(e, units) for fs, e in sub_exprs.items()}))
+        sub_exprs = {fs: self.get_variable_value(fs.name)
+                     for fs in sexp.free_symbols}
+
+        return float(sexp.subs({fs: self._evaluate_variable_expression(e, units)
+                                for fs, e in sub_exprs.items()}))
 
     def eval_expr(self, expr, units="mm"):
         return str(self._evaluate_variable_expression(expr, units)) + units
@@ -792,7 +798,8 @@ class HfssSetup(HfssPropertyObject):
     def analyze(self, name=None):
         '''
         Use:             Solves a single solution setup and all of its frequency sweeps.
-        Command:         Right-click a solution setup in the project tree, and then click Analyze on the shortcut menu.
+        Command:         Right-click a solution setup in the project tree, and then click Analyze
+                         on the shortcut menu.
         Syntax:          Analyze(<SetupName>)
         Parameters:      <setupName>
         Return Value:    None
@@ -889,7 +896,8 @@ class HfssSetup(HfssPropertyObject):
         self._setup_module.DeleteSweep(self.name, name)
 
 #    def add_fields_convergence_expr(self, expr, pct_delta, phase=0):
-#        """note: because of hfss idiocy, you must call "commit_convergence_exprs" after adding all exprs"""
+#        """note: because of hfss idiocy, you must call "commit_convergence_exprs"
+#         after adding all exprs"""
 #        assert isinstance(expr, NamedCalcObject)
 #        self.expression_cache_items.append(
 #            ["NAME:CacheItem",
@@ -904,7 +912,8 @@ class HfssSetup(HfssPropertyObject):
 #             ["NAME:ExpressionContext"]])
 
 #    def commit_convergence_exprs(self):
-#        """note: this will eliminate any convergence expressions not added through this interface"""
+#        """note: this will eliminate any convergence expressions not added
+#           through this interface"""
 #        args = [
 #            "NAME:"+self.name,
 #            ["NAME:ExpressionCache", self.expression_cache_items]
@@ -926,7 +935,8 @@ class HfssSetup(HfssPropertyObject):
         return HfssFrequencySweep(self, name)
 
     def add_fields_convergence_expr(self, expr, pct_delta, phase=0):
-        """note: because of hfss idiocy, you must call "commit_convergence_exprs" after adding all exprs"""
+        """note: because of hfss idiocy, you must call "commit_convergence_exprs"
+        after adding all exprs"""
         assert isinstance(expr, NamedCalcObject)
         self.expression_cache_items.append(
             ["NAME:CacheItem",
@@ -1001,7 +1011,9 @@ class HfssSetup(HfssPropertyObject):
             print("ERROR in MESH reading operation.")
             print(e)
             print('ERROR!  Error in trying to read temporary MESH file ' + temp.name +
-                  '\n. Check to see if there is a mesh available for this current variation. If the nominal design is not solved, it will not have a mesh., but will show up as a variation.')
+                  '\n. Check to see if there is a mesh available for this current variation.\
+                   If the nominal design is not solved, it will not have a mesh., \
+                   but will show up as a variation.')
             df = None
         return df
 
@@ -1116,14 +1128,16 @@ class AnsysQ3DSetup(HfssSetup):
         temp.close()
         path = temp.name+'.txt'
         # <FileName>, <SolnType>, <DesignVariationKey>, <Solution>, <Matrix>, <ResUnit>,
-        # <IndUnit>, <CapUnit>, <CondUnit>, <Frequency>, <MatrixType>, <PassNumber>, <ACPlusDCResistance>
-        self.parent._design.ExportMatrixData(path, soln_type, variation, f'{self.name}:{solution_kind}',
+        # <IndUnit>, <CapUnit>, <CondUnit>, <Frequency>, <MatrixType>, <PassNumber>,
+        # <ACPlusDCResistance>
+        self.parent._design.ExportMatrixData(path, soln_type, variation,
+                                             f'{self.name}:{solution_kind}',
                                              "Original", "ohm", "nH", "fF", "mSie",
                                              frequency, MatrixType,
                                              pass_number, ACPlusDCResistance)
 
-        df_cmat, user_units, (df_cond, units_cond), design_variation = self.load_q3d_matrix(
-            path)
+        df_cmat, user_units, (df_cond, units_cond), design_variation = \
+            self.load_q3d_matrix(path)
         return df_cmat, user_units, (df_cond, units_cond), design_variation
 
     @staticmethod
@@ -1140,7 +1154,8 @@ class AnsysQ3DSetup(HfssSetup):
 
         Example file:
         ```
-        DesignVariation:$BBoxL='650um' $boxH='750um' $boxL='2mm' $QubitGap='30um' $QubitH='90um' $QubitL='450um' Lj_1='13nH'
+        DesignVariation:$BBoxL='650um' $boxH='750um' $boxL='2mm' $QubitGap='30um' \
+                        $QubitH='90um' \$QubitL='450um' Lj_1='13nH'
         Setup1:LastAdaptive
         Problem Type:C
         C Units:farad, G Units:mSie
@@ -1360,8 +1375,8 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
 
         setup = self.parent
         reporter = setup._reporter
-        return reporter.CreateReport(plot_name, "Eigenmode Parameters", "Rectangular Plot", f"{setup.name} : {pass_name}", [],
-                                     params,
+        return reporter.CreateReport(plot_name, "Eigenmode Parameters", "Rectangular Plot",
+                                     f"{setup.name} : {pass_name}", [], params,
                                      ["X Component:=", xcomp,
                                       "Y Component:=", ycomp], [])
 
@@ -2517,7 +2532,9 @@ def get_active_project():
     except AttributeError:
         is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
     if not is_admin:
-        print('\033[93m WARNING: you are not runnning as an admin! You need to run as an admin. You will probably get an error next. \033[0m')
+        print('\033[93m WARNING: you are not runnning as an admin! \
+            You need to run as an admin. You will probably get an error next.\
+                 \033[0m')
 
     app = HfssApp()
     desktop = app.get_app_desktop()
@@ -2547,8 +2564,8 @@ def load_ansys_project(proj_name, project_path=None, extension='.aedt'):
         project_path = Path(project_path)
 
         # Checks
-        assert project_path.is_dir(
-        ),   "ERROR! project_path is not a valid directory. Check the path, and especially \\ charecters."
+        assert project_path.is_dir(), "ERROR! project_path is not a valid directory.\
+            Check the path, and especially \\ charecters."
 
         project_path /= project_path / Path(proj_name + extension)
 
@@ -2556,7 +2573,8 @@ def load_ansys_project(proj_name, project_path=None, extension='.aedt'):
             print('\tFile path to HFSS project found.')
         else:
             raise Exception(
-                "ERROR! Valid directory, but invalid project filename. Not found! Please check your filename.\n%s\n" % project_path)
+                "ERROR! Valid directory, but invalid project filename. Not found!\
+                     Please check your filename.\n%s\n" % project_path)
 
         if (project_path/'.lock').is_file():
             print('\t\tFile is locked. If connection fails, delete the .lock file.')
