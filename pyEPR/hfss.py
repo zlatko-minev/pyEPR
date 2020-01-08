@@ -60,7 +60,7 @@ BASIS_ORDER = {"Zero Order": 0,
                "Second Order": 2,
                "Mixed Order": -1}
 
-### UNITS
+# UNITS
 # LENGTH_UNIT         --- HFSS UNITS
 # #Assumed default input units for ansys hfss
 LENGTH_UNIT = 'meter'
@@ -103,6 +103,7 @@ def extract_value_unit(expr, units):
         except Exception:
             return expr
 
+
 def extract_value_dim(expr):
     """
     type expr: str
@@ -132,8 +133,8 @@ def fix_units(x, unit_assumed=None):
     '''
     unit_assumed = LENGTH_UNIT_ASSUMED if unit_assumed is None else unit_assumed
     if isinstance(x, str):
-        ## Check if there are already units defined, assume of form 2.46mm  or 2.0 or 4.
-        if x[-1].isdigit() or x[-1]=='.': # number
+        # Check if there are already units defined, assume of form 2.46mm  or 2.0 or 4.
+        if x[-1].isdigit() or x[-1] == '.':  # number
             return x + unit_assumed
         else:  # units are already appleid
             return x
@@ -141,10 +142,11 @@ def fix_units(x, unit_assumed=None):
     elif isinstance(x, Number):
         return fix_units(str(x)+unit_assumed, unit_assumed=unit_assumed)
 
-    elif isinstance(x, Iterable): # hasattr(x, '__iter__'):
+    elif isinstance(x, Iterable):  # hasattr(x, '__iter__'):
         return [fix_units(y, unit_assumed=unit_assumed) for y in x]
     else:
         return x
+
 
 def parse_units(x):
     '''
@@ -250,7 +252,7 @@ def release():
     time.sleep(0.1)
 
     # Note that _GetInterfaceCount is a memeber
-    refcount = pythoncom._GetInterfaceCount() # pylint: disable=no-member
+    refcount = pythoncom._GetInterfaceCount()  # pylint: disable=no-member
 
     if refcount > 0:
         print("Warning! %d COM references still alive" % (refcount))
@@ -515,7 +517,11 @@ class HfssProject(COMWrapper):
         return VariableString(name)
 
     def get_path(self):
-        return self._project.GetPath()
+        if self._project:
+            return self._project.GetPath()
+        else:
+            raise Exception('''Error: HFSS Project does not have a path.
+        Either there is no HFSS project open, or it is not saved.''')
 
     def new_design(self, name, type):
         name = increment_name(name, [d.GetName()
@@ -555,7 +561,7 @@ class HfssDesign(COMWrapper):
             self.solution_type = design.GetSolutionType()
         except Exception as e:
             logger.debug(f'Exception occured at design.GetSolutionType() {e}. Assuming Q3D design')
-            self.solution_type ='Q3D'
+            self.solution_type = 'Q3D'
 
         if design is None:
             return
@@ -1112,9 +1118,9 @@ class AnsysQ3DSetup(HfssSetup):
         # <FileName>, <SolnType>, <DesignVariationKey>, <Solution>, <Matrix>, <ResUnit>,
         # <IndUnit>, <CapUnit>, <CondUnit>, <Frequency>, <MatrixType>, <PassNumber>, <ACPlusDCResistance>
         self.parent._design.ExportMatrixData(path, soln_type, variation, f'{self.name}:{solution_kind}',
-                                            "Original", "ohm", "nH", "fF", "mSie",
-                                            frequency, MatrixType,
-                                            pass_number, ACPlusDCResistance)
+                                             "Original", "ohm", "nH", "fF", "mSie",
+                                             frequency, MatrixType,
+                                             pass_number, ACPlusDCResistance)
 
         df_cmat, user_units, (df_cond, units_cond), design_variation = self.load_q3d_matrix(
             path)
@@ -1202,7 +1208,7 @@ class AnsysQ3DSetup(HfssSetup):
 
         # Unit convert
         q = ureg.parse_expression(Cunits).to(user_units)
-        df_cmat = df_cmat * q.magnitude # scale to user units
+        df_cmat = df_cmat * q.magnitude  # scale to user units
 
         #print("Imported capacitance matrix with UNITS: [%s] now converted to USER UNITS:[%s] from file:\n\t%s"%(Cunits, user_units, path))
 
@@ -1355,10 +1361,9 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
         setup = self.parent
         reporter = setup._reporter
         return reporter.CreateReport(plot_name, "Eigenmode Parameters", "Rectangular Plot", f"{setup.name} : {pass_name}", [],
-                            params,
-                            ["X Component:=", xcomp,
-                            "Y Component:=", ycomp],[])
-
+                                     params,
+                                     ["X Component:=", xcomp,
+                                      "Y Component:=", ycomp], [])
 
 
 class HfssDMDesignSolutions(HfssDesignSolutions):
@@ -1686,7 +1691,7 @@ class HfssModeler(COMWrapper):
         return self.draw_cylinder(edge_pos, radius, height, axis, **kwargs)
 
     def draw_wirebond(self, pos, ori, width, height='0.1mm', z=0,
-                      wire_diameter = "0.02mm", NumSides=6,
+                      wire_diameter="0.02mm", NumSides=6,
                       **kwargs):
         '''
             Args:
