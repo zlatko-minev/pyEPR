@@ -11,7 +11,7 @@ import shutil
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-
+import warnings
 # Standard imports
 from numpy        import pi
 from numpy.linalg import inv
@@ -115,7 +115,7 @@ class Project_Info(object):
             self.seams               = None
 
     def __init__(self, project_path=None, project_name=None, design_name=None,
-                setup_name=None, do_connect = True):
+                 setup_name=None, do_connect=True):
 
         self.project_path  = str(Path(project_path)) if not (project_path is None) else None # Path: format path correctly to system convention
         self.project_name  = project_name
@@ -1008,28 +1008,38 @@ class pyEPR_HFSS(object):
             for mode in modes:  # integer of mode number [0,1,2,3,..]
 
                 # Mode setup & load fields
-                print(f'  Mode {mode} [{mode+1}/{self.nmodes}]')
+                
                 self.set_mode(mode)
 
                 #  Get hfss solved frequencie
                 _Om = pd.Series({})
-                _Om['freq_GHz'] = freqs_bare_GHz[mode]  # freq
+                temp_freq = freqs_bare_GHz[mode]
+                _Om['freq_GHz'] = temp_freq  # freq
                 Om[mode] = _Om
-
+                print(f'  Mode {mode} = {"%.2f" % temp_freq} GHz   [{mode+1}/{self.nmodes}]')
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                 # EPR Hamiltonian calculations
 
                 # Calculation global energies  and report
-                print('    Calculating ℰ_electric', end=',')
+                print('    Calculating ℰ_magnetic', end=',')
                 try:
-                    self.U_E = self.calc_energy_electric(variation)
+                    self.U_H = self.calc_energy_magnetic(variation)
+                  #  self.U_E = self.calc_energy_electric(variation)
                 except Exception as e:
                     tb = sys.exc_info()[2]
                     print("\n\nError:\n", e)
                     raise(Exception(' Did you save the field solutions?\n  Failed during calculation of the total magnetic energy. This is the first calculation step, and is indicative that there are no field solutions saved. ').with_traceback(tb))
-
-                print(' ℰ_magnetic')
-                self.U_H = self.calc_energy_magnetic(variation)
+         #       print('\n \n U_E = {} \n \n'.format(self.U_E))
+            #    time.sleep(2.0)
+                print('ℰ_electric')
+                self.U_E = self.calc_energy_electric(variation)
+                #try:
+                #except Exception as e:
+                 #   tb = sys.exc_info()[2]
+                  #  print("\n\nError:\n", e)
+                   # raise(Exception(' Did you save the field solutions?\n  Failed during calculation of the total magnetic energy. This is the first calculation step, and is indicative that there are no field solutions saved. ').with_traceback(tb))
+          #      print('\n \n U_H = {} \n \n'.format(self.U_H))
+                
                 sol = Series({'U_H': self.U_H, 'U_E': self.U_E})
 
                 print(f"""     {'(ℰ_E-ℰ_H)/ℰ_E':>15s} {'ℰ_E':>9s} {'ℰ_H':>9s}
@@ -1175,7 +1185,11 @@ class pyEPR_HFSS(object):
 
     def get_variation_nominal(self):
         return self.design.get_nominal_variation()
-
+    def get_num_variation_nominal(self):
+        try:
+            return str(self.listvariations.index(self.nominalvariation))
+        except:
+            return '0'
     def get_variations_all(self):
         self.update_variation_information()
         return self.listvariations
@@ -1192,6 +1206,7 @@ class pyEPR_HFSS(object):
             self.nominalvariation = self.design.get_nominal_variation()
             self.nvariations      = np.size(self.listvariations)
             self.variations       = [str(i) for i in range(self.nvariations)]
+            self.num_variation_nominal = self.get_num_variation_nominal()
             if self.design.solution_type == 'Eigenmode':
                 self.nmodes       = int(self.setup.n_modes)
             else:
@@ -1324,53 +1339,125 @@ def pyEPR_ND(freqs, Ljs, ϕzpf,
 #==============================================================================
 
 class Results_Hamiltonian(OrderedDict):
+    
     '''
          Class to store and process results from the analysis of H_nl.
     '''
+        
+    def __init__(self, dict_file=None,Data_dir=None):
+        """ input: 
+           dict file - 1. ethier None to create an empty results hamilitoninan as 
+                       as was done in the original code
+                          
+                       2. or a string with the name of the file where the file of the
+                       previously saved Results_Hamiltonian instatnce we wish
+                       to load 
+                      
+                       3. or an existing instance of a dict class which will be 
+                       upgraded to the Results_Hamiltonian class
+            Data_dir -  the directory in which the file is to be saved or loaded 
+                        from, defults to the config.root_dir
+                        """
+        super().__init__()
+        
+        if Data_dir is None:
+            Data_dir = Path(config.root_dir)
+        
+        if dict_file is None:    
+            self.file_name = str(Data_dir)+'\\Results_Hamiltonian.npz'
+            
+        elif isinstance(dict_file,str): 
+            try:
+                self.file_name = str(Data_dir)+'\\' +dict_file
+                self.load_from_npz()
+            except:
+                self.file_name = dict_file
+                self.load_from_npz()
+        
+        elif isinstance(dict_file,dict):
+            self.inject_dic(dict_file)
+            self.file_name = str(Data_dir)+'\\Results_Hamiltonian.npz'
+        else:
+            raise ValueError('type dict_file is of type {}'.format(type(dict_file)))
+                #load file
     #TODO: make this savable and loadable
-
-    def get_vs_variation(self, quantity):
+    def save_to_npz(self,filename= None):
+        
+        if filename is None: filename = self.file_name
+        
+        np.savez(filename, Res_Hamil=dict(self))
+        return filename
+    
+    def load_from_npz(self,filename= None):
+        
+        if filename is None: filename = self.file_name
+        
+        self.inject_dic(extract_dic(file_name=filename)[0])
+        return filename
+    
+    def inject_dic(self,add_dic):
+        Init_number_of_keys = len(self.keys())
+        for key,val in add_dic.items():
+###TODO remove all copies of same data            
+          #  if key in self.keys():
+                #raise ValueError('trying to overwrite an exsiting varation')
+            self[str(int(key)+Init_number_of_keys)] = val
+        return 1
+    
+    def get_vs_variation(self, quantity,lv = None,vs='variation'):
         res = OrderedDict()
-        for k, r in self.items():
-            res[k] = r[quantity]
+        if lv is None:
+            for k, r in self.items():
+                res[k] = r[quantity]
+        else:
+   #         try:
+            for key in lv:
+                if vs=='variation':
+                    res[key] = self[key][quantity]
+                else:
+                    res[str(ureg.Quantity(self[key]['hfss_variables']['_'+vs]).magnitude)] = self[key][quantity]
+    #        except:
+            #    print(' No such variation as ' +key)
+            
         return res
-
-    def get_frequencies_HFSS(self):
-        z = sort_df_col(pd.DataFrame(self.get_vs_variation('f_0')))
+    #def get_vs_variable()
+    def get_frequencies_HFSS(self,lv =None,vs='variation'):
+        z = sort_df_col(pd.DataFrame(self.get_vs_variation('f_0',lv =lv,vs=vs))).sort_index(axis=1)
         z.index.name   = 'eigenmode'
-        z.columns.name = 'variation'
+        z.columns.name = vs
         return z
 
-    def get_frequencies_O1(self):
-        z = sort_df_col(pd.DataFrame(self.get_vs_variation('f_1')))
+    def get_frequencies_O1(self,lv =None,vs='variation'):
+        z = sort_df_col(pd.DataFrame(self.get_vs_variation('f_1',lv =lv,vs=vs))).sort_index(axis=1)
         z.index.name   = 'eigenmode'
-        z.columns.name = 'variation'
+        z.columns.name = vs
         return z
 
-    def get_frequencies_ND(self):
-        z = sort_df_col(pd.DataFrame(self.get_vs_variation('f_ND')))
+    def get_frequencies_ND(self,lv =None,vs='variation'):
+        z = sort_df_col(pd.DataFrame(self.get_vs_variation('f_ND',lv =lv,vs=vs))).sort_index(axis=1)
         z.index.name   = 'eigenmode'
-        z.columns.name = 'variation'
+        z.columns.name = vs
         return z
 
-    def get_chi_O1(self):
-        z = self.get_vs_variation('chi_O1')
+    def get_chi_O1(self,lv =None,vs='variation'):
+        z = self.get_vs_variation('chi_O1',lv =lv,vs=vs)
         return z
 
-    def get_chi_ND(self):
-        z = self.get_vs_variation('chi_ND')
+    def get_chi_ND(self,lv =None,vs='variation'):
+        z = self.get_vs_variation('chi_ND',lv =lv,vs=vs)
         return z
 
 
 class pyEPR_Analysis(object):
+    #TODO make away to propgrate to the data analysis capablites of or to merge more than a single HDF file 
     '''
         Defines an analysis object which loads and plots data from a h5 file
         This data is obtained using pyEPR_HFSS
     '''
-    def __init__(self, data_filename, variations=None, do_print_info = True):
+    def __init__(self, data_filename, variations=None, do_print_info = True, Res_hamil_filename= None):
 
         self.data_filename = data_filename
-        self.results       = Results_Hamiltonian()
+        self.results       = Results_Hamiltonian(dict_file=Res_hamil_filename)
 
         with HDFStore(data_filename, mode = 'r') as hdf:  # = h5py.File(data_filename, 'r')
 
@@ -1424,7 +1511,12 @@ class pyEPR_Analysis(object):
         self._renorm_pj           = True
         dum                       = DataFrame_col_diff(self.hfss_variables)
         self.hfss_vars_diff_idx   = dum if not (dum.any() == False) else []
-
+        try:
+            self.Num_hfss_vars_diff_idx =len(self.hfss_vars_diff_idx[self.hfss_vars_diff_idx==True])
+        except:
+            e = sys.exc_info()[0]
+            warnings.warn( "<p>Error: %s</p>" % e )
+            self.Num_hfss_vars_diff_idx= 0
         if do_print_info:
             self.print_info()
 
@@ -1434,11 +1526,70 @@ class pyEPR_Analysis(object):
                 print(self.hfss_variables[self.hfss_vars_diff_idx])
             print('\n')
 
-    def get_variable_vs(self, swpvar):
+    def get_variable_vs(self, swpvar,lv=None):
+        """ lv is list of variations (example ['0', '1']), if None it takes all variations
+            swpvar is the variable by which to orginize
+            
+            return:
+            ret -ordered dicitonary of key which is the variation number and the magnitude of swaver as the item
+        """
         ret = OrderedDict()
-        for key, varz in self.hfss_variables.items():
-            ret[key] = ureg.Quantity(varz['_'+swpvar]).magnitude
+        if lv is None:
+            for key, varz in self.hfss_variables.items():
+                ret[key] = ureg.Quantity(varz['_'+swpvar]).magnitude
+        else:
+            try:
+                for key in lv:
+                    ret[key] = ureg.Quantity(self.hfss_variables[key]['_'+swpvar]).magnitude
+            except:
+                print(' No such variation as ' +key)
         return ret
+    def get_variable_value(self,swpvar,lv = None):
+        
+        var =self.get_variable_vs(swpvar,lv=lv)    
+        return [var[key] for key in var.keys()]
+    
+    def get_variations_of_variable_value(self, swpvar,value,lv =None):
+        """A function to return all the variations in which one of the variables has a specific value
+            lv is list of variations (example ['0', '1']), if None it takes all variations
+            swpvar is a string and the name of the variable we wish to filter
+            value is the value of swapvr in which we are intrested
+            
+            returns lv - a list of the variations for which swavr==value
+            """
+            
+        if lv is None: lv = self.variations
+        
+        ret = self.get_variable_vs(swpvar,lv=lv)
+        
+        lv = np.array(list(ret.keys()))[np.array(list(ret.values()))==value] 
+        
+        #lv = lv_temp if not len(lv_temp) else lv
+        if  not (len(lv)):
+            raise ValueError('No variations have the variable-' +swpvar +'= {}'.format(value))
+            
+        return lv    
+            
+    def get_variation_of_multiple_variables_value(self, Var_dic,lv =None):
+        """
+                SEE get_variations_of_variable_value
+            A function to return all the variations in which one of the variables has a specific value
+            lv is list of variations (example ['0', '1']), if None it takes all variations
+            Var_dic is a dic with the name of the variable as key and the value to filter as item
+            """
+            
+        if lv is None: lv = self.variations
+        
+        var_str = None
+        for key, var in Var_dic.items():
+            lv = self.get_variations_of_variable_value(key,var,lv)
+            if var_str is None:
+                var_str = key +'= {}'.format(var)
+            else:
+                var_str = var_str +' & '+ key +'= {}'.format(var)
+        return lv,var_str
+        
+        
 
     def get_convergences_Max_Tets(self):
         ''' Index([u'Pass Number', u'Solved Elements', u'Max Delta Freq. %' ])  '''
@@ -1500,18 +1651,15 @@ class pyEPR_Analysis(object):
         return Ejs
 
     def analyze_all_variations(self,
-                               cos_trunc     = None,
-                               fock_trunc    = None,
-                               print_result  = True):
+                               variations =None,#None returns all_variations otherwis this is a list with number as strings ['0', '1']
+                               **kwargs):
         '''
             See analyze_variation
         '''
         result = OrderedDict()
-        for variation in self.variations:
-            result[variation] = self.analyze_variation(variation=variation,
-                                                        cos_trunc=cos_trunc,
-                                                        fock_trunc=fock_trunc,
-                                                        print_result=print_result)
+        if variations is None:  variations = self.variations
+        for variation in variations:
+            result[variation] = self.analyze_variation(variation,**kwargs)
         return result
 
     def get_Pmj(self, variation, _renorm_pj=None, print_=False):
@@ -1580,7 +1728,7 @@ class pyEPR_Analysis(object):
                           print_result  = True,
                           junctions     = None,
                           modes         = None):
-
+##TODO avoide analyzing a previously analyzed variation
         '''
         Can also print results neatly.
         Args:
@@ -1700,22 +1848,49 @@ class pyEPR_Analysis(object):
 
         print( '\n*** Q_coupling'  )
         print(result['Q_coupling'])
-
-    def plot_Hresults(self, variable=None, fig=None):
+        
+    def plotting_dic_x(self,Var_dic,var_name):
+        dic = {}
+        
+        if (len(Var_dic.keys())+1)== self.Num_hfss_vars_diff_idx:
+            lv,lv_str = self.get_variation_of_multiple_variables_value(Var_dic)
+            dic['label']= lv_str
+            dic['x_label']= var_name
+            dic['x']= self.get_variable_value(var_name,lv=lv)
+        else:
+            raise ValueError('more than one hfss variablae changes each time')
+        
+        return lv, dic
+    def plotting_dic_data(self,Var_dic,var_name,data_name):
+        lv,dic =self.plotting_dic_x()
+        dic['y_label']= data_name
+        
+    def plot_results(self, result,Y_label, variable,X_label ,variations =None):
+        
+        import matplotlib.pyplot as plt
+        
+        
+        
+    
+        
+    def plot_Hresults(self, variable=None, fig=None,variations =None):
         '''
-            versus varaitions
+            versus variations
         '''
         import matplotlib.pyplot as plt
 
         epr = self # lazyhack
-
+        if not(variable is None):
+            var_val = self.get_variable_value(variable,lv = variations)
+        else:
+            variable ='variation'
         fig, axs = plt.subplots(2,2, figsize=(10,6)) if fig is None else (fig, fig.axes)
 
         ax = axs[0,0]
         ax.set_title('Modal frequencies (MHz)')
-        f0 = epr.results.get_frequencies_HFSS()
-        f1 = epr.results.get_frequencies_O1()
-        f_ND = epr.results.get_frequencies_ND()
+        f0 = self.results.get_frequencies_HFSS(lv =variations,vs = variable)
+        f1 = self.results.get_frequencies_O1(lv =variations,vs = variable)
+        f_ND = self.results.get_frequencies_ND(lv =variations,vs = variable)
         mode_idx = list(f0.index)
         nmodes   = len(mode_idx)
         cmap     = cmap_discrete(nmodes)
@@ -1734,7 +1909,7 @@ class pyEPR_Analysis(object):
 
         ax = axs[1,0]
         ax.set_title('Quality factors')
-        Qs = epr.Qs
+        Qs = self.Qs if variations is None else self.Qs[variations] 
         Qs.transpose().plot(ax = ax, lw=0, marker=markerf1, ms=4, legend=True, zorder = 20, color = cmap)
         Qs.transpose().plot(ax = ax, lw=1, alpha = 0.2, color = 'grey', legend=False)
         ax.set_yscale('log')
@@ -1745,7 +1920,7 @@ class pyEPR_Analysis(object):
         def plot_chi_alpha(chi, primary):
             for i, m in enumerate(mode_idx):
                 ax = axs[0,1]
-                z = sort_Series_idx(pd.Series({k: chim.loc[m,m] for k, chim in chi.items()}))
+                z = sort_Series_idx(pd.Series({k: chim.loc[m,m] for k, chim in chi.items()})).sort_index()
                 z.plot(ax = ax, lw=0, ms=4, label = m, color = cmap[i], marker='o' if primary else 'x')
                 if primary:
                     z.plot(ax = ax, lw=1, alpha = 0.2, color = 'grey', label = '_nolegend_')
@@ -1762,9 +1937,9 @@ class pyEPR_Analysis(object):
             legend_translucent(axs[0][1],  leg_kw = dict(fontsize = 7, title = 'Mode'))
             legend_translucent(axs[1][1],  leg_kw = dict(fontsize = 7))
 
-        chiND  = epr.results.get_chi_ND()
-        chiO1  = epr.results.get_chi_O1()
-        use_ND = not (np.any([r['fock_trunc'] == None for k, r in epr.results.items()]))
+        chiND  = self.results.get_chi_ND(lv =variations,vs = variable)
+        chiO1  = self.results.get_chi_O1(lv =variations,vs = variable)
+        use_ND = not (np.any([r['fock_trunc'] == None for k, r in self.results.items()]))
         if use_ND:
             plot_chi_alpha(chiND, True)
             do_legends()
@@ -1778,16 +1953,11 @@ class pyEPR_Analysis(object):
         return fig, axs
 
 
-    def plot_convergence_f_lin(self, ax = None):
-        if ax is None:
-            fig, ax = plt.subplots(1,1)
-        Tets    = self.get_convergences_Tets_vs_pass()
-        DeltaF  = self.get_convergences_MaxDeltaFreq_vs_pass()
-        for var in Tets:
-            ax.plot(Tets[var].values, DeltaF[var].values, label =var)
-        ax.set_yscale('log')
-        ax.grid(True)
-        ax.set_xlabel('Number of mesh elements')
-        ax.set_ylabel('Max $\\Delta f$')
-        ax.set_title('$f_\\mathrm{lin}$ convergence vs. pass number')
-        legend_translucent(ax)
+def extract_dic(name=None, file_name=None):
+    """#name is the name of the dictionry as saved in the npz file if it is None, 
+    the function will return a list of all dictionaries in the npz file
+    file name is the name of the npz file"""
+    with np.load(file_name,allow_pickle=True) as f:
+        if name is None:
+            return  [f[i][()] for i in f.keys()]
+        return [f[name][()]]
