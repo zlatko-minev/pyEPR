@@ -33,6 +33,17 @@
 
 # Compatibility with python 2.7 and 3
 from __future__ import division, print_function, absolute_import
+from .toolbox.plotting import mpl_dpi
+from .hfss import load_ansys_project, get_active_design, get_active_project,\
+    HfssProject, CalcObject, parse_units, parse_units_user
+from .hfss import release as hfss_release
+from .core import Project_Info, pyEPR_HFSS, pyEPR_Analysis
+from . import hfss
+from . import core
+from . import numeric_diag
+from . import calcs
+from . import toolbox
+from . import config
 from collections import OrderedDict
 
 import logging
@@ -40,7 +51,7 @@ __imports_warn = False
 
 
 ##############################################################################
-### Configure logging
+# Configure logging
 
 logger = logging.getLogger('pyEPR')  # singleton
 
@@ -52,7 +63,7 @@ if not len(logger.handlers):
 
     # Format
     # unlike the root logger, a custom logger can’t be configured using basicConfig().
-    #c_format = logging.Formatter(
+    # c_format = logging.Formatter(
     #    '%(name)s - %(levelname)s - %(message)s\n   ::%(pathname)s:%(lineno)d: %(funcName)s\n')
     c_format = logging.Formatter('%(asctime)s %(levelname)s [%(funcName)s]: %(message)s',
                                  datefmt='%I:%M%p %Ss')
@@ -85,7 +96,8 @@ try:
         'ignore', category=pd.io.pytables.PerformanceWarning)
 except (ImportError, ModuleNotFoundError):
     if __imports_warn:
-        logger.warning("IMPORT WARNING: `pandas` python package not found. %s", __STD_END_MSG)
+        logger.warning(
+            "IMPORT WARNING: `pandas` python package not found. %s", __STD_END_MSG)
 
 # Check for qutip
 try:
@@ -147,10 +159,10 @@ except (ImportError, ModuleNotFoundError):
     For more info, see https://github.com/bcj/AttrDict
     """))
 
-##### Check if the config is set up
+# Check if the config is set up
 if 1:
     from pathlib import Path
-    path = Path(__path__[0]) # module path
+    path = Path(__path__[0])  # module path
     if not (path/'config.py').is_file():
         # if config does not exist copy default config
         print(f'\n**** pyEPR WARNING: config.py does not exist. The user should set this up.\n \
@@ -160,14 +172,12 @@ if 1:
         shutil.copy(str(path/'config_default.py'), str(path/'config.py'))
 
 
-
 ##############################################################################
 # pyEPR Specific
 
 # Config setup
-from . import config
 try:  # Check if we're in IPython.
-    __IPYTHON__ # pylint: disable=undefined-variable, pointless-statement
+    __IPYTHON__  # pylint: disable=undefined-variable, pointless-statement
     config.ipython = True
 except Exception:
     config.ipython = False
@@ -175,14 +185,3 @@ config.__STD_END_MSG = __STD_END_MSG
 
 
 # Convenience variable and function imports
-from . import toolbox
-from . import calcs
-from . import numeric_diag
-from . import core
-from . import hfss
-
-from .core import Project_Info, pyEPR_HFSS, pyEPR_Analysis
-from .hfss import release as hfss_release
-from .hfss import load_ansys_project, get_active_design, get_active_project,\
-    HfssProject, CalcObject, parse_units, parse_units_user
-from .toolbox.plotting import mpl_dpi
