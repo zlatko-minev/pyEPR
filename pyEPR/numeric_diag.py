@@ -8,6 +8,7 @@ Original code by Phil Reinhold
 Revised and updated by Zlatko Minev & Lysander Christakis
 This file is tricky, use caution to modify.
 '''
+# pylint: disable=invalid-name
 
 from __future__ import print_function
 
@@ -16,9 +17,8 @@ from functools import reduce
 import numpy as np
 
 from .calcs.constants import Planck as h
-from .calcs.constants import elementary_charge as e
-from .calcs.constants import fluxQ, hbar, pi
-from .toolbox.pythonic import fact
+from .calcs.constants import fluxQ, hbar
+from .calcs.hamiltonian import MatrixOps
 
 try:
     import qutip
@@ -26,47 +26,24 @@ try:
 except (ImportError, ModuleNotFoundError):
     pass
 
-
 __all__ = ['bbq_hmt', 'make_dispersive', 'bbq_nq']
 
-
-###############################################################################
-# Module
-
-def dot(ais, bis):
-    return sum(ai*bi for ai, bi in zip(ais, bis))
-
-
-def cos_approx(x, cos_trunc=5):
-    return sum((-1)**i * x**(2*i) / float(fact(2*i)) for i in range(2, cos_trunc + 1))
-
-
-"""
-class HamOps(object):
-    @staticmethod
-    def fock_state_on(d, fock_trunc, N_modes):
-        ''' d={mode number: # of photons} In the bare eigen basis
-        '''
-        return qutip.tensor(*[qutip.basis(fock_trunc, d.get(i, 0)) for i in range(N_modes)])  # give me the value d[i]  or 0 if d[i] does not exist
-
-    @staticmethod
-    def closest_state_to(s, energyMHz, evecs):
-        def distance(s2):
-            return (s.dag() * s2[1]).norm()
-        return max(zip(energyMHz, evecs), key=distance)
-"""
+dot = MatrixOps.dot
+cos_approx = MatrixOps.cos_approx
 
 
 def bbq_hmt(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual=False):
     r"""
     :param fs: Linearized model, H_lin, normal mode frequencies in Hz, length N
     :param ljs: junction linerized inductances in Henries, length M
-    :param fzpfs: Zero-point fluctutation of the junction fluxes for each mode across each junction, shape MxJ
+    :param fzpfs: Zero-point fluctutation of the junction fluxes for each mode across each junction,
+                 shape MxJ
     :return: Hamiltonian in units of Hz (i.e H / h)
     All in SI units. The ZPF fed in are the generalized, not reduced, flux.
 
     Description:
-     Takes the linear mode frequencies, $\omega_m$, and the zero-point fluctuations, ZPFs, and builds the Hamiltonian matrix of $H_full$, assuming cos potential.
+     Takes the linear mode frequencies, $\omega_m$, and the zero-point fluctuations, ZPFs, and
+     builds the Hamiltonian matrix of $H_full$, assuming cos potential.
     """
     nmodes = len(fs)
     njuncs = len(ljs)
@@ -113,7 +90,7 @@ def bbq_hmt(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual=False):
 
 def make_dispersive(H, fock_trunc, fzpfs=None, f0s=None, chi_prime=False,
                     use_1st_order=False):
-    """
+    r"""
     Input: Hamiltonian Matrix.
         Optional: phi_zpfs and normal mode frequncies, f0s.
         use_1st_order : deprecated
@@ -124,7 +101,6 @@ def make_dispersive(H, fock_trunc, fzpfs=None, f0s=None, chi_prime=False,
         Based on the assignment of the excitations, the function returns the dressed mode frequencies $\omega_m^\prime$, and the cross-Kerr matrix (including anharmonicities) extracted from the numerical diagonalization, as well as from 1st order perturbation theory.
         Note, the diagonal of the CHI matrix is directly the anharmonicity term.
     """
-    import qutip
     if hasattr(H, '__len__'):  # is it an array / list?
         [H_lin, H_nl] = H
         H = H_lin + H_nl
