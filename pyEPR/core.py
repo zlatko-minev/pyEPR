@@ -1,17 +1,18 @@
 '''
  Copyright Zlatko Minev and Zaki Leghtas
- 2015, 2016, 2017, 2018
+ 2015, 2016, 2017, 2018, 2019, 2020
 '''
 from __future__ import print_function    # Python 2.7 and 3 compatibility
 import os
 import sys
 import time
 import shutil
-#import warnings
+import warnings
 import numpy as np
 import pandas as pd
+import matplotlib as mpl
 import matplotlib.pyplot as plt
-import warnings
+
 # Standard imports
 from numpy        import pi
 from numpy.linalg import inv
@@ -24,16 +25,15 @@ from pathlib      import Path
 from . import hfss
 from . import logger
 from . import config
-from . import AttrDict
 from .hfss        import ureg, CalcObject, ConstantVecCalcObject, set_property
-from .toolbox     import print_NoNewLine, print_color, deprecated, fact, epsilon_0, hbar, Planck, fluxQ, nck, \
+from .toolbox.pythonic     import print_NoNewLine, print_color, deprecated, fact,  nck, \
                          divide_diagonal_by_2, print_matrix, DataFrame_col_diff, get_instance_vars,\
                          sort_df_col, sort_Series_idx
-from .toolbox_circuits import Calcs_basic
-from .toolbox_plotting import cmap_discrete, legend_translucent
+from .calcs.constants import epsilon_0, hbar, Planck, fluxQ
+from .calcs.basic import CalcsBasic
+from .toolbox.plotting import cmap_discrete, legend_translucent
 from .numeric_diag import bbq_hmt, make_dispersive
-import matplotlib as mpl
-from .toolbox_report import plot_convergence_f_vspass, plot_convergence_max_df, plot_convergence_solved_elem, plot_convergence_maxdf_vs_sol
+from .reports import plot_convergence_f_vspass, plot_convergence_max_df, plot_convergence_solved_elem, plot_convergence_maxdf_vs_sol
 
 
 class Project_Info(object):
@@ -115,12 +115,13 @@ class Project_Info(object):
             self.seams               = None
 
     def __init__(self, project_path=None, project_name=None, design_name=None,
-                 setup_name= None, do_connect = True):
+                 setup_name=None, do_connect=True):
+
 
         self.project_path  = str(Path(project_path)) if not (project_path is None) else None # Path: format path correctly to system convention
         self.project_name  = project_name
         self.design_name   = design_name
-        self.setup_name    =  setup_name
+        self.setup_name    = setup_name
 
         ## HFSS desgin: describe junction parameters
         # TODO: introduce modal labels
@@ -215,9 +216,9 @@ class Project_Info(object):
 
     def get_setup(self, name):
         """
-        Connects to a specific setup for the design. 
+        Connects to a specific setup for the design.
         Sets  self.setup and self.setup_name.
-        If Name is 
+        If Name is
         """
 
         if name is None:
@@ -230,7 +231,7 @@ class Project_Info(object):
             self.setup_name = self.setup.name
             logger.info(f'\tOpened setup: name={self.setup_name}  type={type(self.setup)}')
             return self.setup
-        
+
 
     def check_connected(self):
         """Checks if fully connected including setup
@@ -1008,7 +1009,7 @@ class pyEPR_HFSS(object):
             for mode in modes:  # integer of mode number [0,1,2,3,..]
 
                 # Mode setup & load fields
-                
+
                 self.set_mode(mode)
 
                 #  Get hfss solved frequencie
@@ -1039,7 +1040,7 @@ class pyEPR_HFSS(object):
                   #  print("\n\nError:\n", e)
                    # raise(Exception(' Did you save the field solutions?\n  Failed during calculation of the total magnetic energy. This is the first calculation step, and is indicative that there are no field solutions saved. ').with_traceback(tb))
           #      print('\n \n U_H = {} \n \n'.format(self.U_H))
-                
+
                 sol = Series({'U_H': self.U_H, 'U_E': self.U_E})
 
                 print(f"""     {'(ℰ_E-ℰ_H)/ℰ_E':>15s} {'ℰ_E':>9s} {'ℰ_H':>9s}
@@ -1339,27 +1340,27 @@ def pyEPR_ND(freqs, Ljs, ϕzpf,
 #==============================================================================
 
 class Results_Hamiltonian(OrderedDict):
-    
+
     '''
          Class to store and process results from the analysis of H_nl.
     '''
-        
+
     def __init__(self, dict_file=None,Data_dir=None):
-        """ input: 
-           dict file - 1. ethier None to create an empty results hamilitoninan as 
+        """ input:
+           dict file - 1. ethier None to create an empty results hamilitoninan as
                        as was done in the original code
-                          
+
                        2. or a string with the name of the file where the file of the
                        previously saved Results_Hamiltonian instatnce we wish
-                       to load 
-                      
-                       3. or an existing instance of a dict class which will be 
+                       to load
+
+                       3. or an existing instance of a dict class which will be
                        upgraded to the Results_Hamiltonian class
-            Data_dir -  the directory in which the file is to be saved or loaded 
+            Data_dir -  the directory in which the file is to be saved or loaded
                         from, defults to the config.root_dir
                         """
         super().__init__()
-        
+
         if Data_dir is None:
             Data_dir = str(Path(config.root_dir))+ '\\temp\\'
             if not os.path.isdir(Data_dir): os.makedirs(Data_dir) 
@@ -1384,7 +1385,7 @@ class Results_Hamiltonian(OrderedDict):
             except:
                 self.file_name = dict_file
                 self.load_from_npz()
-        
+
         elif isinstance(dict_file,dict):
             self.inject_dic(dict_file)
             self.file_name = str(Data_dir)+'Results_Hamiltonian.npz'
@@ -1393,28 +1394,28 @@ class Results_Hamiltonian(OrderedDict):
                 #load file
     #TODO: make this savable and loadable
     def save_to_npz(self,filename= None):
-        
+
         if filename is None: filename = self.file_name
-        
+
         np.savez(filename, Res_Hamil=dict(self))
         return filename
-    
+
     def load_from_npz(self,filename= None):
-        
+
         if filename is None: filename = self.file_name
-        
+
         self.inject_dic(extract_dic(file_name=filename)[0])
         return filename
-    
+
     def inject_dic(self,add_dic):
         Init_number_of_keys = len(self.keys())
         for key,val in add_dic.items():
-###TODO remove all copies of same data            
+###TODO remove all copies of same data
           #  if key in self.keys():
                 #raise ValueError('trying to overwrite an exsiting varation')
             self[str(int(key)+Init_number_of_keys)] = val
         return 1
-    
+
     def get_vs_variation(self, quantity,lv = None,vs='variation'):
         res = OrderedDict()
         if lv is None:
@@ -1429,7 +1430,7 @@ class Results_Hamiltonian(OrderedDict):
                     res[str(ureg.Quantity(self[key]['hfss_variables']['_'+vs]).magnitude)] = self[key][quantity]
     #        except:
             #    print(' No such variation as ' +key)
-            
+
         return res
     #def get_vs_variable()
     def get_frequencies_HFSS(self,lv =None,vs='variation'):
@@ -1463,7 +1464,7 @@ class Results_Hamiltonian(OrderedDict):
 
 
 class pyEPR_Analysis(object):
-    #TODO make away to propgrate to the data analysis capablites of or to merge more than a single HDF file 
+    #TODO make away to propgrate to the data analysis capablites of or to merge more than a single HDF file
     '''
         Defines an analysis object which loads and plots data from a h5 file
         This data is obtained using pyEPR_HFSS
@@ -1544,7 +1545,7 @@ class pyEPR_Analysis(object):
     def get_variable_vs(self, swpvar,lv=None):
         """ lv is list of variations (example ['0', '1']), if None it takes all variations
             swpvar is the variable by which to orginize
-            
+
             return:
             ret -ordered dicitonary of key which is the variation number and the magnitude of swaver as the item
         """
@@ -1560,31 +1561,31 @@ class pyEPR_Analysis(object):
                 print(' No such variation as ' +key)
         return ret
     def get_variable_value(self,swpvar,lv = None):
-        
-        var =self.get_variable_vs(swpvar,lv=lv)    
+
+        var =self.get_variable_vs(swpvar,lv=lv)
         return [var[key] for key in var.keys()]
-    
+
     def get_variations_of_variable_value(self, swpvar,value,lv =None):
         """A function to return all the variations in which one of the variables has a specific value
             lv is list of variations (example ['0', '1']), if None it takes all variations
             swpvar is a string and the name of the variable we wish to filter
             value is the value of swapvr in which we are intrested
-            
+
             returns lv - a list of the variations for which swavr==value
             """
-            
+
         if lv is None: lv = self.variations
-        
+
         ret = self.get_variable_vs(swpvar,lv=lv)
-        
-        lv = np.array(list(ret.keys()))[np.array(list(ret.values()))==value] 
-        
+
+        lv = np.array(list(ret.keys()))[np.array(list(ret.values()))==value]
+
         #lv = lv_temp if not len(lv_temp) else lv
         if  not (len(lv)):
             raise ValueError('No variations have the variable-' +swpvar +'= {}'.format(value))
-            
-        return lv    
-            
+
+        return lv
+
     def get_variation_of_multiple_variables_value(self, Var_dic,lv =None):
         """
                 SEE get_variations_of_variable_value
@@ -1592,9 +1593,9 @@ class pyEPR_Analysis(object):
             lv is list of variations (example ['0', '1']), if None it takes all variations
             Var_dic is a dic with the name of the variable as key and the value to filter as item
             """
-            
+
         if lv is None: lv = self.variations
-        
+
         var_str = None
         for key, var in Var_dic.items():
             lv = self.get_variations_of_variable_value(key,var,lv)
@@ -1603,8 +1604,8 @@ class pyEPR_Analysis(object):
             else:
                 var_str = var_str +' & '+ key +'= {}'.format(var)
         return lv,var_str
-        
-        
+
+
 
     def get_convergences_Max_Tets(self):
         ''' Index([u'Pass Number', u'Solved Elements', u'Max Delta Freq. %' ])  '''
@@ -1736,7 +1737,7 @@ class pyEPR_Analysis(object):
 
         print(PJ, SJ, Om, EJ)
 
-        PHI_zpf = Calcs_basic.epr_to_zpf(PJ, SJ, Om, EJ)
+        PHI_zpf = CalcsBasic.epr_to_zpf(PJ, SJ, Om, EJ)
 
         return PJ, SJ, Om, EJ, PHI_zpf                   # All as np.array
 
@@ -1869,10 +1870,10 @@ class pyEPR_Analysis(object):
 
         print( '\n*** Q_coupling'  )
         print(result['Q_coupling'])
-        
+
     def plotting_dic_x(self,Var_dic,var_name):
         dic = {}
-        
+
         if (len(Var_dic.keys())+1)== self.Num_hfss_vars_diff_idx:
             lv,lv_str = self.get_variation_of_multiple_variables_value(Var_dic)
             dic['label']= lv_str
@@ -1880,20 +1881,20 @@ class pyEPR_Analysis(object):
             dic['x']= self.get_variable_value(var_name,lv=lv)
         else:
             raise ValueError('more than one hfss variablae changes each time')
-        
+
         return lv, dic
     def plotting_dic_data(self,Var_dic,var_name,data_name):
         lv,dic =self.plotting_dic_x()
         dic['y_label']= data_name
-        
+
     def plot_results(self, result,Y_label, variable,X_label ,variations =None):
-        
+
         import matplotlib.pyplot as plt
-        
-        
-        
-    
-        
+
+
+
+
+
     def plot_Hresults(self, variable=None, fig=None,variations =None):
         '''
             versus variations
@@ -1930,7 +1931,7 @@ class pyEPR_Analysis(object):
 
         ax = axs[1,0]
         ax.set_title('Quality factors')
-        Qs = self.Qs if variations is None else self.Qs[variations] 
+        Qs = self.Qs if variations is None else self.Qs[variations]
         Qs.transpose().plot(ax = ax, lw=0, marker=markerf1, ms=4, legend=True, zorder = 20, color = cmap)
         Qs.transpose().plot(ax = ax, lw=1, alpha = 0.2, color = 'grey', legend=False)
         ax.set_yscale('log')
@@ -1975,7 +1976,7 @@ class pyEPR_Analysis(object):
 
 
 def extract_dic(name=None, file_name=None):
-    """#name is the name of the dictionry as saved in the npz file if it is None, 
+    """#name is the name of the dictionry as saved in the npz file if it is None,
     the function will return a list of all dictionaries in the npz file
     file name is the name of the npz file"""
     with np.load(file_name,allow_pickle=True) as f:

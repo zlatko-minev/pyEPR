@@ -2,25 +2,24 @@
 """
 Created on Fri Aug 25 19:30:12 2017
 
-Plotting snippets and useful functions 
+Plotting snippets and useful functions
 
 @author: Zlatko K. Minev
 """
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-
-from .config import Plotting_Options
+import numpy as np
 from matplotlib.colors import rgb2hex
 
-default_cmap = mpl.cm.viridis
+from ..config import Plotting_Options
 
 # ==============================================================================
 # Plotting - MPL basics
 # ==============================================================================
+
 
 def mpl_dpi(dpi=200):
     '''
@@ -28,6 +27,7 @@ def mpl_dpi(dpi=200):
     '''
     mpl.rcParams['figure.dpi'] = dpi
     mpl.rcParams['savefig.dpi'] = dpi
+
 
 def plt_cla(ax):
     '''
@@ -40,6 +40,7 @@ def plt_cla(ax):
         artist.remove()
     if ax.legend_:
         ax.legend_.remove()
+
 
 def legend_translucent(ax, values=[], loc=0, alpha=0.5, leg_kw={}):
     '''
@@ -70,9 +71,10 @@ def get_last_color(ax):
     '''
     return ax.lines[-1].get_color()
 
+
 def get_next_color(ax):
-    ''' 
-    To reset color cycle 
+    '''
+    To reset color cycle
         ax.set_prop_cycle(None)
 
     USE
@@ -85,15 +87,16 @@ def get_next_color(ax):
     return next(ax._get_lines.prop_cycler)['color']
 
 
-def get_color_cycle(n, colormap=default_cmap, start=0., stop=1., format='hex'):
+def get_color_cycle(n, colormap=None, start=0., stop=1., format='hex'):
     '''
     See also get_next_color
     '''
+    colormap = colormap or Plotting_Options.default_color_map
+
     pts = np.linspace(start, stop, n)
     if format == 'hex':
         colors = [rgb2hex(colormap(pt)) for pt in pts]
     return colors
-
 
 
 def cmap_discrete(n, cmap_kw={}):
@@ -113,21 +116,21 @@ def cmap_discrete(n, cmap_kw={}):
 
     return get_color_cycle(n+1, **cmap_KW)
 
+
 def cmap_discrete_CubeHelix(n, helix_kw={}):
     '''
         https://github.com/jiffyclub/palettable/blob/master/demo/Cubehelix%20Demo.ipynb
         cube.show_discrete_image()
+
+        Requires palettable
     '''
-    from palettable import cubehelix
+    from palettable import cubehelix  # pylint: disable=import-error
     helix_KW = dict(start_hue=240., end_hue=-300., min_sat=1., max_sat=2.5,
                     min_light=0.3, max_light=0.8, gamma=.9)
     helix_KW.update(helix_kw)
     cube = cubehelix.Cubehelix.make(n=n, **helix_KW)
     return cube.mpl_colors
 
-
-#################################################################################
-# Special plots
 
 def xarr_heatmap(fg, title=None, kwheat={}, fmt=('%.3f', '%.2f'), fig=None):
     ''' Needs seaborn and xarray'''
