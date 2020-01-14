@@ -115,20 +115,12 @@ class Project_Info(object):
             self.seams               = None
 
     def __init__(self, project_path=None, project_name=None, design_name=None,
-<<<<<<< HEAD
                  setup_name= None, do_connect = True):
-=======
-                setup_name=None, do_connect = True):
->>>>>>> origin/master
 
         self.project_path  = str(Path(project_path)) if not (project_path is None) else None # Path: format path correctly to system convention
         self.project_name  = project_name
         self.design_name   = design_name
-<<<<<<< HEAD
         self.setup_name    =  setup_name
-=======
-        self.setup_name    = setup_name
->>>>>>> origin/master
 
         ## HFSS desgin: describe junction parameters
         # TODO: introduce modal labels
@@ -335,7 +327,7 @@ class pyEPR_HFSS(object):
             self.pinfo.connect()
 
         self.verbose          = True #TODO: change verbose to logger. remove verbose flags
-        self.append_analysis  = False #TODO
+        self.append_analysis  = False   #TODO
 
         # hfss connect module
         self.fields           = None
@@ -1369,10 +1361,21 @@ class Results_Hamiltonian(OrderedDict):
         super().__init__()
         
         if Data_dir is None:
-            Data_dir = Path(config.root_dir)
+            Data_dir = str(Path(config.root_dir))+ '\\temp\\'
+            if not os.path.isdir(Data_dir): os.makedirs(Data_dir) 
+            Data_dir+=str(time.strftime('%Y-%m-%d %H-%M-%S', time.localtime()))+'_'
+       
+        elif os.path.isfile(Data_dir): #this is for the case we are sendig as Data_dir the hdf5 file
+            Data_dir.replace('.hdf5','_')
         
+        elif os.path.isdir(Data_dir):
+            print(Data_dir)
+        else:
+            raise ValueError('Unexpected Data_dir')
+            
+                        
         if dict_file is None:    
-            self.file_name = str(Data_dir)+'\\Results_Hamiltonian.npz'
+            self.file_name = str(Data_dir)+'Results_Hamiltonian.npz'
             
         elif isinstance(dict_file,str): 
             try:
@@ -1384,7 +1387,7 @@ class Results_Hamiltonian(OrderedDict):
         
         elif isinstance(dict_file,dict):
             self.inject_dic(dict_file)
-            self.file_name = str(Data_dir)+'\\Results_Hamiltonian.npz'
+            self.file_name = str(Data_dir)+'Results_Hamiltonian.npz'
         else:
             raise ValueError('type dict_file is of type {}'.format(type(dict_file)))
                 #load file
@@ -1430,19 +1433,22 @@ class Results_Hamiltonian(OrderedDict):
         return res
     #def get_vs_variable()
     def get_frequencies_HFSS(self,lv =None,vs='variation'):
-        z = sort_df_col(pd.DataFrame(self.get_vs_variation('f_0',lv =lv,vs=vs))).sort_index(axis=1)
+        z = sort_df_col(pd.DataFrame(self.get_vs_variation('f_0',lv =lv,vs=vs)))
+        if vs == 'variation': z =z.sort_index(axis=1)
         z.index.name   = 'eigenmode'
         z.columns.name = vs
         return z
 
     def get_frequencies_O1(self,lv =None,vs='variation'):
-        z = sort_df_col(pd.DataFrame(self.get_vs_variation('f_1',lv =lv,vs=vs))).sort_index(axis=1)
+        z = sort_df_col(pd.DataFrame(self.get_vs_variation('f_1',lv =lv,vs=vs)))
+        if vs == 'variation': z =z.sort_index(axis=1)
         z.index.name   = 'eigenmode'
         z.columns.name = vs
         return z
 
     def get_frequencies_ND(self,lv =None,vs='variation'):
-        z = sort_df_col(pd.DataFrame(self.get_vs_variation('f_ND',lv =lv,vs=vs))).sort_index(axis=1)
+        z = sort_df_col(pd.DataFrame(self.get_vs_variation('f_ND',lv =lv,vs=vs)))
+        if vs == 'variation': z =z.sort_index(axis=1)
         z.index.name   = 'eigenmode'
         z.columns.name = vs
         return z
@@ -1465,7 +1471,8 @@ class pyEPR_Analysis(object):
     def __init__(self, data_filename, variations=None, do_print_info = True, Res_hamil_filename= None):
 
         self.data_filename = data_filename
-        self.results       = Results_Hamiltonian(dict_file=Res_hamil_filename)
+#        if Res_hamil_filename is None
+        self.results       = Results_Hamiltonian(dict_file=Res_hamil_filename,Data_dir=data_filename)
 
         with HDFStore(data_filename, mode = 'r') as hdf:  # = h5py.File(data_filename, 'r')
 
@@ -1660,6 +1667,7 @@ class pyEPR_Analysis(object):
 
     def analyze_all_variations(self,
                                variations =None,#None returns all_variations otherwis this is a list with number as strings ['0', '1']
+                               Analyze_previous =False, # set to true if you wish to overwrite previous analysis
                                **kwargs):
         '''
             See analyze_variation
@@ -1667,7 +1675,11 @@ class pyEPR_Analysis(object):
         result = OrderedDict()
         if variations is None:  variations = self.variations
         for variation in variations:
-            result[variation] = self.analyze_variation(variation,**kwargs)
+            if (not Analyze_previous) and (variation in self.results.keys()):
+                result[variation]= self.results[variation]
+            else:
+                result[variation] = self.analyze_variation(variation,**kwargs)
+    
         return result
 
     def get_Pmj(self, variation, _renorm_pj=None, print_=False):
@@ -1818,7 +1830,8 @@ class pyEPR_Analysis(object):
         result['cos_trunc']      = cos_trunc
 
         self.results[variation]  = result
-
+        self.results.save_to_npz()
+        
         if print_result:
             self.print_variation(variation)
             self.print_result(result)
@@ -1899,7 +1912,7 @@ class pyEPR_Analysis(object):
         f0 = self.results.get_frequencies_HFSS(lv =variations,vs = variable)
         f1 = self.results.get_frequencies_O1(lv =variations,vs = variable)
         f_ND = self.results.get_frequencies_ND(lv =variations,vs = variable)
-        mode_idx = list(f0.index)
+        mode_idx = list(f1.index) #changed by Asaf from f0 as not all modes are always analyzed
         nmodes   = len(mode_idx)
         cmap     = cmap_discrete(nmodes)
 
@@ -1928,7 +1941,7 @@ class pyEPR_Analysis(object):
         def plot_chi_alpha(chi, primary):
             for i, m in enumerate(mode_idx):
                 ax = axs[0,1]
-                z = sort_Series_idx(pd.Series({k: chim.loc[m,m] for k, chim in chi.items()})).sort_index()
+                z = sort_Series_idx(pd.Series({k: chim.loc[m,m] for k, chim in chi.items()}))
                 z.plot(ax = ax, lw=0, ms=4, label = m, color = cmap[i], marker='o' if primary else 'x')
                 if primary:
                     z.plot(ax = ax, lw=1, alpha = 0.2, color = 'grey', label = '_nolegend_')
