@@ -135,7 +135,7 @@ except (ImportError, ModuleNotFoundError):
 
 
 try:
-    from attrdict import AttrDict # replace with Dict?
+    from attrdict import AttrDict as Dict
 except (ImportError, ModuleNotFoundError):
     raise(ImportError("""
     Please install python package `AttrDict`
@@ -167,7 +167,7 @@ if 1:
 # Config setup
 from . import config
 try:  # Check if we're in IPython.
-    __IPYTHON__
+    __IPYTHON__ # pylint: disable=undefined-variable, pointless-statement
     config.ipython = True
 except Exception:
     config.ipython = False
@@ -175,9 +175,8 @@ config.__STD_END_MSG = __STD_END_MSG
 
 
 # Convenience variable and function imports
-from . import toolbox_plotting
-from . import toolbox_circuits
 from . import toolbox
+from . import calcs
 from . import numeric_diag
 from . import core
 from . import hfss
@@ -186,4 +185,4 @@ from .core import Project_Info, pyEPR_HFSS, pyEPR_Analysis
 from .hfss import release as hfss_release
 from .hfss import load_ansys_project, get_active_design, get_active_project,\
     HfssProject, CalcObject, parse_units, parse_units_user
-from .toolbox_plotting import mpl, plt, np, mpl_dpi
+from .toolbox.plotting import mpl_dpi

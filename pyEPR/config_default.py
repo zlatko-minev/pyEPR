@@ -1,14 +1,18 @@
 """
 Created on Fri Oct 30 14:21:45 2015
 
-Configuration file 
+Configuration file
 
 Copy this file and rename it as config.py
 """
-from . import AttrDict
+# pylint: disable=invalid-name
+
+import matplotlib.pyplot as plt
+
+from . import Dict
 
 #------------------------------------------------------------
-# Directories 
+# Directories
 'Folder to save result data in'
 root_dir = r'C:\data-pyEPR'
 
@@ -16,23 +20,27 @@ root_dir = r'C:\data-pyEPR'
 pyEPR_default_options
 	Default options to use
 
-method_calc_P_mj  :  
+method_calc_P_mj  :
 	'line_voltage' : Uses the line voltage integral
-	'J_surf_mag'   : takes the avg. Jsurf over the rect. Make sure you have seeded 
+	'J_surf_mag'   : takes the avg. Jsurf over the rect. Make sure you have seeded
 					 lots of tets here. I recommend starting with 4 across smallest dimension.
-					 Multi-junction calculation of energy participation ratio matrix based on <I_J>. Current is integrated average of J_surf by default: (zkm 3/29/16)
-            		 Will calculate the Pj matrix for the selected modes for the given junctions junc_rect array & length of juuncs
+					 Multi-junction calculation of energy participation ratio matrix based on <I_J>.
+					 Current is integrated average of J_surf by default: (zkm 3/29/16)
+            		 Will calculate the Pj matrix for the selected modes for the given junctions
+					 junc_rect array & length of juuncs
 '''
-options_hfss = AttrDict(dict(
-	method_calc_P_mj = 'line_voltage', # 'line_voltage' or 'J_surf_mag'
-	save_mesh_stats  = True,
+options_hfss = Dict(dict(
+    method_calc_P_mj = 'line_voltage', # 'line_voltage' or 'J_surf_mag'
+    save_mesh_stats  = True,
 ))
 
- 
+
 
 class Dissipation_params:
-	''' Loss properties of various materials and surfaces '''
-	#TOOD: Turn into a dictionary 
+	"""
+	Loss properties of various materials and surfaces
+	"""
+	# TODO: Turn into a dictionary with Dict
 
 	# bulk dielectric:
 	# refs:  https://arxiv.org/abs/1308.1743
@@ -55,9 +63,9 @@ class Dissipation_params:
 	gseam          = 1.0e3 # per Ohm meter: seam conductance
 
 
-import matplotlib.pyplot as plt
+
 class Plotting_Options:
-    default_color_map = plt.cm.viridis
+    default_color_map = plt.cm.viridis # pylint: disable=no-member
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Internal
