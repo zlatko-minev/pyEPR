@@ -17,13 +17,13 @@ Module  that contains key and utility modues used in pyEPR.
 Module that contains calculation useful sub-modules
 - constants: numerical constants
 - basic: epr to zpf, and other general functions
-- conversions:  conversion functions for Lj to Ej, Cj to Ej, and such.
+- convert:  conversion functions for Lj to Ej, Cj to Ej, and such.
 - transmon: transmon related functions
 
 
 ##### hfss.py
 Interface functions with Ansoft HFSS.
-Contributed by Phil Rheinhold.  Originally part of [pyHFSS](https://github.com/PhilReinhold/pyHFSS).
+Contributed by Phil Rheinhold. Originally part of [pyHFSS](https://github.com/PhilReinhold/pyHFSS).
 Updated and modified by Zlatko Minev & Zaki Leghtas.
 
 ##### numeic_diag.py
