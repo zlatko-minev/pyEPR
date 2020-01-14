@@ -12,20 +12,12 @@ import warnings
 
 # Constants
 from collections import OrderedDict
-from scipy.constants import Planck, elementary_charge, epsilon_0, pi
+from .constants import Planck, elementary_charge, epsilon_0, pi, π, ħ, ϕ0, e_el
 
-# Convinience
-π = pi
-ħ = hbar = Planck/(2*pi)              # Reduced Planks constant
-# Reduced Flux Quantum  (3.29105976 × 10-16 Webers)
-ϕ0 = fluxQ = ħ / (2*elementary_charge)
-# Magnitude of the electric charge carried by a single electron
-e_el = elementary_charge
 
 # ==============================================================================
 # Utility functions
 # ==============================================================================
-
 
 def combinekw(kw1, kw2):
     ''' Copy kw1,  update with kw2, return result '''
@@ -253,12 +245,12 @@ def DataFrame_col_diff(PS, indx=0):
     if len(R) == 1:
         return np.logical_not(R[0])
     else:
-        return np.logical_not(np.logical_and.reduce(R))
+        return np.logical_not(np.logical_and.reduce(R))  # pylint: disable=no-member
 
 
 def DataFrame_display_side_by_side(*args, do_display=True):
     '''
-    from pyEPR.toolbox import display_dfs
+    from pyEPR.toolbox.pythonic import display_dfs
     https://stackoverflow.com/questions/38783027/jupyter-notebook-display-two-pandas-tables-side-by-side
     '''
     from IPython.display import display_html
@@ -279,7 +271,7 @@ def xarray_unravel_levels(arr, names, my_convert=lambda x: x):
         names : names of lists; you dont have to include the last two dataframe columns & rows, but you can to override them
         requires  xarray
     '''
-    import xarray
+    import xarray  # pylint: disable=import-error
     if type(arr) == pd.DataFrame:
         return xarray.DataArray(arr, dims=None if len(names) == 0 else names)
     elif type(arr) in [OrderedDict, dict]:
@@ -299,8 +291,7 @@ def robust_percentile(calc_data, ROBUST_PERCENTILE=2.):
     return vmin, vmax
 
 
-__all__ = ['hbar', 'e_el', 'epsilon_0', 'pi', 'fluxQ',
-           'fact', 'nck', 'combinekw',
+__all__ = ['fact', 'nck', 'combinekw',
            'divide_diagonal_by_2',
            'sort_df_col', 'sort_Series_idx',
            'print_matrix', 'print_NoNewLine',

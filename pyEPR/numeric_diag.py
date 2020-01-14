@@ -14,10 +14,8 @@ from __future__ import print_function
 import numpy as np
 
 from functools import reduce
-from . import logger
-from .toolbox import pi, fluxQ, fact, hbar,  \
-    elementary_charge as e, \
-    Planck as h
+from .toolbox.constants import pi, fluxQ, hbar, elementary_charge as e, Planck as h
+from .toolbox.pythonic import fact
 
 try:
     import qutip
@@ -30,7 +28,7 @@ __all__ = ['bbq_hmt', 'make_dispersive', 'bbq_nq']
 
 
 ###############################################################################
-### Module
+# Module
 
 def dot(ais, bis):
     return sum(ai*bi for ai, bi in zip(ais, bis))
@@ -57,7 +55,7 @@ class HamOps(object):
 
 
 def bbq_hmt(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual=False):
-    """
+    r"""
     :param fs: Linearized model, H_lin, normal mode frequencies in Hz, length N
     :param ljs: junction linerized inductances in Henries, length M
     :param fzpfs: Zero-point fluctutation of the junction fluxes for each mode across each junction, shape MxJ

@@ -9,7 +9,7 @@ Copy this file and rename it as config.py
 
 import matplotlib.pyplot as plt
 
-from . import AttrDict
+from . import Dict
 
 #------------------------------------------------------------
 # Directories
@@ -29,7 +29,7 @@ method_calc_P_mj  :
             		 Will calculate the Pj matrix for the selected modes for the given junctions
 					 junc_rect array & length of juuncs
 '''
-options_hfss = AttrDict(dict(
+options_hfss = Dict(dict(
     method_calc_P_mj = 'line_voltage', # 'line_voltage' or 'J_surf_mag'
     save_mesh_stats  = True,
 ))
@@ -40,7 +40,7 @@ class Dissipation_params:
 	"""
 	Loss properties of various materials and surfaces
 	"""
-	# TODO: Turn into a dictionary wiith attrdict
+	# TODO: Turn into a dictionary with Dict
 
 	# bulk dielectric:
 	# refs:  https://arxiv.org/abs/1308.1743
