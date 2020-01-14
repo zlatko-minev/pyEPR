@@ -5,22 +5,20 @@ Created on Fri Aug 25 19:30:12 2017
 @author: Zlatko
 """
 
-from __future__ import division, print_function, absolute_import  
+from __future__ import absolute_import, division, print_function
 
-import numpy as np
 import matplotlib.pyplot as plt
-
-from .config import Plotting_Options
+import numpy as np
 from matplotlib.colors import rgb2hex
 
+from ..config import Plotting_Options
 
-
-
-#==============================================================================
+# ==============================================================================
 # Plotting
-#==============================================================================
+# ==============================================================================
 
-def legend_translucent(ax, values = [], loc = 0, alpha = 0.5, leg_kw = {}):
+
+def legend_translucent(ax, values=[], loc=0, alpha=0.5, leg_kw={}):
     '''
     values = [ ["%.2f" %k for k in RES] ]
 
@@ -32,12 +30,12 @@ def legend_translucent(ax, values = [], loc = 0, alpha = 0.5, leg_kw = {}):
     if ax.get_legend_handles_labels() == ([], []):
         return None
 
-    leg = ax.legend(*values, loc = loc, fancybox=True, **leg_kw)
+    leg = ax.legend(*values, loc=loc, fancybox=True, **leg_kw)
     leg.get_frame().set_alpha(alpha)
     return leg
 
 
-def cmap_discrete(n, cmap_kw = {}):
+def cmap_discrete(n, cmap_kw={}):
     ''' Discrete colormap.
         cmap_kw = dict(colormap = plt.cm.gist_earth, start = 0.05, stop = .95)
 
@@ -46,41 +44,44 @@ def cmap_discrete(n, cmap_kw = {}):
         helix = True, Allows us to instead call helix from here
     '''
     if cmap_kw.pop('helix', False):
-        return cmap_discrete_CubeHelix(n, helix_kw = cmap_kw)
+        return cmap_discrete_CubeHelix(n, helix_kw=cmap_kw)
 
-    cmap_KW = dict(colormap = Plotting_Options.default_color_map, start = 0.05, stop = .95)
+    cmap_KW = dict(colormap=Plotting_Options.default_color_map,
+                   start=0.05, stop=.95)
     cmap_KW.update(cmap_kw)
 
     return get_color_cycle(n+1, **cmap_KW)
 
 
-def get_color_cycle(n, colormap=Plotting_Options.default_color_map, start=0., stop=1., format='hex'):
+def get_color_cycle(n, colormap=Plotting_Options.default_color_map, start=0., stop=1., format_='hex'):
     pts = np.linspace(start, stop, n)
-    if format == 'hex':
+    if format_ == 'hex':
         colors = [rgb2hex(colormap(pt)) for pt in pts]
     return colors
 
 
-def cmap_discrete_CubeHelix(n, helix_kw = {}):
+def cmap_discrete_CubeHelix(n, helix_kw={}):
     '''
         https://github.com/jiffyclub/palettable/blob/master/demo/Cubehelix%20Demo.ipynb
         cube.show_discrete_image()
+
+        Requires palettable
     '''
-    from palettable import cubehelix
-    helix_KW = dict(start_hue=240., end_hue=-300.,min_sat=1., max_sat=2.5,
-                                    min_light=0.3, max_light=0.8, gamma=.9)
+    from palettable import cubehelix # pylint: disable=import-error
+    helix_KW = dict(start_hue=240., end_hue=-300., min_sat=1., max_sat=2.5,
+                    min_light=0.3, max_light=0.8, gamma=.9)
     helix_KW.update(helix_kw)
     cube = cubehelix.Cubehelix.make(n=n, **helix_KW)
     return cube.mpl_colors
 
 
-def xarr_heatmap(fg, title = None, kwheat = {}, fmt = ('%.3f', '%.2f'), fig = None):
+def xarr_heatmap(fg, title=None, kwheat={}, fmt=('%.3f', '%.2f'), fig=None):
     ''' Needs seaborn and xarray'''
-    fig = plt.figure() if fig == None  else fig
-    df  = fg.to_pandas()
+    fig = plt.figure() if fig == None else fig
+    df = fg.to_pandas()
     # format indecies
-    df.index   = [float(fmt[0]%x) for x in df.index]
-    df.columns = [float(fmt[1]%x) for x in df.columns]
+    df.index = [float(fmt[0] % x) for x in df.index]
+    df.columns = [float(fmt[1] % x) for x in df.columns]
     import seaborn as sns
     ax = sns.heatmap(df, annot=True, **kwheat)
     ax.invert_yaxis()
@@ -89,4 +90,5 @@ def xarr_heatmap(fg, title = None, kwheat = {}, fmt = ('%.3f', '%.2f'), fig = No
     ax.set_ylabel(fg.dims[0])
 
 
-__all__  = [ 'legend_translucent', 'cmap_discrete', 'get_color_cycle', 'xarr_heatmap']
+__all__ = ['legend_translucent', 'cmap_discrete',
+           'get_color_cycle', 'xarr_heatmap']

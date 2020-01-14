@@ -11,15 +11,14 @@ import logging
 import numpy as np
 
 from functools import reduce
-from .toolbox import pi, fluxQ, fact, hbar,  \
-                     elementary_charge as e, \
-                     Planck as h
+from .toolbox.constants import pi, fluxQ, hbar,  elementary_charge as e, Planck as h
+from .toolbox.pythonic import fact
 
 try:
     import qutip
     from qutip import basis, tensor
 except (ImportError, ModuleNotFoundError):
-    pass 
+    pass
 
 
 __all__ = ['bbq_hmt', 'make_dispersive', 'bbq_nq']
@@ -27,7 +26,7 @@ logger  = logging.getLogger('pyEPR')
 
 
 ###############################################################################
-### Module 
+### Module
 
 def dot(ais, bis):
     return sum(ai*bi for ai, bi in zip(ais, bis))
@@ -39,10 +38,10 @@ def cos_approx(x, cos_trunc=5):
 class HamOps(object):
     @staticmethod
     def fock_state_on(d, fock_trunc, N_modes):
-        ''' d={mode number: # of photons} In the bare eigen basis 
+        ''' d={mode number: # of photons} In the bare eigen basis
         '''
         return qutip.tensor(*[qutip.basis(fock_trunc, d.get(i, 0)) for i in range(N_modes)])  # give me the value d[i]  or 0 if d[i] does not exist
-    
+
     @staticmethod
     def closest_state_to(s, energyMHz, evecs):
         def distance(s2):
@@ -57,7 +56,7 @@ def bbq_hmt(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual = False):
     :param fzpfs: Zero-point fluctutation of the junction fluxes for each mode across each junction, shape MxJ
     :return: Hamiltonian in units of Hz (i.e H / h)
     All in SI units. The ZPF fed in are the generalized, not reduced, flux.
-    
+
     Description:
      Takes the linear mode frequencies, $\omega_m$, and the zero-point fluctuations, ZPFs, and builds the Hamiltonian matrix of $H_full$, assuming cos potential.
     """
@@ -66,7 +65,7 @@ def bbq_hmt(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual = False):
     fs, ljs, fzpfs = map(np.array, (fs, ljs, fzpfs))
     ejs = fluxQ**2 / ljs
     fjs = ejs / h ;
-    
+
     fzpfs = np.transpose(fzpfs)  # Take from MxJ  to JxM
 
     assert np.isnan(fzpfs).any() == False, "Phi ZPF has NAN, this is NOT allowed! Fix me. \n%s" %fzpfs
@@ -104,15 +103,15 @@ def bbq_hmt(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual = False):
 def make_dispersive(H, fock_trunc, fzpfs= None, f0s = None, chi_prime = False,
                     use_1st_order = False):
     """
-    Input: Hamiltonian Matrix. 
+    Input: Hamiltonian Matrix.
         Optional: phi_zpfs and normal mode frequncies, f0s.
-        use_1st_order : deprecated 
-    Output: 
-        Return dressed mode frequencies, chis, chi prime, phi_zpf flux (not reduced), and linear frequencies 
-    Description: 
+        use_1st_order : deprecated
+    Output:
+        Return dressed mode frequencies, chis, chi prime, phi_zpf flux (not reduced), and linear frequencies
+    Description:
         Takes the Hamiltonian matrix `H` from bbq_hmt. It them finds the eigenvalues/eigenvectors and  assigns quantum numbers to them --- i.e., mode excitations,  such as, for instance, for three mode, |0,0,0> or |0,0,1>, which correspond to no excitations in any of the modes or one excitation in the 3rd mode, resp.    The assignment is performed based on the maximum overlap between the eigenvectors of H_full and H_lin.   If this crude explanation is confusing, let me know, I will write a more detailed one :slightly_smiling_face:
         Based on the assignment of the excitations, the function returns the dressed mode frequencies $\omega_m^\prime$, and the cross-Kerr matrix (including anharmonicities) extracted from the numerical diagonalization, as well as from 1st order perturbation theory.
-        Note, the diagonal of the CHI matrix is directly the anharmonicity term. 
+        Note, the diagonal of the CHI matrix is directly the anharmonicity term.
     """
     import qutip
     if hasattr(H, '__len__'): # is it an array / list?
@@ -256,4 +255,3 @@ def bbq_nq(freqs, zmat, ljs, cos_trunc=6, fock_trunc=8, show_fit = False):
 
     H = bbq_hmt(f0s, ljs, fzpfs, cos_trunc, fock_trunc)
     return make_dispersive(H, fock_trunc, fzpfs, f0s)
-

@@ -24,11 +24,12 @@ from pathlib      import Path
 from . import hfss
 from . import config
 from .hfss        import ureg, CalcObject, ConstantVecCalcObject
-from .toolbox     import print_NoNewLine, print_color, deprecated, fact, epsilon_0, hbar, Planck, fluxQ, nck, \
+from .toolbox.pythonic import print_NoNewLine, print_color, deprecated, fact, nck, \
                          divide_diagonal_by_2, print_matrix, DataFrame_col_diff, get_instance_vars,\
                          sort_df_col, sort_Series_idx
-from .toolbox_circuits import Calcs_basic
-from .toolbox_plotting import cmap_discrete, legend_translucent
+from .toolbox.conversions import CalcsBasic
+from .toolbox.plotting import cmap_discrete, legend_translucent
+from .toolbox.constants import epsilon_0, hbar, Planck, fluxQ
 from .numeric_diag import bbq_hmt, make_dispersive
 
 ### Definitions
@@ -65,8 +66,8 @@ class Project_Info(object):
             Note, DO NOT USE Global names that start with $.
         junc_lens     = None
             Junciton rect. length, measured in meters.
-            
-    Args: 
+
+    Args:
         junctions     : OrderedDict
         The key of this dict give the junction nickname in pyEPR.
         Each junction is given the following 4 parameters:
@@ -77,7 +78,7 @@ class Project_Info(object):
     """
 
     class _Dissipative:
-        
+
         def __init__(self):
             self.dielectrics_bulk    = None
             self.dielectric_surfaces = None
@@ -97,10 +98,10 @@ class Project_Info(object):
             self.Pj_from_current  = True
             self.p_mj_method      = 'J_surf_mag'
             self.save_mesh_stats  = True
-            
+
 
     def __init__(self, project_path, project_name=None, design_name=None):
-        
+
         self.project_path  = str(Path(project_path)) # Path: format path correctly to system convention
         self.project_name  = project_name
         self.design_name   = design_name
@@ -121,11 +122,11 @@ class Project_Info(object):
         self.project       = None
         self.design        = None
         self.setup         = None
-        
+
 
     _Forbidden = ['app', 'design', 'desktop', 'project',
                   'dissipative', 'setup', '_Forbidden', 'junctions']
-    
+
     def save(self, hdf):
         '''
             hdf : pd.HDFStore
@@ -147,27 +148,27 @@ class Project_Info(object):
         assert self.project_path is not None
 
         self.app, self.desktop, self.project = hfss.load_HFSS_project(self.project_name, self.project_path)
-        
-        # Design 
+
+        # Design
         try:
             self.design  = self.project.get_design(self.design_name) if self.design_name != None else self.project.get_active_design()
         except Exception as e:
             tb = sys.exc_info()[2]
             print("\n\nOriginal error:\n", e)
             raise(Exception(' Did you provide the correct design name? Failed to pull up design.').with_traceback(tb))
-        
+
         if not ('Eigenmode' == self.design.solution_type):
             print('\tWarning: The design tpye is not Eigenmode. Are you sure you dont want eigenmode?', file=sys.stderr)
-            
-        # Setup 
+
+        # Setup
         try:
             if len(self.design.get_setup_names()) == 0:
                 print('\tNo eigen setup detected. Creating a default one.', file=sys.stderr)
                 assert  ('Eigenmode' == self.design.solution_type)
                 self.design.create_em_setup()
                 self.setup_name = 'Setup'
-                
-            self.setup = self.design.get_setup(name=self.setup_name)    
+
+            self.setup = self.design.get_setup(name=self.setup_name)
         except Exception as e:
             tb = sys.exc_info()[2]
             print("\n\nOriginal error:\n", e)
@@ -177,10 +178,10 @@ class Project_Info(object):
         self.project_name = self.project.name
         self.design_name  = self.design.name
         self.setup_name   = self.setup.name
-        
+
         oDesign, oModeler = self.get_dm()
         print('\tConnected successfully.\n\t :)\t :)\t :)\t\n')
-    
+
         return self.design, oModeler, self.app, self.desktop, self.project, self.setup
 
     def check_connected(self):
@@ -200,36 +201,36 @@ class Project_Info(object):
         self.desktop.release()
         self.app.release()
         hfss.release()
-        
+
     ### UTILITY FUNCTIONS
-    
+
     def get_dm(self):
-        ''' 
-        Get the design and modeler 
-        
+        '''
+        Get the design and modeler
+
         .. code-block:: python
             oDesign, oModeler = projec.get_dm()
-            
+
         '''
-        oDesign  = self.design 
+        oDesign  = self.design
         oModeler = oDesign.modeler
         return oDesign, oModeler
-    
+
     def get_all_variables_names(self):
         """Returns array of all project and local design names."""
         return self.project.get_variable_names() + self.design.get_variable_names()
-    
+
     def get_all_object_names(self):
         """Returns array of strings"""
-        oObjects = [] 
+        oObjects = []
         for s in ["Non Model", "Solids", "Unclassified", "Sheets", "Lines"]:
             oObjects += self.design.modeler.get_objects_in_group(s)
         return oObjects
-    
+
     def validate_junction_info(self):
-        """ Validate that the user has put in the junction info correctly. 
-            Do no also forget to check the length of the rectangles/line of 
-            the junction if you change it. 
+        """ Validate that the user has put in the junction info correctly.
+            Do no also forget to check the length of the rectangles/line of
+            the junction if you change it.
         """
         all_variables_names = self.get_all_variables_names()
         all_object_names    = self.get_all_object_names()
@@ -237,8 +238,8 @@ class Project_Info(object):
             assert jj['Lj_variable'] in all_variables_names, "pyEPR project_info user error found: Seems like for junction `%s` you specified a design or project variable for `Lj_variable` that does not exist in HFSS by the name: `%s` " %(jjnm, jj['Lj_variable'])
             for name in ['rect', 'line']:
                 assert jj[name] in all_object_names, "pyEPR project_info user error found: Seems like for junction `%s` you specified a %s that does not exist in HFSS by the name: `%s` " %(jjnm, name, jj[name])
-        #TODO: Check the length of the rectnagle 
-    
+        #TODO: Check the length of the rectnagle
+
 
 #==============================================================================
 #%% Main compuation class & interface with HFSS
@@ -273,7 +274,7 @@ class pyEPR_HFSS(object):
     @property
     def junctions(self):
         return self.pinfo.junctions
-    
+
     @property
     def ports(self):
         return self.pinfo.ports
@@ -327,11 +328,11 @@ class pyEPR_HFSS(object):
         self.listvariations   = self.design._solutions.ListVariations(str(self.setup.solution_name))
         self.nominalvariation = self.design.get_nominal_variation()
         self.nvariations      = np.size(self.listvariations)
-        
+
 
     def get_latest_h5(self):
         '''
-            No longer used. Could be added back in. 
+            No longer used. Could be added back in.
         '''
         dirpath = self.data_dir
 
@@ -624,7 +625,7 @@ class pyEPR_HFSS(object):
         A=vecH.times_mu()
         B=vecH.conj()
         A=A.dot(B)
-        A=A.real()        
+        A=A.real()
         A=A.integrate_vol(name=volume)
         return A.evaluate(lv=lv)
 
@@ -643,9 +644,9 @@ class pyEPR_HFSS(object):
         ''' Peak current I_max for mdoe J in junction J
             The avg. is over the surface of the junction. I.e., spatial. '''
         lv   = self.get_lv(variation)
-        
+
         jl, uj = self.get_junc_len_dir(variation, junc_line)
-        
+
         uj = ConstantVecCalcObject(uj, self.setup)
         calc = CalcObject([],self.setup)
         #calc = calc.getQty("Jsurf").mag().integrate_surf(name = junc_rect)
@@ -672,9 +673,9 @@ class pyEPR_HFSS(object):
         calc = calc.getQty("H").imag().integrate_line_tangent(name = junc_line_name)
         #self.design.Clear_Field_Clac_Stack()
         return calc.evaluate(lv=lv)
-    
+
     def get_junc_len_dir(self, variation, junc_line):
-        '''return the length and direction of a junction defined by a line 
+        '''return the length and direction of a junction defined by a line
         inputs: variation: simulation variation
                 junc_line: polyline object
         outputs: jl (float) junction length
@@ -688,13 +689,13 @@ class pyEPR_HFSS(object):
             calc = CalcObject([],self.setup)
             calc = calc.line_tangent_coor(junc_line, coor)
             u.append(calc.evaluate(lv=lv))
-        
+
         jl = float(np.sqrt(u[0]**2+u[1]**2+u[2]**2))
         uj = [float(u[0]/jl), float(u[1]/jl), float(u[2]/jl)]
         return jl, uj
-    
+
     def calculate_Q_mp(self, variation, freq_GHz, U_E):
-        ''' calculate the coupling Q of mode m with each port p 
+        ''' calculate the coupling Q of mode m with each port p
         Expected that you have specified the mode before calling this'''
 
         Qp = pd.Series({})
@@ -766,10 +767,10 @@ class pyEPR_HFSS(object):
         """
 
         self._run_time = time.strftime('%Y%m%d_%H%M%S', time.localtime())
-        
+
         self.update_variation_information()
         if variations      is None:
-            variations = (['-1'] if self.listvariations == (u'',)  else [str(i) for i in range(self.nvariations)] )    
+            variations = (['-1'] if self.listvariations == (u'',)  else [str(i) for i in range(self.nvariations)] )
         if modes           is None:
             modes = range(self.nmodes)
 
@@ -805,13 +806,13 @@ class pyEPR_HFSS(object):
 
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
             # This is crummy now. Maybe use xarray.
-            
-            Om  = OrderedDict() # Matrix of angular frequency (of analyzed modes) 
+
+            Om  = OrderedDict() # Matrix of angular frequency (of analyzed modes)
             Pm  = OrderedDict() # Participation P matrix
             Sm  = OrderedDict() # Sign          S matrix
-            Qm_coupling  = OrderedDict() # Quality factor matrix 
+            Qm_coupling  = OrderedDict() # Quality factor matrix
             SOL = OrderedDict() # other results
-            
+
             for mode in modes:
                 # Mode setup & load fields
                 print('  Mode ' +  str(mode) + ' / ' + str(self.nmodes-1))
@@ -838,7 +839,7 @@ class pyEPR_HFSS(object):
                 # calcualte for each of the junctions
                 Pm[mode], Sm[mode] = self.calculate_p_mj(variation, self.U_H, self.U_E, Ljs)
                 _Om = pd.Series({})
-                _Om['freq_GHz'] = freqs_bare_GHz[mode] # freq  
+                _Om['freq_GHz'] = freqs_bare_GHz[mode] # freq
                 Om[mode] = _Om
 
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -849,7 +850,7 @@ class pyEPR_HFSS(object):
                 Qm_coupling[mode] = self.calculate_Q_mp(variation,
                                                         freqs_bare_GHz[mode],
                                                         self.U_E)
-                    
+
                 if self.pinfo.dissipative.seams is not None:           # get seam Q
                     for seam in self.pinfo.dissipative.seams:
                         sol = sol.append(self.get_Qseam(seam,mode,variation))
@@ -909,18 +910,18 @@ def pyEPR_ND(freqs, Ljs, ϕzpf,
              return_H      = False):
     '''
     Numerical diagonalizaiton for pyEPR.
-    
+
     :param fs: (GHz, not radians) Linearized model, H_lin, normal mode frequencies in Hz, length M
     :param ljs: (Henries) junction linerized inductances in Henries, length J
     :param fzpfs: (reduced) Reduced Zero-point fluctutation of the junction fluxes for each mode across each junction, shape MxJ
 
     :return: Hamiltonian mode freq and dispersive shifts. Shifts are in MHz. Shifts have flipped sign so that down shift is positive.
     '''
-    
+
     freqs, Ljs, ϕzpf = map(np.array, (freqs, Ljs, ϕzpf))
     assert(all(freqs<1E6)), "Please input the frequencies in GHz"
     assert(all(Ljs  <1E-3)),"Please input the inductances in Henries"
-    
+
     Hs = bbq_hmt(freqs * 1E9, Ljs.astype(np.float), fluxQ*ϕzpf, cos_trunc, fock_trunc, individual = use_1st_order)
     f_ND, χ_ND, _, _ = make_dispersive(Hs, fock_trunc, ϕzpf, freqs, use_1st_order = use_1st_order)
     χ_ND = -χ_ND * 1E-6 # convert to MHz, and flip sign so that down shift is positive
@@ -1121,28 +1122,28 @@ class pyEPR_Analysis(object):
                                                         fock_trunc=fock_trunc,
                                                         print_result=print_result)
         return result
-    
+
     def get_Pmj(self, variation, _renorm_pj=None, print_=False):
         '''
             Get normalized Pmj Matrix
-            
+
             Return DataFrame object for PJ
         '''
         if _renorm_pj is None:
             _renorm_pj = self._renorm_pj
-        
+
         Pm = self.PM[variation].copy()   # EPR matrix from Jsurf avg, DataFrame
-        
+
         if self._renorm_pj:  # Renormalize
             s          = self.sols[variation]
             Pm_glb_sum = (s['U_E'] - s['U_H'])/s['U_E']     # sum of participations as calculated by global UH and UE
             Pm_norm    = Pm_glb_sum/Pm.sum(axis = 1)
             # Should we still do this when Pm_glb_sum is very small
             if print_:
-                print("Pm_norm = %s " % str(Pm_norm)) 
+                print("Pm_norm = %s " % str(Pm_norm))
             Pm = Pm.mul(Pm_norm, axis=0)
-            
-        else:            
+
+        else:
             Pm_norm     = 1
             if print_:
                 print('NO renorm!')
@@ -1151,9 +1152,9 @@ class pyEPR_Analysis(object):
             print_color("  ! Warning:  Some p_mj was found <= 0. This is probably a numerical error, or a super low-Q mode.  We will take the abs value.  Otherwise, rerun with more precision, inspect, and do due dilligence.)")
             print(Pm,'\n')
             Pm = np.abs(Pm)
-            
+
         return {'PJ':Pm, 'Pm_norm':Pm_norm}
-    
+
     def get_matrices(self, variation, _renorm_pj=None, print_=False):
         '''
             All as matrices
@@ -1161,24 +1162,24 @@ class pyEPR_Analysis(object):
             :SJ: Sign matrix, s_mj
             :Om: Omega_mm matrix (in GHz) (\hbar = 1) Not radians.
             :EJ: E_jj matrix of Josephson energies (in same units as hbar omega matrix)
-            :PHI_zpf: ZPFs in units of \phi_0 reduced flux quantum 
-            
+            :PHI_zpf: ZPFs in units of \phi_0 reduced flux quantum
+
             Return all as *np.array*
                 PM, SIGN, Om, EJ, Phi_ZPF
         '''
         #TODO: superseed by Convert.ZPF_from_EPR
-            
+
         PJ = self.get_Pmj(variation, _renorm_pj=_renorm_pj, print_=print_)
         PJ = np.array(PJ['PJ'])
         SJ = np.array(self.SM[variation])                # DataFrame
-        Om = np.diagflat(self.OM[variation].values)      # GHz. Frequencies of HFSS linear modes. Input in dataframe but of one line. Output nd array 
+        Om = np.diagflat(self.OM[variation].values)      # GHz. Frequencies of HFSS linear modes. Input in dataframe but of one line. Output nd array
         EJ = np.diagflat(self.get_Ejs(variation).values) # GHz
-        
-        PHI_zpf = Calcs_basic.epr_to_zpf(PJ, SJ, Om, EJ)
-        
+
+        PHI_zpf = CalcsBasic.epr_to_zpf(PJ, SJ, Om, EJ)
+
         return PJ, SJ, Om, EJ, PHI_zpf                   # All as np.array
-            
-    
+
+
     def analyze_variation(self,
                           variation,
                           cos_trunc     = None,
@@ -1234,7 +1235,7 @@ class pyEPR_Analysis(object):
             SJ = SJ[modes,:]
             Om = Om[modes,:][:,modes]
             PHI_zpf = PHI_zpf[modes,:]
-        
+
         # Analytic 4-th order
         CHI_O1 = 0.25* Om @ PJ @ inv(EJ) @ PJ.T @ Om * 1000. # MHz
         f1s    = np.diag(Om) - 0.5*np.ndarray.flatten( np.array(CHI_O1.sum(1))) / 1000.                  # 1st order PT expect freq to be dressed down by alpha
@@ -1242,7 +1243,7 @@ class pyEPR_Analysis(object):
 
         # Numerical diag
         if cos_trunc is not None:
-            f1_ND, CHI_ND = pyEPR_ND(freqs_hfss, 
+            f1_ND, CHI_ND = pyEPR_ND(freqs_hfss,
                                      Ljs,
                                      PHI_zpf,
                                      cos_trunc     = cos_trunc,
@@ -1258,7 +1259,7 @@ class pyEPR_Analysis(object):
         result['chi_ND']  = pd.DataFrame(CHI_ND)   # why dataframe?
         result['ZPF']     = PHI_zpf
         result['Pm_normed'] = PJ
-        result['_Pm_norm']  = self.get_Pmj(variation, _renorm_pj=self._renorm_pj, 
+        result['_Pm_norm']  = self.get_Pmj(variation, _renorm_pj=self._renorm_pj,
                                            print_=print_result)['Pm_norm'] # calling again
         result['hfss_variables'] = self.hfss_variables[variation] # just propagate
         result['Ljs']            = self.Ljs[variation]
@@ -1288,7 +1289,7 @@ class pyEPR_Analysis(object):
 
     def print_result(self, result):
         pritm = lambda x, frmt="{:9.2g}": print_matrix(x, frmt = frmt) #TODO: actually make into dataframe with mode labela and junction labels
-        
+
         print( '*** P (participation matrix, normalized.)'  )
         pritm(result['Pm_normed'])
 
@@ -1306,7 +1307,7 @@ class pyEPR_Analysis(object):
 
         print( '\n*** Q_coupling'  )
         print(result['Q_coupling'])
-        
+
     def plot_Hresults(self, variable=None, fig=None):
         '''
             versus varaitions
