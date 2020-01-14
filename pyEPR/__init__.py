@@ -33,22 +33,14 @@
 
 # Compatibility with python 2.7 and 3
 from __future__ import division, print_function, absolute_import
-from .toolbox.plotting import mpl_dpi
-from .hfss import load_ansys_project, get_active_design, get_active_project,\
-    HfssProject, CalcObject, parse_units, parse_units_user
-from .hfss import release as hfss_release
-from .core import Project_Info, pyEPR_HFSS, pyEPR_Analysis
-from . import hfss
-from . import core
-from . import numeric_diag
-from . import calcs
-from . import toolbox
-from . import config
-from collections import OrderedDict
 
 import logging
-__imports_warn = False
+import warnings
+from pathlib import Path
+from collections import OrderedDict
 
+# Internal flags
+__imports_warn = False
 
 ##############################################################################
 # Configure logging
@@ -59,7 +51,8 @@ if not len(logger.handlers):
     c_handler = logging.StreamHandler()
     logger.propagate = False
     # Jupyter notebooks already has a stream handler on the default log,
-    # Do not propage upstream to the root logger.  https://stackoverflow.com/questions/31403679/python-logging-module-duplicated-console-output-ipython-notebook-qtconsole
+    # Do not propage upstream to the root logger.
+    #  https://stackoverflow.com/questions/31403679/python-logging-module-duplicated-console-output-ipython-notebook-qtconsole
 
     # Format
     # unlike the root logger, a custom logger can’t be configured using basicConfig().
@@ -91,7 +84,6 @@ except (ImportError, ModuleNotFoundError):
 
 try:
     import pandas as pd
-    import warnings
     warnings.filterwarnings(
         'ignore', category=pd.io.pytables.PerformanceWarning)
 except (ImportError, ModuleNotFoundError):
@@ -161,7 +153,6 @@ except (ImportError, ModuleNotFoundError):
 
 # Check if the config is set up
 if 1:
-    from pathlib import Path
     path = Path(__path__[0])  # module path
     if not (path/'config.py').is_file():
         # if config does not exist copy default config
@@ -169,13 +160,14 @@ if 1:
              We are now going to coopy config_default.py to config.py from:\n {path}\n\
              Check the save_dir file path to make sure that it is corect. \n')
         import shutil
-        shutil.copy(str(path/'config_default.py'), str(path/'config.py'))
+        shutil.copy(str(path/'_default_config.py'), str(path/'config.py'))
 
 
 ##############################################################################
 # pyEPR Specific
 
 # Config setup
+from . import config
 try:  # Check if we're in IPython.
     __IPYTHON__  # pylint: disable=undefined-variable, pointless-statement
     config.ipython = True
@@ -185,3 +177,14 @@ config.__STD_END_MSG = __STD_END_MSG
 
 
 # Convenience variable and function imports
+from . import hfss
+from . import core
+from . import numeric_diag
+from . import calcs
+from . import toolbox
+
+from .toolbox.plotting import mpl_dpi
+from .hfss import load_ansys_project, get_active_design, get_active_project,\
+    HfssProject, CalcObject, parse_units, parse_units_user
+from .hfss import release as hfss_release
+from .core import Project_Info, pyEPR_HFSS, pyEPR_Analysis

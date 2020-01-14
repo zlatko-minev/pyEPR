@@ -1,9 +1,10 @@
 """
 Created on Fri Oct 30 14:21:45 2015
 
-Configuration file
+Default configuration file. Copy this file and rename it as config.py
 
-Copy this file and rename it as config.py
+TODO: The user config should really inherit the default config here.
+Can make the entire config a single dictionary.
 """
 # pylint: disable=invalid-name
 
@@ -13,7 +14,8 @@ from . import Dict
 
 #------------------------------------------------------------
 # Directories
-'Folder to save result data in'
+
+# Folder to save result data to.
 root_dir = r'C:\data-pyEPR'
 
 '''
