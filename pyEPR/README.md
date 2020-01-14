@@ -8,13 +8,18 @@ When using this packed directly, the directory containing this folder should be 
 Contains the core analysis and run functions.
 
 ##### toolbox
-Folder that contains key and utility modues used in pyEPR.
-- conversions:  conversion functions for Lj to Ej, Cj to Ej, and such.
+Module  that contains key and utility modues used in pyEPR.
 - plotting: useful in visualizaiton and analysis.
-- constants: numerical constants
 - pythonic:  useful pythonic functions
-- calcs_basic: epr to zpf, and other general functions
-- calcs_transmon: transmon related functions
+- report: used to plot reports
+
+##### calcs
+Module that contains calculation useful sub-modules
+- constants: numerical constants
+- basic: epr to zpf, and other general functions
+- conversions:  conversion functions for Lj to Ej, Cj to Ej, and such.
+- transmon: transmon related functions
+
 
 ##### hfss.py
 Interface functions with Ansoft HFSS.

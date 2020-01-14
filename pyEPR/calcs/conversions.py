@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 from numpy import sqrt
 
-from .calcs_basic import CalcsBasic
+from .basic import CalcsBasic
 from .constants import (Planck, e_el, elementary_charge, fluxQ, hbar, pi, ħ, π,
                         ϕ0)
 

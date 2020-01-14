@@ -6,7 +6,6 @@ import numpy as np
 from numpy import sqrt
 #from numpy.linalg import inv
 
-
 class CalcsBasic():
 
     @staticmethod

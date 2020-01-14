@@ -12,25 +12,26 @@ Purpose:
 '''
 # TODO: Rename module to ansys, to specify its broader use
 
-from __future__ import division, print_function    # Python 2.7 and 3 compatibility
+from __future__ import (division,  # Python 2.7 and 3 compatibility
+                        print_function)
 
+import atexit
 import os
 import re
+import signal
+import tempfile
 import time
 import types
+from collections.abc import Iterable
+from copy import copy
+from numbers import Number
+from pathlib import Path
+
 import numpy as np
-import atexit
-import signal
 import pandas as pd
-import tempfile
+from sympy.parsing import sympy_parser
 
 from . import logger
-from copy import copy
-from pathlib import Path
-from numbers import Number
-from sympy.parsing import sympy_parser
-from collections.abc import Iterable
-
 
 # Handle a  few usually troublesome to import packages, which the use may not have
 # installed yet

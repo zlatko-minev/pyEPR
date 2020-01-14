@@ -12,7 +12,7 @@ import warnings
 
 # Constants
 from collections import OrderedDict
-from .constants import Planck, elementary_charge, epsilon_0, pi, π, ħ, ϕ0, e_el
+from ..calcs.constants import Planck, elementary_charge, epsilon_0, pi, π, ħ, ϕ0, e_el
 
 
 # ==============================================================================

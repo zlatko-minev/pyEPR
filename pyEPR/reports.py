@@ -4,10 +4,10 @@ Module for reporting utility function
 @author: Zlatko K Minev
 """
 
-import numpy as np
+#import numpy as np
 import pandas as pd
 
-from .plotting import legend_translucent, mpl, plt
+from .toolbox.plotting import legend_translucent, plt
 
 
 def _style_plot_convergence(ax, ylabel=None, xlabel='Pass number', ylabel_col='k', y_title=False):

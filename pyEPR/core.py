@@ -29,11 +29,11 @@ from .hfss        import ureg, CalcObject, ConstantVecCalcObject, set_property
 from .toolbox.pythonic     import print_NoNewLine, print_color, deprecated, fact,  nck, \
                          divide_diagonal_by_2, print_matrix, DataFrame_col_diff, get_instance_vars,\
                          sort_df_col, sort_Series_idx
-from .toolbox.constants import epsilon_0, hbar, Planck, fluxQ
-from .toolbox.calcs_basic import CalcsBasic
+from .calcs.constants import epsilon_0, hbar, Planck, fluxQ
+from .calcs.basic import CalcsBasic
 from .toolbox.plotting import cmap_discrete, legend_translucent
 from .numeric_diag import bbq_hmt, make_dispersive
-from .toolbox.report import plot_convergence_f_vspass, plot_convergence_max_df, plot_convergence_solved_elem, plot_convergence_maxdf_vs_sol
+from .reports import plot_convergence_f_vspass, plot_convergence_max_df, plot_convergence_solved_elem, plot_convergence_maxdf_vs_sol
 
 
 class Project_Info(object):

@@ -11,10 +11,13 @@ This file is tricky, use caution to modify.
 
 from __future__ import print_function
 
+from functools import reduce
+
 import numpy as np
 
-from functools import reduce
-from .toolbox.constants import pi, fluxQ, hbar, elementary_charge as e, Planck as h
+from .calcs.constants import Planck as h
+from .calcs.constants import elementary_charge as e
+from .calcs.constants import fluxQ, hbar, pi
 from .toolbox.pythonic import fact
 
 try:

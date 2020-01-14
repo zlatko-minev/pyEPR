@@ -176,6 +176,7 @@ config.__STD_END_MSG = __STD_END_MSG
 
 # Convenience variable and function imports
 from . import toolbox
+from . import calcs
 from . import numeric_diag
 from . import core
 from . import hfss

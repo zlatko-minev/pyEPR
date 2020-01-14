@@ -9,9 +9,9 @@ from numpy import pi, sqrt, exp
 from numpy.linalg import inv
 
 from .constants import e_el, fluxQ
-from .pythonic import divide_diagonal_by_2
+from .conversions import Convert
+from ..toolbox.pythonic import divide_diagonal_by_2
 
-from.conversions import Convert
 
 
 class CalcsTransmon():
