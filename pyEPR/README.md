@@ -4,6 +4,10 @@ Zlatko Minev & Zaki Leghtas
 
 When using this packed directly, the directory containing this folder should be added to the Python search path.
 
+##### config_user.py
+User specified configuration file. Overwrites `_default_config.py` dictionary.
+A user should not edit `_default_config.py` directly. A user should overwrite values in `config_user.py`
+
 ##### core.py
 Contains the core analysis and run functions.
 
@@ -19,7 +23,6 @@ Module that contains calculation useful sub-modules
 - basic: epr to zpf, and other general functions
 - convert:  conversion functions for Lj to Ej, Cj to Ej, and such.
 - transmon: transmon related functions
-
 
 ##### hfss.py
 Interface functions with Ansoft HFSS.
