@@ -1,19 +1,19 @@
 '''
-pyEPR.hfss
+pyEPR.ansys
     2014-present
 
 Purpose:
-    Handles HFSS interaction and control.
+    Handles Ansys interaction and control from version 2014 onward.
+    Tested most extensively with V2016 and V2019R3.
 
 @authors:
     Originally contributed by Phil Reinhold.
     Developed further by Zlatko Minev, Zaki Leghtas, and the pyEPR team.
     For the base version of hfss.py, see https://github.com/PhilReinhold/pyHFSS
 '''
-# TODO: Rename module to ansys, to specify its broader use
 
-from __future__ import (division,  # Python 2.7 and 3 compatibility
-                        print_function)
+# Python 2.7 and 3 compatibility
+from __future__ import (division, print_function)
 
 import atexit
 import os
@@ -564,7 +564,8 @@ class HfssDesign(COMWrapper):
             # This funciton does not exist if the desing is not HFSS
             self.solution_type = design.GetSolutionType()
         except Exception as e:
-            logger.debug(f'Exception occured at design.GetSolutionType() {e}. Assuming Q3D design')
+            logger.debug(
+                f'Exception occured at design.GetSolutionType() {e}. Assuming Q3D design')
             self.solution_type = 'Q3D'
 
         if design is None:
@@ -969,7 +970,8 @@ class HfssSetup(HfssPropertyObject):
         temp = tempfile.NamedTemporaryFile()
         temp.close()
         temp = temp.name + '.conv'
-        self.parent._design.ExportConvergence(self.name, variation, *pre_fn_args, temp, overwrite)
+        self.parent._design.ExportConvergence(
+            self.name, variation, *pre_fn_args, temp, overwrite)
 
         # Read File
         temp = Path(temp)

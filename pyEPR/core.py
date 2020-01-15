@@ -30,10 +30,10 @@ from collections  import OrderedDict
 from pathlib      import Path
 
 # pyEPR custom imports
-from . import hfss
+from . import ansys
 from . import logger
 from . import config
-from .hfss        import ureg, CalcObject, ConstantVecCalcObject, set_property
+from .ansys        import ureg, CalcObject, ConstantVecCalcObject, set_property
 from .toolbox.pythonic import print_NoNewLine, print_color, deprecated, fact,  nck, \
                          divide_diagonal_by_2, print_matrix, DataFrame_col_diff, get_instance_vars,\
                          sort_df_col, sort_Series_idx
@@ -179,7 +179,7 @@ class Project_Info(object):
         '''
         #logger.info('Connecting to HFSS ...')
 
-        self.app, self.desktop, self.project = hfss.load_ansys_project(
+        self.app, self.desktop, self.project = ansys.load_ansys_project(
             self.project_name, self.project_path)
         self.project_name = self.project.name
         self.project_path = self.project.get_path()
@@ -265,7 +265,7 @@ class Project_Info(object):
         self.project.release()
         self.desktop.release()
         self.app.release()
-        hfss.release()
+        ansys.release()
 
     ### UTILITY FUNCTIONS
 

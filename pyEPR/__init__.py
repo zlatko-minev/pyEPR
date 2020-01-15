@@ -133,11 +133,11 @@ if config.internal.warn_missing_import:
 
 from . import toolbox
 from . import calcs
-from . import hfss
+from . import ansys
 from . import core
 
 from .toolbox.plotting import mpl_dpi
-from .hfss import load_ansys_project, get_active_design, get_active_project,\
+from .ansys import load_ansys_project, get_active_design, get_active_project,\
     HfssProject, CalcObject, parse_units, parse_units_user
-from .hfss import release as hfss_release
+from .ansys import release as hfss_release
 from .core import Project_Info, pyEPR_HFSS, pyEPR_Analysis

@@ -24,8 +24,8 @@ Module that contains calculation useful sub-modules
 - convert:  conversion functions for Lj to Ej, Cj to Ej, and such.
 - transmon: transmon related functions
 
-##### hfss.py
-Interface functions with Ansoft HFSS.
+##### ansys.py
+Interface functions with Ansys. (A long time ago, this used to be Ansoft HFSS).
 Contributed by Phil Rheinhold. Originally part of [pyHFSS](https://github.com/PhilReinhold/pyHFSS).
 Updated and modified by Zlatko Minev & Zaki Leghtas.
 
