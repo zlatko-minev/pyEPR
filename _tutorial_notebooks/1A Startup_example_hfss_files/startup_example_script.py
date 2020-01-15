@@ -6,7 +6,7 @@ The results are saved, printed, and nicely plotted.
 @author: Zlatko
 """
 
-from pyEPR import Project_Info, pyEPR_HFSS, pyEPR_Analysis
+from pyEPR import Project_Info, pyEPR_HFSSAnalysis, pyEPR_Analysis
 
 # 1.  Project and design. Open link to HFSS controls.
 project_info = Project_Info('c:/sims',
@@ -23,7 +23,7 @@ project_info.dissipative.dielectrics_bulk    = ['si_substrate']    # supply name
 project_info.dissipative.dielectric_surfaces = ['interface']
 
 # 3.  Run analysis
-epr_hfss = pyEPR_HFSS(project_info)
+epr_hfss = pyEPR_HFSSAnalysis(project_info)
 epr_hfss.do_EPR_analysis()
 
 # 4.  Hamiltonian analysis
