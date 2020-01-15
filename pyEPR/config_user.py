@@ -4,7 +4,12 @@ User configuration file.
 The dictionary of options specified here overwrites the pyEPR default
 config defined in _config_default.py
 
-Do not edit `_config_default.py` directly. Rather, overwrite attributes here
+Do not edit `_config_default.py` directly. Rather, overwrite attributes here.
+
+GIT: Do not track changes here.
+ Keep your changes only locally. Use the shell command
+    $ git update-index --skip-worktree config_user.py
+ in the pyEPR/pyEPR folder to stop tracking this file.
 
 @author: Your name goes here
 """
