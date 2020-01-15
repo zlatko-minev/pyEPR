@@ -553,6 +553,7 @@ class HfssProject(COMWrapper):
 
 
 class HfssDesign(COMWrapper):
+
     def __init__(self, project, design):
         super(HfssDesign, self).__init__()
         self.parent = project
@@ -1492,6 +1493,46 @@ class HfssReport(COMWrapper):
         return np.loadtxt(fn, skiprows=1, delimiter=',').transpose()
         # warning for python 3 probably need to use genfromtxt
 
+class Optimetrics(COMWrapper):
+    """
+    Optimetrics script commands executed by the "Optimetrics" module.
+
+    Example use:
+    .. code-block python
+            opti = Optimetrics(pinfo.design)
+            names = opti.get_setup_names()
+            print('Names of optimetrics: ', names)
+            opti.solve_setup(names[0])
+
+    Note that running optimetrics requires the license for Optimetrics by Ansys.
+    """
+    def __init__(self, design):
+        super(HfssModeler, self).__init__()
+
+        self.design=design # parent
+        self._optimetrics = self.design._optimetrics # <COMObject GetModule>
+        self.setup_names = None
+
+    def get_setup_names(self):
+        """
+        Return list of Optimetrics setup names
+        """
+        self.setup_names = list(self._optimetrics.GetSetupNames())
+        return self.setup_names.copy()
+
+    def solve_setup(self, setup_name:str):
+        """
+        Solves the specified Optimetrics setup.
+        Corresponds to:  Right-click the setup in the project tree, and then click
+        Analyze on the shortcut menu.
+
+        setup_name (str) : name of setup, should be in get_setup_names
+
+        Blocks execution until ready to use.
+
+        Note that this requires the license for Optimetrics by Ansys.
+        """
+        return self._optimetrics.SolveSetup(setup_name)
 
 class HfssModeler(COMWrapper):
     def __init__(self, design, modeler, boundaries, mesh):

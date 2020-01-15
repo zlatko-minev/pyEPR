@@ -66,7 +66,7 @@ class Project_Info(object):
                         Used to define the current orientation for each junction.
                         Used to define sign of ZPF.
             `length`:   Length in HFSS of the junction rectangle and line
-                        (specified in meters).
+                        (specified in meters). You can use epr.parse_units('100um')
 
         Example definition:
 
@@ -1466,8 +1466,8 @@ class Results_Hamiltonian(OrderedDict):
 
         return res
     #def get_vs_variable()
-    def get_frequencies_HFSS(self,lv =None,vs='variation'):
-        z = sort_df_col(pd.DataFrame(self.get_vs_variation('f_0',lv =lv,vs=vs)))
+    def get_frequencies_HFSS(self,lv=None,vs='variation'):
+        z = sort_df_col(pd.DataFrame(self.get_vs_variation('f_0',lv=lv,vs=vs)))
         if vs == 'variation': z =z.sort_index(axis=1)
         z.index.name   = 'eigenmode'
         z.columns.name = vs
