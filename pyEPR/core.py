@@ -57,9 +57,14 @@ class Project_Info(object):
         Each junction is given a name and is specified by a dictionary.
         It has the following properties:
 
-            1. `Lj_variable` : Name of HFSS variable that specifies junction inductance Lj defined on the boundary condition in HFSS. DO NOT USE Global names that start with $.
+            1. `Lj_variable` : Name of HFSS variable that specifies junction inductance Lj defined
+                               on the boundary condition in HFSS. DO NOT USE Global names that start
+                               with $.
             2. `rect`        : Name of HFSS rectangle on which lumped boundary condition is specified.
-            3. `line`        : Name of HFSS polyline which spans the length of the recntalge. Used to define the voltage across the junction.  Used to define the current orientation for each junction. Used to define sign of ZPF.
+            3. `line`        : Name of HFSS polyline which spans the length of the recntalge.
+                               Used to define the voltage across the junction.
+                               Used to define the current orientation for each junction.
+                               Used to define sign of ZPF.
             4. `length`      : Length in HFSS of the junction rectangle and line (specified in meters).
 
         Example definition:

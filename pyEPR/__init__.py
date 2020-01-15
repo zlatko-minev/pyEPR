@@ -1,4 +1,5 @@
-# This file is part of pyEPR: Energy participation ratio (EPR) design of quantum circuits in python
+# This file is part of pyEPR: Energy participation ratio (EPR) design of
+# quantum circuits in python
 #
 #    Copyright (c) 2015-2020 and later, Zlatko K. Minev and Zaki Leghtas
 #    All rights reserved.
