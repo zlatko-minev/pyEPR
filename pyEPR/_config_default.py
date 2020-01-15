@@ -22,6 +22,7 @@ config = Dict( # pylint: disable=invalid-name
 
     # Folder to save result data to.
     root_dir=r'C:\data-pyEPR',
+    save_format=r'%Y-%m-%d %H-%M-%S',
 
     ansys=Dict(
         # method_calc_P_mj sets the method used to calculate the participation ratio in eigenmode.
