@@ -447,7 +447,11 @@ good-names=i,
            p_mj,
            Ej,
            Cj,
-           config
+           config,
+           Pmj,
+           SJ,
+           Ω,
+           EJ
 
 # Include a hint for the correct naming format with invalid-name.
 include-naming-hint=no
