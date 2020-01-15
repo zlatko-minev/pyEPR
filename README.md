@@ -48,8 +48,8 @@ import pyEPR as epr
 
 # 1. Connect to your Ansys, and load your design
 pinfo = epr.Project_Info(project_path = r'C:\sim_folder',
-						 project_name = r'cavity_with_two_qubits',
-						 design_name  = r'Alice_Bob')
+                         project_name = r'cavity_with_two_qubits',
+                         design_name  = r'Alice_Bob')
 
 # 2. Non-linear (Josephson) junctions: specify
 pinfo.junctions['jAlice'] = {'Lj_variable':'LJAlice', 'rect':'qubitAlice', 'line': 'alice_line', 'length':parse_units('50um')}
@@ -66,7 +66,7 @@ eprh.do_EPR_analysis()
 
 # 4.  Perform Hamiltonian spectrum post-analysis, building on mw solutions using EPR
 epra = epr.pyEPR_Analysis(eprh.data_filename)
-epra.analyze_all_variations(cos_trunc=8, fock_trunc=7)
+epra.analyze_all_variations(cos_trunc = 8, fock_trunc = 7)
 epra.plot_Hresults()
 ```
 
