@@ -3,6 +3,12 @@
 Example startup script to perform full quantization of a two qubit, one cavity Josephson circuit.
 The results are saved, printed, and nicely plotted.
 
+------~~~~!!!!------~~~~
+
+Please also see the Jupyter notebook tutorials!
+
+------~~~~!!!!------~~~~
+
 @author: Zlatko
 """
 

@@ -1759,10 +1759,10 @@ $begin 'AnsoftProject'
 			$end 'OptimetricsSetups'
 		$end 'Optimetrics'
 		$begin 'Solutions'
-			FieldType='EigenPeakElecticField'
+			FieldType='EigenStoredEnergy'
 			IncludePortPostProcessing=false
-			SourceEntry(ID=-10, Index=0, Terminal=false, Terminated=false, Magnitude='1', Phase='0deg')
-			SourceEntry(ID=-10, Index=1, Terminal=false, Terminated=false, Magnitude='0', Phase='0deg')
+			SourceEntry(ID=-10, Index=0, Terminal=false, Terminated=false, Magnitude='0W', Phase='0deg')
+			SourceEntry(ID=-10, Index=1, Terminal=false, Terminated=false, Magnitude='1W', Phase='0deg')
 		$end 'Solutions'
 		$begin 'PortFieldDisplay'
 			$begin 'PortFieldDisplay'
@@ -2002,7 +2002,7 @@ $begin 'AnsoftProject'
 							$end 'Sweep'
 							$begin 'Sweep'
 								Variable='Lj_1'
-								Column='9nH'
+								Column='9nH;11nH'
 								Units='nH'
 							$end 'Sweep'
 						$end 'Sweeps'
@@ -3780,7 +3780,7 @@ $begin 'AnsoftProject'
 				DesignInstanceID=1
 				$begin 'WindowPosition'
 					$begin 'EditorWindow'
-						Circuit(Editor3d(View(WindowPos(3, -1, -1, -8, -31, 26, 26, 1352, 506), OrientationMatrix(1.83123955994728e-013, -1.24493610858917, 4.76837158203125e-007, 0, 1.24493682384491, -9.21437578655649e-017, -6.51554948384749e-017, 0, -1.29488162813746e-013, -4.76837158203125e-007, 1.24493646621704, 0, 15.5888376235962, 25.6996116638184, 0.182403564453125, 1, 0, 8.20215892791748, 23.365650177002, 22.0754222869873, 30.5078029632568, -135.619201660156, 132.764892578125), Drawings[9: 'cavity_enclosure', 'substrate', 'rect_jj1', 'pad_lower', 'pad_upper', 'line_jj1', 'jj', 'pads', 'substrate'], 'View Data'('Render Mode'=1, 'Show Ruler'=1, 'Coordinate Systems View Mode'=0, 'CS Triad View Mode'=0, GridVisible=1, GridAutoAdjust=1, GridType='Rect', GridStyle='Line', NumPixels=30, dXForGrid=0.2, dYForGrid=0.2, dZForGrid=0.2, dRForGrid=0.2, dThetaForGrid=10), ClipPlanes(ClipPlaneOptions(DisableWhenDrawingNewPlane=true, ForceOpqaueForUnclipped=false, ShowClipped=false, Transparency=0, HandleColor=16776960)))))
+						Circuit(Editor3d(View(WindowPos(5, -1, -1, -8, -31, 26, 26, 1352, 506), OrientationMatrix(1.83123955994728e-013, -1.24493610858917, 4.76837158203125e-007, 0, 1.24493682384491, -9.21437578655649e-017, -6.51554948384749e-017, 0, -1.29488162813746e-013, -4.76837158203125e-007, 1.24493646621704, 0, 15.5888376235962, 25.6996116638184, 0.182403564453125, 1, 0, 6.07798480987549, 25.4898262023926, 22.0754222869873, 30.5078029632568, -135.619201660156, 132.764892578125), Drawings[9: 'cavity_enclosure', 'substrate', 'rect_jj1', 'pad_lower', 'pad_upper', 'line_jj1', 'jj', 'pads', 'substrate'], 'View Data'('Render Mode'=1, 'Show Ruler'=1, 'Coordinate Systems View Mode'=0, 'CS Triad View Mode'=0, GridVisible=1, GridAutoAdjust=1, GridType='Rect', GridStyle='Line', NumPixels=30, dXForGrid=0.5, dYForGrid=0.5, dZForGrid=0.5, dRForGrid=0.5, dThetaForGrid=10), ClipPlanes(ClipPlaneOptions(DisableWhenDrawingNewPlane=true, ForceOpqaueForUnclipped=false, ShowClipped=false, Transparency=0, HandleColor=16776960)))))
 					$end 'EditorWindow'
 				$end 'WindowPosition'
 				$begin 'ReportSetup'
@@ -3899,7 +3899,7 @@ $begin 'AnsoftProject'
 								$end 'TraceDef'
 							$end 'Frequency convergence'
 							$begin 'Freq. vs. pass'
-								ReportID=20
+								ReportID=38
 								ReportName='Freq. vs. pass'
 								$begin 'TraceDef'
 									TraceDefinitionType='TraceDefinition'
@@ -3913,8 +3913,8 @@ $begin 'AnsoftProject'
 											$end 'REPORT_TYPE_SIM_VALUE_CONTEXT'
 										$end 'DESIGN_SOLUTION_SIM_VALUE_CONTEXT'
 									$end 'DesignSolnDefn'
-									ID=18
-									VersionID=106
+									ID=36
+									VersionID=130
 									Name='re(Mode(1))'
 									TieNameToExpr=true
 									$begin 'Components'
@@ -3967,8 +3967,8 @@ $begin 'AnsoftProject'
 											$end 'REPORT_TYPE_SIM_VALUE_CONTEXT'
 										$end 'DESIGN_SOLUTION_SIM_VALUE_CONTEXT'
 									$end 'DesignSolnDefn'
-									ID=19
-									VersionID=107
+									ID=37
+									VersionID=131
 									Name='re(Mode(2))'
 									TieNameToExpr=true
 									$begin 'Components'
@@ -4011,10 +4011,10 @@ $begin 'AnsoftProject'
 								$end 'TraceDef'
 							$end 'Freq. vs. pass'
 						$end 'Reports'
-						NextUniqueID=21
+						NextUniqueID=39
 						MoveBackwards=false
 						$begin 'NextVersID'
-							NextUniqueID=108
+							NextUniqueID=132
 							MoveBackwards=false
 						$end 'NextVersID'
 					$end 'ReportManager'
@@ -5479,22 +5479,22 @@ $begin 'AnsoftProject'
 							$end 'Report2D'
 						$end 'Frequency convergence'
 						$begin 'Freq. vs. pass'
-							ReportID=20
+							ReportID=38
 							$begin 'Report2D'
 								name='Freq. vs. pass'
-								ReportID=20
+								ReportID=38
 								ReportType=2
 								DisplayType=1
 								Title=''
 								Domain=''
 								$begin 'Graph2DsV2'
 									$begin 'Graph2D'
-										TraceDefID=18
+										TraceDefID=36
 										Type='Continuous'
 										Axis='Y1'
 									$end 'Graph2D'
 									$begin 'Graph2D'
-										TraceDefID=19
+										TraceDefID=37
 										Type='Continuous'
 										Axis='Y1'
 									$end 'Graph2D'
@@ -6929,10 +6929,10 @@ $begin 'AnsoftProject'
 														DataSourceID=4
 														$begin 'BasicLayoutAttribute'
 															$begin 'LayoutRect'
-																Top=548
-																Left=694
-																Bottom=9803
-																Right=9080
+																Top=478
+																Left=479
+																Bottom=9821
+																Right=9385
 															$end 'LayoutRect'
 														$end 'BasicLayoutAttribute'
 													$end 'SubMapItem'
@@ -6940,10 +6940,10 @@ $begin 'AnsoftProject'
 														DataSourceID=28
 														$begin 'BasicLayoutAttribute'
 															$begin 'LayoutRect'
-																Top=548
-																Left=694
-																Bottom=9803
-																Right=9080
+																Top=478
+																Left=479
+																Bottom=9821
+																Right=9385
 															$end 'LayoutRect'
 														$end 'BasicLayoutAttribute'
 													$end 'SubMapItem'
@@ -6954,7 +6954,7 @@ $begin 'AnsoftProject'
 																Top=75
 																Left=75
 																Bottom=9925
-																Right=441
+																Right=308
 															$end 'LayoutRect'
 														$end 'BasicLayoutAttribute'
 													$end 'SubMapItem'
@@ -6965,15 +6965,15 @@ $begin 'AnsoftProject'
 														$begin 'CartesianAxisLayoutAttribute'
 															$begin 'AxisRect'
 																Top=75
-																Left=9080
+																Left=9385
 																Bottom=9925
 																Right=9925
 															$end 'AxisRect'
 															$begin 'GridRect'
-																Top=548
-																Left=694
-																Bottom=9803
-																Right=9080
+																Top=478
+																Left=479
+																Bottom=9821
+																Right=9385
 															$end 'GridRect'
 															AxisCollapsed=false
 															AxisExpandCollapseByUser=false
@@ -6984,15 +6984,15 @@ $begin 'AnsoftProject'
 														$begin 'CartesianAxisLayoutAttribute'
 															$begin 'AxisRect'
 																Top=75
-																Left=694
-																Bottom=548
-																Right=9080
+																Left=479
+																Bottom=478
+																Right=9385
 															$end 'AxisRect'
 															$begin 'GridRect'
-																Top=548
-																Left=694
-																Bottom=9803
-																Right=9080
+																Top=478
+																Left=479
+																Bottom=9821
+																Right=9385
 															$end 'GridRect'
 															AxisCollapsed=false
 															AxisExpandCollapseByUser=false
@@ -7020,9 +7020,9 @@ $begin 'AnsoftProject'
 																$begin 'OverlayLayoutAttribute'
 																	$begin 'BoundingRect'
 																		Top=4850
-																		Left=541
+																		Left=408
 																		Bottom=9850
-																		Right=8041
+																		Right=7908
 																	$end 'BoundingRect'
 																	ModifySize=false
 																	ModifyPosition=false
@@ -7038,8 +7038,8 @@ $begin 'AnsoftProject'
 									IsViewAttribServer=false
 									ViewID=-1
 									$begin 'SourceIDMap'
-										IDMapItem(18, 0, -1, 37)
-										IDMapItem(19, 0, -1, 39)
+										IDMapItem(36, 0, -1, 37)
+										IDMapItem(37, 0, -1, 39)
 									$end 'SourceIDMap'
 									$begin 'TraceCharacteristicsMgr'
 									$end 'TraceCharacteristicsMgr'
@@ -7094,7 +7094,7 @@ $begin 'AnsoftProject'
 							$end 'WindowInfoList'
 						$end 'Frequency convergence'
 						$begin 'Freq. vs. pass'
-							ReportID=20
+							ReportID=38
 							$begin 'WindowInfoList'
 								$begin 'Report2D'
 									$begin 'ViewInfo'
@@ -7115,7 +7115,7 @@ $begin 'AnsoftProject'
 												$end 'CurveMed'
 											$end 'DispType'
 										$end 'WrapperDoc'
-										WindowPos(WindowPos(5, -1, -1, -8, -31, 130, 130, 1456, 610))
+										WindowPos(WindowPos(3, -1, -1, -8, -31, 130, 130, 1456, 610))
 									$end 'ViewInfo'
 								$end 'Report2D'
 							$end 'WindowInfoList'
