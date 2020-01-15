@@ -704,12 +704,28 @@ class HfssDesign(COMWrapper):
                 "UserDef:=", True,
                 "Value:=", value]]]])
 
-    def set_variable(self, name, value, postprocessing=False):
+    def set_variable(self, name:str, value:str, postprocessing=False):
+        """Warning: THis is case sensitive,
+
+        Arguments:
+            name {str} -- Name of variable to set, such as 'Lj_1'.
+                          This is not the same as as 'LJ_1'.
+                          You must use the same casing.
+            value {str} -- Value, such as '10nH'
+
+        Keyword Arguments:
+            postprocessing {bool} -- Postprocessingh variable only or not.
+                          (default: {False})
+
+        Returns:
+            VariableString
+        """
         # TODO: check if variable does not exist and quit if it doesn't?
-        if name not in self._design.GetVariables()+self._design.GetPostProcessingVariables():
+        if name not in self.get_variable_names():
             self.create_variable(name, value, postprocessing=postprocessing)
         else:
             self._design.SetVariableValue(name, value)
+
         return VariableString(name)
 
     def get_variable_value(self, name):
@@ -814,6 +830,7 @@ class HfssSetup(HfssPropertyObject):
         '''
         if name is None:
             name = self.name
+        logger.info(f'Analyzing setup {name}')
         return self.parent._design.Analyze(name)
 
     def solve(self, name=None):
