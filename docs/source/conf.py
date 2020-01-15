@@ -21,6 +21,9 @@ project = 'pyEPR'
 copyright = '2020, Zlatko Minev, Zaki Leghtas, and the pyEPR Team'
 author = 'Zlatko Minev, Zaki Leghtas, and the pyEPR Team'
 
+import sys
+sys.path.insert(0, os.path.abspath("../../pyEPR"))
+
 # The full version, including alpha/beta/rc tags
 import pyEPR
 version = pyEPR.__version__
@@ -62,8 +65,14 @@ exclude_patterns = ["**.ipynb_checkpoints"]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme' #'alabaster'
-
+html_theme =  'sphinx_rtd_theme' #'default' # 'sphinx_rtd_theme' #'alabaster' "sphinxdoc" 'classic'
+if 0:
+	import os
+	on_rtd = os.environ.get('READTHEDOCS') == 'True'
+	if on_rtd:
+	    html_theme = 'default'
+	else:
+	    html_theme = 'nature'
 
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -82,7 +91,3 @@ autodoc_member_order = 'groupwise'
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
-
-# The theme to use for HTML and HTML Help pages.  Major themes that come with
-# Sphinx are currently 'default' and 'sphinxdoc'.
-html_theme = "sphinxdoc"
