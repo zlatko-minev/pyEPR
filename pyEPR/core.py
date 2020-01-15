@@ -1336,13 +1336,14 @@ class pyEPR_HFSSAnalysis(object):
 
         if fig is None:
             fig = plt.figure(figsize=(11,3.))
-            fig.clf()
-
-        #Grid spec and axes;    height_ratios=[4, 1], wspace=0.5
-        gs = mpl.gridspec.GridSpec(1, 3, width_ratios=[1.2, 1.5, 1])
-        axs = [fig.add_subplot(gs[i]) for i in range(3)]
 
         for variation in self.variations:
+            fig.clf()
+
+            #Grid spec and axes;    height_ratios=[4, 1], wspace=0.5
+            gs = mpl.gridspec.GridSpec(1, 3, width_ratios=[1.2, 1.5, 1])
+            axs = [fig.add_subplot(gs[i]) for i in range(3)]
+
             logger.info(f'Creating report for variation {variation}')
             convergence_t = self.get_convergence()
             convergence_f = self.hfss_report_f_convergence()
@@ -1354,10 +1355,11 @@ class pyEPR_HFSSAnalysis(object):
             plot_convergence_maxdf_vs_sol(axs[2], convergence_t.iloc[:,1],
                                           convergence_t.iloc[:,0])
 
-        fig.tight_layout(w_pad=0.1)#pad=0.0, w_pad=0.1, h_pad=1.0)
-        if _display:
-            from IPython.display import display
-            display(fig)
+            fig.tight_layout(w_pad=0.1)#pad=0.0, w_pad=0.1, h_pad=1.0)
+
+            if _display:
+                from IPython.display import display
+                display(fig)
 
         return fig
 
@@ -1900,127 +1902,132 @@ class pyEPR_Analysis(object):
 
     def print_variation(self, variation):
         if len(self.hfss_vars_diff_idx) > 0:
-            print( '\n*** Different parameters'  )
+            print('\n*** Different parameters')
             print(self.hfss_variables[self.hfss_vars_diff_idx][variation], '\n')
 
-        print( '*** P (participation matrix, not normlz.)'  )
+        print('*** P (participation matrix, not normlz.)')
         print(self.PM[variation])
 
-        print( '\n*** S (sign-bit matrix)'  )
+        print('\n*** S (sign-bit matrix)')
         print(self.SM[variation])
 
     def print_result(self, result):
-        pritm = lambda x, frmt="{:9.2g}": print_matrix(x, frmt = frmt) #TODO: actually make into dataframe with mode labela and junction labels
+        # TODO: actually make into dataframe with mode labela and junction labels
+        pritm = lambda x, frmt="{:9.2g}": print_matrix(x, frmt=frmt)
 
-        print( '*** P (participation matrix, normalized.)'  )
+        print('*** P (participation matrix, normalized.)')
         pritm(result['Pm_normed'])
 
-        print( '\n*** Chi matrix O1 PT (MHz)\n    Diag is anharmonicity, off diag is full cross-Kerr.'  )
+        print('\n*** Chi matrix O1 PT (MHz)\n    Diag is anharmonicity, off diag is full cross-Kerr.')
         pritm(result['chi_O1'], "{:9.3g}")
 
-        print( '\n*** Chi matrix ND (MHz) '  )
+        print('\n*** Chi matrix ND (MHz) ')
         pritm(result['chi_ND'], "{:9.3g}")
 
-        print( '\n*** Frequencies O1 PT (MHz)'  )
+        print('\n*** Frequencies O1 PT (MHz)')
         print(result['f_1'])
 
-        print( '\n*** Frequencies ND (MHz)'  )
+        print('\n*** Frequencies ND (MHz)')
         print(result['f_ND'])
 
-        print( '\n*** Q_coupling'  )
+        print('\n*** Q_coupling')
         print(result['Q_coupling'])
 
-    def plotting_dic_x(self,Var_dic,var_name):
+    def plotting_dic_x(self, Var_dic, var_name):
         dic = {}
 
-        if (len(Var_dic.keys())+1)== self.Num_hfss_vars_diff_idx:
-            lv,lv_str = self.get_variation_of_multiple_variables_value(Var_dic)
-            dic['label']= lv_str
-            dic['x_label']= var_name
-            dic['x']= self.get_variable_value(var_name,lv=lv)
+        if (len(Var_dic.keys())+1) == self.Num_hfss_vars_diff_idx:
+            lv, lv_str = self.get_variation_of_multiple_variables_value(Var_dic)
+            dic['label'] = lv_str
+            dic['x_label'] = var_name
+            dic['x'] = self.get_variable_value(var_name, lv=lv)
         else:
             raise ValueError('more than one hfss variablae changes each time')
 
         return lv, dic
-    def plotting_dic_data(self,Var_dic,var_name,data_name):
-        lv,dic =self.plotting_dic_x()
-        dic['y_label']= data_name
 
-    def plot_results(self, result,Y_label, variable,X_label ,variations =None):
+    def plotting_dic_data(self, Var_dic, var_name, data_name):
+        lv, dic = self.plotting_dic_x()
+        dic['y_label'] = data_name
 
-        import matplotlib.pyplot as plt
+    def plot_results(self, result, Y_label, variable, X_label, variations=None):
+        #TODO?
+        pass
 
-
-
-
-
-    def plot_Hresults(self, variable=None, fig=None,variations =None):
+    def plot_Hresults(self, variable=None, fig=None, variations=None):
         '''
-            versus variations
+        Plot results versus variation
         '''
-        import matplotlib.pyplot as plt
 
-        epr = self # lazyhack
-        if not(variable is None):
-            var_val = self.get_variable_value(variable,lv = variations)
+        ### Which variable was swept
+        if not variable is None:
+            var_val = self.get_variable_value(variable, lv=variations)
         else:
-            variable ='variation'
-        fig, axs = plt.subplots(2,2, figsize=(10,6)) if fig is None else (fig, fig.axes)
+            variable = 'variation'
 
-        ax = axs[0,0]
+        ### Create figure and axes
+        fig, axs = plt.subplots(2, 2, figsize=(10, 6)) if fig is None else (fig, fig.axes)
+
+        ### Axis: Frequencies
+        ax = axs[0, 0]
         ax.set_title('Modal frequencies (MHz)')
-        f0 = self.results.get_frequencies_HFSS(lv =variations,vs = variable)
-        f1 = self.results.get_frequencies_O1(lv =variations,vs = variable)
-        f_ND = self.results.get_frequencies_ND(lv =variations,vs = variable)
-        mode_idx = list(f1.index) #changed by Asaf from f0 as not all modes are always analyzed
-        nmodes   = len(mode_idx)
-        cmap     = cmap_discrete(nmodes)
+        f0 = self.results.get_frequencies_HFSS(lv=variations, vs=variable)
+        f1 = self.results.get_frequencies_O1(lv=variations, vs=variable)
+        f_ND = self.results.get_frequencies_ND(lv=variations, vs=variable)
+        mode_idx = list(f1.index)  # changed by Asaf from f0 as not all modes are always analyzed
+        nmodes = len(mode_idx)
+        cmap = cmap_discrete(nmodes)
 
+        # Which line to draw
         if f_ND.empty:
             plt_me_line = f1
-            markerf1    = 'o'
+            markerf1 = 'o'
         else:
             plt_me_line = f_ND
-            markerf1    = '.'
-            f_ND.transpose().plot(ax = ax, lw=0, marker='o',ms=4, legend=False, zorder =30, color = cmap)
+            markerf1 = '.'
+            f_ND.transpose().plot(ax=ax, lw=0, marker='o', ms=4, legend=False, zorder=30, color=cmap)
 
-        f0.transpose().plot(ax = ax, lw=0, marker='x',ms=2, legend=False, zorder = 10, color = cmap)
-        f1.transpose().plot(ax = ax, lw=0, marker=markerf1,ms=4, legend=False, zorder = 20, color = cmap)
-        plt_me_line.transpose().plot(ax = ax, lw=1, alpha = 0.2, color = 'grey', legend=False)
+        f0.transpose().plot(ax=ax, lw=0, marker='x', ms=2, legend=False, zorder=10, color=cmap)
+        f1.transpose().plot(ax=ax, lw=0, marker=markerf1, ms=4, legend=False, zorder=20, color=cmap)
+        plt_me_line.transpose().plot(ax=ax, lw=1, alpha=0.5, color='grey', legend=False)
 
-        ax = axs[1,0]
+        ### Axis: Quality factors'
+        ax = axs[1, 0]
         ax.set_title('Quality factors')
         Qs = self.Qs if variations is None else self.Qs[variations]
-        Qs.transpose().plot(ax = ax, lw=0, marker=markerf1, ms=4, legend=True, zorder = 20, color = cmap)
-        Qs.transpose().plot(ax = ax, lw=1, alpha = 0.2, color = 'grey', legend=False)
+        Qs.transpose().plot(ax=ax, lw=0, marker=markerf1, ms=4, legend=True, zorder=20, color=cmap)
+        Qs.transpose().plot(ax=ax, lw=1, alpha=0.2, color='grey', legend=False)
         ax.set_yscale('log')
 
-
+        ### Axis: Alpha and chi
         axs[0][1].set_title('Anharmonicities (MHz)')
         axs[1][1].set_title('Cross-Kerr frequencies (MHz)')
+
         def plot_chi_alpha(chi, primary):
             for i, m in enumerate(mode_idx):
-                ax = axs[0,1]
-                z = sort_Series_idx(pd.Series({k: chim.loc[m,m] for k, chim in chi.items()}))
-                z.plot(ax = ax, lw=0, ms=4, label = m, color = cmap[i], marker='o' if primary else 'x')
+                ax = axs[0, 1]
+                z = sort_Series_idx(pd.Series({k: chim.loc[m, m] for k, chim in chi.items()}))
+                z.plot(ax=ax, lw=0, ms=4, label=m, color=cmap[i], marker='o' if primary else 'x')
                 if primary:
-                    z.plot(ax = ax, lw=1, alpha = 0.2, color = 'grey', label = '_nolegend_')
+                    z.plot(ax=ax, lw=1, alpha=0.2, color='grey', label='_nolegend_')
                 for i, n in enumerate(mode_idx):
                     if int(n) > int(m):
                         # plot chi
-                        ax = axs[1,1]
-                        z = sort_Series_idx(pd.Series({k: chim.loc[m,n] for k, chim in chi.items()}))
-                        z.plot(ax = ax, lw=0, ms=4, label = str(m)+','+str(n), color = cmap[i], marker='o' if primary else 'x')
+                        ax = axs[1, 1]
+                        z = sort_Series_idx(
+                            pd.Series({k: chim.loc[m, n] for k, chim in chi.items()}))
+                        z.plot(ax=ax, lw=0, ms=4, label=str(m)+','+str(n),
+                               color=cmap[i], marker='o' if primary else 'x')
                         if primary:
-                            z.plot(ax = ax, lw=1, alpha = 0.2, color = 'grey', label = '_nolegend_')
+                            z.plot(ax=ax, lw=1, alpha=0.2, color='grey', label='_nolegend_')
 
         def do_legends():
-            legend_translucent(axs[0][1],  leg_kw = dict(fontsize = 7, title = 'Mode'))
-            legend_translucent(axs[1][1],  leg_kw = dict(fontsize = 7))
+            legend_translucent(axs[0][1],  leg_kw=dict(fontsize=7, title='Mode'))
+            legend_translucent(axs[1][1],  leg_kw=dict(fontsize=7))
 
-        chiND  = self.results.get_chi_ND(lv =variations,vs = variable)
-        chiO1  = self.results.get_chi_O1(lv =variations,vs = variable)
-        use_ND = not (np.any([r['fock_trunc'] == None for k, r in self.results.items()]))
+        chiND = self.results.get_chi_ND(lv=variations, vs=variable)
+        chiO1 = self.results.get_chi_O1(lv=variations, vs=variable)
+        use_ND = not np.any([r['fock_trunc'] == None for k, r in self.results.items()])
         if use_ND:
             plot_chi_alpha(chiND, True)
             do_legends()
@@ -2029,6 +2036,7 @@ class pyEPR_Analysis(object):
             plot_chi_alpha(chiO1, True)
             do_legends()
 
+        ### Wrap up
         fig.tight_layout()
 
         return fig, axs
