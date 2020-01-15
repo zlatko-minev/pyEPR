@@ -43,33 +43,31 @@ The following code illustrates how to perform a complete analysis of a simple tw
 
 
 ```python
-from pyEPR import *
+# Load pyEPR. See the tutorial notebooks!
+import pyEPR as epr
 
-# Connect to your HFSS project
-pinfo = Project_Info(r'C:/path-to-sims',
-			    project_name = 'two_qubit_one_cavity', # Project file name (string).
-			    									   # "None" will get the current active one.
-			    design_name  = 'Alice_Bob'             # Design name (string).
-			     									   # "None" will get the current active one.
-			    ).conect()
+# 1. Connect to your Ansys, and load your design
+pinfo = epr.Project_Info(project_path = r'C:\sim_folder',
+						 project_name = r'cavity_with_two_qubits',
+						 design_name  = r'Alice_Bob')
 
-# Specify your Josephson tunnel junction info for HFSS
+# 2. Non-linear (Josephson) junctions: specify
 pinfo.junctions['jAlice'] = {'Lj_variable':'LJAlice', 'rect':'qubitAlice', 'line': 'alice_line', 'length':parse_units('50um')}
 pinfo.junctions['jBob']   = {'Lj_variable':'LJBob',   'rect':'qubitBob',   'line': 'bob_line',   'length':parse_units('50um')}
 pinfo.validate_junction_info() # Check that valid names of variables and objects have been supplied.
 
-# 2b. Dissipative elements. (see more options in Project_Info.dissipative)
-pinfo.dissipative.dielectrics_bulk    = ['si_substrate', 'dielectic_object2']    # supply names of hfss objects
+# 2b. Dissipative elements: specify
+pinfo.dissipative.dielectrics_bulk    = ['si_substrate', 'dielectic_object2'] # supply names of hfss objects
 pinfo.dissipative.dielectric_surfaces = ['interface1', 'interface2']
 
-# 3.  Run analysis
-epr_hfss = pyEPR_HFSSAnalysis(pinfo)
-epr_hfss.do_EPR_analysis()
+# 3.  Perform microwave analysis on eigenmode solutions
+eprh = epr.pyEPR_HFSSAnalysis(pinfo)
+eprh.do_EPR_analysis()
 
-# 4.  Hamiltonian analysis
-epr = pyEPR_Analysis(epr_hfss.data_filename)
-epr.analyze_all_variations(cos_trunc = 8, fock_trunc = 7)
-epr.plot_Hresults()
+# 4.  Perform Hamiltonian spectrum post-analysis, building on mw solutions using EPR
+epra = epr.pyEPR_Analysis(eprh.data_filename)
+epra.analyze_all_variations(cos_trunc=8, fock_trunc=7)
+epra.plot_Hresults()
 ```
 
 # `pyEPR` Video Tutorials <img src="https://developers.google.com/site-assets/logo-youtube.svg" height=30>
