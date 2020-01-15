@@ -12,10 +12,12 @@ from __future__ import absolute_import, division, print_function
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import rgb2hex
 from matplotlib.axes import Axes
+from matplotlib.colors import rgb2hex
 
-from . import config
+from .. import config
+
+default_colormap = lambda: getattr(mpl.cm, config.plotting.default_color_map)
 
 # ==============================================================================
 # Plotting - MPL basics
@@ -92,7 +94,7 @@ def get_color_cycle(n, colormap=None, start=0., stop=1., format='hex'):
     '''
     See also get_next_color
     '''
-    colormap = colormap or config.Plotting_Options.default_color_map
+    colormap = colormap or default_colormap()
 
     pts = np.linspace(start, stop, n)
     if format == 'hex':
@@ -111,7 +113,7 @@ def cmap_discrete(n, cmap_kw={}):
     if cmap_kw.pop('helix', False):
         return cmap_discrete_CubeHelix(n, helix_kw=cmap_kw)
 
-    cmap_KW = dict(colormap=config.Plotting_Options.default_color_map,
+    cmap_KW = dict(colormap=default_colormap(),
                    start=0.05, stop=.95)
     cmap_KW.update(cmap_kw)
 
