@@ -11,6 +11,7 @@ in a dictionary called CONFIG in a file called config.py
 @date: Created on Fri Oct 30 14:21:45 2015
 """
 
+import collections.abc
 from . import Dict
 
 # If we are reloading the package, then config will already be defined, then do not overwrite it.
@@ -127,6 +128,23 @@ def is_using_ipython():
         return False
 
 
+def update_recursive(d:collections.abc.Mapping, u:collections.abc.Mapping):
+    """Recursive update of dictionaries.
+
+    Arguments:
+        d {collections.abc.Mapping} -- dict to overwrite
+        u {collections.abc.Mapping} -- dcit used to update
+
+    Returns:
+        same as d; Updated d
+    """
+    for k, v in u.items():
+        if isinstance(v, collections.abc.Mapping):
+            d[k] = update_recursive(d.get(k, {}), v)
+        else:
+            d[k] = v
+    return d
+
 def get_config():
     """Returns the config pointer.
 
@@ -149,10 +167,11 @@ def get_config():
 
         # Update with user config
         from . import _config_user
-        config.update(_config_user.config)
+        _config = update_recursive(config, _config_user.config)
 
         # Add to config any bootup params
         config.internal.ipython = is_using_ipython()
+
         return config
 
 
