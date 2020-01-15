@@ -57,15 +57,16 @@ class Project_Info(object):
         Each junction is given a name and is specified by a dictionary.
         It has the following properties:
 
-            1. `Lj_variable` : Name of HFSS variable that specifies junction inductance Lj defined
-                               on the boundary condition in HFSS. DO NOT USE Global names that start
-                               with $.
-            2. `rect`        : Name of HFSS rectangle on which lumped boundary condition is specified.
-            3. `line`        : Name of HFSS polyline which spans the length of the recntalge.
-                               Used to define the voltage across the junction.
-                               Used to define the current orientation for each junction.
-                               Used to define sign of ZPF.
-            4. `length`      : Length in HFSS of the junction rectangle and line (specified in meters).
+            `Lj_variable`: Name of HFSS variable that specifies junction inductance Lj defined
+                        on the boundary condition in HFSS. DO NOT USE Global names that start
+                        with $.
+            `rect`:     Name of HFSS rectangle on which lumped boundary condition is specified.
+            `line`:     Name of HFSS polyline which spans the length of the recntalge.
+                        Used to define the voltage across the junction.
+                        Used to define the current orientation for each junction.
+                        Used to define sign of ZPF.
+            `length`:   Length in HFSS of the junction rectangle and line
+                        (specified in meters).
 
         Example definition:
 
@@ -90,7 +91,8 @@ class Project_Info(object):
     -----------------------
         project_path  : str
             Directory path to the hfss project file. Should be the directory, not the file.
-            default = None: Assumes the project is open, and thus gets the project based on `project_name`
+            default = None: Assumes the project is open, and thus gets the project based
+            on `project_name`
         project_name  : str,  None
             Name of the project within the project_path. "None" will get the current active one.
         design_name   : str,  None
@@ -131,7 +133,9 @@ class Project_Info(object):
     def __init__(self, project_path=None, project_name=None, design_name=None,
                  setup_name=None, do_connect=True):
 
-        self.project_path  = str(Path(project_path)) if not (project_path is None) else None # Path: format path correctly to system convention
+        # Path: format path correctly to system convention
+        self.project_path  = str(Path(project_path)) \
+                             if not (project_path is None) else None
         self.project_name  = project_name
         self.design_name   = design_name
         self.setup_name    = setup_name
@@ -174,36 +178,38 @@ class Project_Info(object):
         return self.connect()
 
     def connect(self):
-        '''
-        Connect to HFSS design.
-        '''
-        #logger.info('Connecting to HFSS ...')
+        """
+        Connect to Ansys Desktop.
+        """
+        logger.info('Connecting to Ansys Desktop API...')
 
         self.app, self.desktop, self.project = ansys.load_ansys_project(
             self.project_name, self.project_path)
         self.project_name = self.project.name
         self.project_path = self.project.get_path()
 
-        # Design
+        ### Design
         if self.design_name is None:
             self.design = self.project.get_active_design()
             self.design_name = self.design.name
-            logger.info(f'\tOpened active design\n\tDesign:    {self.design_name} [Solution type: {self.design.solution_type}]')
+            logger.info(f'\tOpened active design\n\
+\tDesign:    {self.design_name} [Solution type: {self.design.solution_type}]')
         else:
             try:
                 self.design = self.project.get_design(self.design_name)
+                logger.info(f'\tOpened active design\n\
+\tDesign:    {self.design_name} [Solution type: {self.design.solution_type}]')
             except Exception as e:
                 tb = sys.exc_info()[2]
-                logger.error(f"Original error: {e}\n")
-                raise(Exception(' Did you provide the correct design name? Failed to pull up design.').with_traceback(tb))
+                logger.error(f"Original error \N{loudly crying face}: {e}\n")
+                raise(Exception(' Did you provide the correct design name?\
+                    Failed to pull up design. \N{loudly crying face}').with_traceback(tb))
 
-        #if not ('Eigenmode' == self.design.solution_type):
-        #    logger.warning('\tWarning: The design tpye is not Eigenmode. Are you sure you dont want eigenmode?')
-
-        # Setup
+        ### Setup
         try:
-            n_setups = len(self.design.get_setup_names())
-            if n_setups == 0:
+            setup_names = self.design.get_setup_names()
+
+            if len(setup_names) == 0:
                 logger.warning('\tNo design setup detected.')
                 if self.design.solution_type == 'Eigenmode':
                     logger.warning('\tCreating eigenmode default setup one.')
@@ -212,18 +218,22 @@ class Project_Info(object):
                 elif self.design.solution_type == 'DrivenModal':
                     setup = self.design.create_dm_setup() # adding a driven modal design
                     self.setup_name = setup.name
+            else:
+                self.setup_name = setup_names[0]
+
             self.get_setup(self.setup_name) # get the actual setup if there is one
 
         except Exception as e:
             tb = sys.exc_info()[2]
-            logger.error(f"Original error: {e}\n")
-            raise(Exception(' Did you provide the correct setup name? Failed to pull up setup.').with_traceback(tb))
+            logger.error(f"Original error \N{loudly crying face}: {e}\n")
+            raise(Exception(' Did you provide the correct setup name?\
+                        Failed to pull up setup. \N{loudly crying face}').with_traceback(tb))
 
         # Finalize
         self.project_name = self.project.name
         self.design_name  = self.design.name
 
-        logger.info('\tConnected successfully.\t :)\t :)\t :)\t\n')
+        logger.info('\tConnection to Ansys established successfully. \N{grinning face} \n')
 
         return self
 
@@ -233,16 +243,16 @@ class Project_Info(object):
         Sets  self.setup and self.setup_name.
         If Name is
         """
-
         if name is None:
             return None
         else:
             self.setup = self.design.get_setup(name=self.setup_name)
             if self.setup is None:
-                 logger.error(f"Could not retrieve setup: {self.setup_name}\n \
-                     Did you give the right name? Does it exist?")
+                logger.error(f"Could not retrieve setup: {self.setup_name}\n \
+                               Did you give the right name? Does it exist?")
+
             self.setup_name = self.setup.name
-            logger.info(f'\tOpened setup: name={self.setup_name}  type={type(self.setup)}')
+            logger.info(f'\tOpened setup `{self.setup_name}`  ({type(self.setup)})')
             return self.setup
 
 
@@ -260,8 +270,8 @@ class Project_Info(object):
         '''
         Disconnect from existing HFSS design.
         '''
-        assert self.check_connected(
-        ) is True, "it does not appear that you have connected to HFSS yet. use connect()"
+        assert self.check_connected() is True,\
+            "It does not appear that you have connected to HFSS yet. use connect()"
         self.project.release()
         self.desktop.release()
         self.app.release()
@@ -271,11 +281,10 @@ class Project_Info(object):
 
     def get_dm(self):
         '''
-        Get the design and modeler
+        Utility shortcut function to get the design and modeler.
 
         .. code-block:: python
             oDesign, oModeler = projec.get_dm()
-
         '''
         oDesign = self.design
         oModeler = oDesign.modeler
@@ -294,17 +303,28 @@ class Project_Info(object):
 
     def validate_junction_info(self):
         """ Validate that the user has put in the junction info correctly.
-            Do no also forget to check the length of the rectangles/line of
-            the junction if you change it.
+        Do no also forget to check the length of the rectangles/line of
+        the junction if you change it.
         """
+
         all_variables_names = self.get_all_variables_names()
         all_object_names    = self.get_all_object_names()
+
         for jjnm, jj in self.junctions.items():
-            assert jj['Lj_variable'] in all_variables_names, "pyEPR project_info user error found: Seems like for junction `%s` you specified a design or project variable for `Lj_variable` that does not exist in HFSS by the name: `%s` " % (
-                jjnm, jj['Lj_variable'])
+
+            assert jj['Lj_variable'] in all_variables_names,\
+                """pyEPR project_info user error found \N{face with medical mask}:
+                Seems like for junction `%s` you specified a design or project
+                variable for `Lj_variable` that does not exist in HFSS by the name:
+                 `%s` """ % (jjnm, jj['Lj_variable'])
+
             for name in ['rect', 'line']:
-                assert jj[name] in all_object_names, "pyEPR project_info user error found: Seems like for junction `%s` you specified a %s that does not exist in HFSS by the name: `%s` " % (
-                    jjnm, name, jj[name])
+
+                assert jj[name] in all_object_names, \
+                    """pyEPR project_info user error found \N{face with medical mask}:
+                    Seems like for junction `%s` you specified a %s that does not exist
+                    in HFSS by the name: `%s` """ % (jjnm, name, jj[name])
+
         #TODO: Check the length of the rectnagle
 
 
