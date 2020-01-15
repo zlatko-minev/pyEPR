@@ -22,7 +22,9 @@ copyright = '2020, Zlatko Minev, Zaki Leghtas, and the pyEPR Team'
 author = 'Zlatko Minev, Zaki Leghtas, and the pyEPR Team'
 
 import sys
+import os
 sys.path.insert(0, os.path.abspath("../../pyEPR"))
+print(sys.path)
 
 # The full version, including alpha/beta/rc tags
 import pyEPR
