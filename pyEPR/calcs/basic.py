@@ -23,7 +23,7 @@ class CalcsBasic():
         '''
         (Pmj, SJ, Ω, EJ) = map(np.array, (Pmj, SJ, Ω, EJ))
 
-        if (Pmj > 0).any():
+        if (Pmj < 0).any():
             print('BAD!')
             logger.error(f"""The simulation is not converged!!! \N{nauseated face}
             Some of the energy participations are less than zero.

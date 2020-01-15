@@ -40,6 +40,12 @@ config = Dict( # pylint: disable=invalid-name
         save_mesh_stats=True,
     ),
 
+    epr = Dict(
+
+        # Use participation enomalizaiton or now
+        renorm_pj = True,
+    ),
+
     # Loss properties of various materials and surfaces
     dissipation=Dict(
 

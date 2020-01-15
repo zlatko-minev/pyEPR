@@ -1430,7 +1430,7 @@ class Results_Hamiltonian(OrderedDict):
     '''
     Class to store and process results from the analysis of $H_nl$.
     '''
-
+    file_name_extra = ' Results_Hamiltonian.npz'
     def __init__(self, dict_file=None, data_dir=None):
         """ input:
            dict file - 1. ethier None to create an empty results hamilitoninan as
@@ -1442,6 +1442,7 @@ class Results_Hamiltonian(OrderedDict):
 
                        3. or an existing instance of a dict class which will be
                        upgraded to the Results_Hamiltonian class
+
             data_dir -  the directory in which the file is to be saved or loaded
                         from, defults to the config.root_dir
                         """
@@ -1450,22 +1451,18 @@ class Results_Hamiltonian(OrderedDict):
         self.sort_index = True # for retrieval
 
         if data_dir is None:
-            data_dir = str(Path(config.root_dir)) + '\\temp\\'
-            if not os.path.isdir(data_dir):
-                os.makedirs(data_dir)
-            data_dir += str(time.strftime('%Y-%m-%d %H-%M-%S', time.localtime()))+'_'
+            data_dir = Path(config.root_dir) / 'temp' / \
+                       time.strftime('%Y-%m-%d %H-%M-%S', time.localtime())
 
-        # this is for the case we are sendig as data_dir the npz file
-        elif os.path.isfile(data_dir):
-            data_dir.replace('.npz', '_')
-
-        elif os.path.isdir(data_dir):
-            print(data_dir)
-        else:
-            raise ValueError('Unexpected data_dir')
+        data_dir = Path(data_dir).resolve()
+        file_name = data_dir.stem
+        directory = data_dir.parents[0]
+        if not directory.is_dir():
+            directory.mkdir(parents=True, exist_ok=True)
 
         if dict_file is None:
-            self.file_name = str(data_dir)+'Results_Hamiltonian.npz'
+            self.file_name = str(directory/(str(file_name)+self.file_name_extra))
+            #logger.info(f'Filename hamiltonian params to {self.file_name }')
 
         elif isinstance(dict_file, str):
             try:
@@ -1476,8 +1473,10 @@ class Results_Hamiltonian(OrderedDict):
                 self.load_from_npz()
 
         elif isinstance(dict_file, dict):
+            # Depreciated
             self.inject_dic(dict_file)
-            self.file_name = str(data_dir)+'Results_Hamiltonian.npz'
+            self.file_name = str(data_dir)+self.file_name_extra
+
         else:
             raise ValueError('type dict_file is of type {}'.format(type(dict_file)))
             #load file
@@ -1518,7 +1517,10 @@ class Results_Hamiltonian(OrderedDict):
         Returns:
             Sorted DtaaFrame
         """
-        return z.sort_index(axis=1)
+        if isinstance(z, pd.DataFrame):
+            return z.sort_index(axis=1)
+        else:
+            return z
 
     def get_vs_variations(self, quantity: str, variations: list = None, vs='variation'):
         """
@@ -1570,10 +1572,14 @@ class Results_Hamiltonian(OrderedDict):
 
     def get_chi_O1(self, variations: list = None, vs='variation'):
         z = self.get_vs_variations('chi_O1', variations=variations, vs=vs)
+        #if self.sort_index:
+        #    z = self.do_sort_index(z)
         return z
 
     def get_chi_ND(self, variations: list = None, vs='variation'):
         z = self.get_vs_variations('chi_ND', variations=variations, vs=vs)
+        #if self.sort_index:
+        #    z = self.do_sort_index(z)
         return z
 
 
@@ -1592,7 +1598,7 @@ class pyEPR_Analysis(object):
         self.results = Results_Hamiltonian(dict_file=Res_hamil_filename,
                                            data_dir=data_filename)
 
-        with open(str(filepath), 'rb') as handle:
+        with open(str(data_filename), 'rb') as handle:
             # Contain everything: project_info and results
             self.data = Dict(pickle.load(handle))
 
@@ -1610,26 +1616,29 @@ class pyEPR_Analysis(object):
         self.PM             = results['Pm'] # participation matrices
         self.SM             = results['Sm'] # sign matrices
         self.sols           = results['sols']
-        self.mesh_stats     = results['mesh_stats']
+        self.mesh_stats     = results['mesh']
         self.convergence    = results['convergence']
         self.convergence_f_pass = results['convergence_f_pass']
 
-        self.nmodes               = self.sols[variations[0]].shape[0]
-        self._renorm_pj           = True
+        self.nmodes               = self.sols[self.variations[0]].shape[0]
+        self._renorm_pj           = config.epr.renorm_pj
+
+        # Unique variation params -- make a get function
         dum                       = DataFrame_col_diff(self.hfss_variables)
         self.hfss_vars_diff_idx   = dum if not (dum.any() == False) else []
         try:
             self.Num_hfss_vars_diff_idx =len(self.hfss_vars_diff_idx[self.hfss_vars_diff_idx==True])
         except:
             e = sys.exc_info()[0]
-            warnings.warn( "<p>Error: %s</p>" % e )
+            logger.warning( "<p>Error: %s</p>" % e )
             self.Num_hfss_vars_diff_idx= 0
+
         if do_print_info:
             self.print_info()
 
     @property
     def project_info(self):
-        return self.loaded.project_info
+        return self.data.project_info
 
     def print_info(self):
         print("\t Differences in variations:")
@@ -1663,8 +1672,9 @@ class pyEPR_Analysis(object):
         return [var[key] for key in var.keys()]
 
     def get_variations_of_variable_value(self, swpvar, value, lv=None):
-        """A function to return all the variations in which one of the variables has a specific value
-            lv is list of variations (example ['0', '1']), if None it takes all variations
+        """A function to return all the variations in which one of the variables
+            has a specific value lv is list of variations (example ['0', '1']),
+            if None it takes all variations
             swpvar is a string and the name of the variable we wish to filter
             value is the value of swapvr in which we are intrested
 
@@ -1680,7 +1690,8 @@ class pyEPR_Analysis(object):
 
         #lv = lv_temp if not len(lv_temp) else lv
         if not (len(lv)):
-            raise ValueError('No variations have the variable-' + swpvar + '= {}'.format(value))
+            raise ValueError('No variations have the variable-' + swpvar +\
+                              '= {}'.format(value))
 
         return lv
 
@@ -1763,12 +1774,15 @@ class pyEPR_Analysis(object):
         return Ejs
 
     def analyze_all_variations(self,
-                               # None returns all_variations otherwis this is a list with number as strings ['0', '1']
+                               # None returns all_variations otherwis this is a
+                               # list with number as strings ['0', '1']
                                variations=None,
-                               Analyze_previous=False,  # set to true if you wish to overwrite previous analysis
+                               Analyze_previous=False,
+                               # set to true if you wish to
+                               # overwrite previous analysis
                                **kwargs):
         '''
-            See analyze_variation
+        See analyze_variation
         '''
         result = OrderedDict()
         if variations is None:
@@ -1928,7 +1942,7 @@ class pyEPR_Analysis(object):
                                            print_=print_result)['Pm_norm'] # calling again
         result['hfss_variables'] = self.hfss_variables[variation] # just propagate
         result['Ljs']            = self.Ljs[variation]
-        result['Q_coupling']     = self.QM_coupling[variation]
+        result['Q_coupling']     = self.Qm_coupling[variation]
         result['Qs']             = self.Qs[variation]
         result['fock_trunc']     = fock_trunc
         result['cos_trunc']      = cos_trunc
@@ -2059,20 +2073,37 @@ class pyEPR_Analysis(object):
         axs[1][1].set_title('Cross-Kerr frequencies (MHz)')
 
         def plot_chi_alpha(chi, primary):
+
             for i, m in enumerate(mode_idx):
                 ax = axs[0, 1]
                 z = sort_Series_idx(pd.Series({k: chim.loc[m, m] for k, chim in chi.items()}))
+                if self.results.sort_index:
+                    try: # lazy
+                        z.index = z.index.astype(float)
+                    except Exception:
+                        pass
+                    z = z.sort_index(axis=0) # series
+
                 z.plot(ax=ax, lw=0, ms=4, label=m, color=cmap[i], marker='o' if primary else 'x')
                 if primary:
                     z.plot(ax=ax, lw=1, alpha=0.2, color='grey', label='_nolegend_')
+
                 for i, n in enumerate(mode_idx):
                     if int(n) > int(m):
                         # plot chi
                         ax = axs[1, 1]
                         z = sort_Series_idx(
                             pd.Series({k: chim.loc[m, n] for k, chim in chi.items()}))
+                        if self.results.sort_index:
+                            try:
+                                z.index = z.index.astype(float)
+                            except Exception:
+                                pass
+                            z = z.sort_index(axis=0) # series
+
                         z.plot(ax=ax, lw=0, ms=4, label=str(m)+','+str(n),
                                color=cmap[i], marker='o' if primary else 'x')
+
                         if primary:
                             z.plot(ax=ax, lw=1, alpha=0.2, color='grey', label='_nolegend_')
 
