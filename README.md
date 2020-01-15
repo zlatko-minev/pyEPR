@@ -63,7 +63,7 @@ pinfo.dissipative.dielectrics_bulk    = ['si_substrate', 'dielectic_object2']   
 pinfo.dissipative.dielectric_surfaces = ['interface1', 'interface2']
 
 # 3.  Run analysis
-epr_hfss = pyEPR_HFSS(pinfo)
+epr_hfss = pyEPR_HFSSAnalysis(pinfo)
 epr_hfss.do_EPR_analysis()
 
 # 4.  Hamiltonian analysis

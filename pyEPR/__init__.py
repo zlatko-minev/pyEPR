@@ -181,11 +181,11 @@ from . import ansys
 from . import core
 
 from .ansys import parse_units, parse_units_user, parse_entry
-from .core import Project_Info, pyEPR_HFSS, pyEPR_Analysis
+from .core import Project_Info, pyEPR_HFSSAnalysis, pyEPR_Analysis
 
 
 __all__ = ['logger', 'config',
            'toolbox', 'calcs', 'ansys', 'core',
-           'Project_Info', 'pyEPR_HFSS', 'pyEPR_Analysis',
+           'Project_Info', 'pyEPR_HFSSAnalysis', 'pyEPR_Analysis',
            'parse_units', 'parse_units_user', 'parse_entry'
            ]

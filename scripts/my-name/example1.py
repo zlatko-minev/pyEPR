@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-My First pyEPR Script 
+My First pyEPR Script
 """
 
 from pyEPR import *
 
 # 1.  Project and design. Open link to HFSS controls.
-project_info = Project_Info(r'C:\zkm\my-first-pyEPR\\', 
+project_info = Project_Info(r'C:\zkm\my-first-pyEPR\\',
 			     project_name = 'HelloWorld-pyEPR', # Project file name (string). "None" will get the current active one.
 			     design_name  = 'MyFirstTest'       # Design name (string). "None" will get the current active one.
 			    )
@@ -21,10 +21,10 @@ project_info.connect_to_project()
 #
 ## 2b. Dissipative elements.
 #project_info.dissipative.dielectrics_bulk    = ['si_substrate']    # supply names here, there are more options in project_info.dissipative.
-#project_info.dissipative.dielectric_surfaces = ['interface']   
+#project_info.dissipative.dielectric_surfaces = ['interface']
 #
 ## 3.  Run analysis
-#epr_hfss = pyEPR_HFSS(project_info)
+#epr_hfss = pyEPR_HFSSAnalysis(project_info)
 #epr_hfss.do_EPR_analysis()
 #
 ## 4.  Hamiltonian analysis

@@ -580,8 +580,9 @@ class HfssDesign(COMWrapper):
         self._modeler = design.SetActiveEditor("3D Modeler")
         self._optimetrics = design.GetModule("Optimetrics")
         self._mesh = design.GetModule("MeshSetup")
-        self.modeler = HfssModeler(
-            self, self._modeler, self._boundaries, self._mesh)
+        self.modeler = HfssModeler(self, self._modeler,\
+                                   self._boundaries, self._mesh)
+        self.optimetrics = Optimetrics(self)
 
     def rename_design(self, name):
         old_name = self._design.GetName()
@@ -1507,7 +1508,7 @@ class Optimetrics(COMWrapper):
     Note that running optimetrics requires the license for Optimetrics by Ansys.
     """
     def __init__(self, design):
-        super(HfssModeler, self).__init__()
+        super(Optimetrics, self).__init__()
 
         self.design=design # parent
         self._optimetrics = self.design._optimetrics # <COMObject GetModule>

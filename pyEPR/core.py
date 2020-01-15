@@ -331,9 +331,9 @@ class Project_Info(object):
 #==============================================================================
 #%% Main compuation class & interface with HFSS
 #==============================================================================
-class pyEPR_HFSS(object):
+class pyEPR_HFSSAnalysis(object):
     """
-    This class defines a pyEPR_HFSS object which calculates and saves
+    This class defines a pyEPR_HFSSAnalysis object which calculates and saves
     Hamiltonian parameters from an HFSS simulation.
     Further, it allows one to calcualte dissipation, etc
     """
@@ -529,9 +529,15 @@ class pyEPR_HFSS(object):
         return freqs_bare_dict, freqs_bare_vals
 
     def get_freqs_bare_pd(self, variation):
-        '''
-            Retun pd.Sereis of modal freq and qs for given variation
-        '''
+        """Return the freq and Qs of the solved modes for a variation
+
+        Arguments:
+            variation {[str]} -- Index of variation
+
+        Returns:
+            Fs, Qs -- Tuple of pandas.Series objects.
+                      the row index is the mode number
+        """
         freqs, kappa_over_2pis = self.solutions.eigenmodes(
             self.get_lv_EM(variation))
         if kappa_over_2pis is None:
@@ -971,9 +977,10 @@ class pyEPR_HFSS(object):
         HFSS Notes:
         ------------------------
             Assumptions:
-                    Low dissipation (high-Q).
-                    Right now, we assume that there are no lumped capcitors to simply calculations. Not required.
-                    We assume that there are only lumped inductors, so that U_tot = U_E+U_H+U_L    and U_C =0, so that U_tot = 2*U_E;
+                Low dissipation (high-Q).
+                Right now, we assume that there are no lumped capcitors to simply calculations. Not required.
+                We assume that there are only lumped inductors, so that U_tot = U_E+U_H+U_L
+                and U_C =0, so that U_tot = 2*U_E;
         """
 
         self._run_time = time.strftime('%Y%m%d_%H%M%S', time.localtime())
@@ -1236,7 +1243,8 @@ class pyEPR_HFSS(object):
         variations = ['0','1','2'] or [] for empty
         '''
         if self.setup:
-            self.listvariations   = self.design._solutions.ListVariations(str(self.setup.solution_name))
+            self.listvariations   = self.design._solutions.ListVariations(\
+                                                str(self.setup.solution_name))
             self.nominalvariation = self.design.get_nominal_variation()
             self.nvariations      = np.size(self.listvariations)
             self.variations       = [str(i) for i in range(self.nvariations)]
@@ -1245,6 +1253,7 @@ class pyEPR_HFSS(object):
                 self.nmodes       = int(self.setup.n_modes)
             else:
                 self.nmodes       = 0
+
     def has_fields(self, variation=None):
         '''
         Determine if fields exist for a particular solution.
@@ -1257,9 +1266,11 @@ class pyEPR_HFSS(object):
         else:
             False
 
-    def hfss_report_f_convergence(self, variation= '0'):
+    def hfss_report_f_convergence(self, variation='0', save_csv=True):
         '''
-        Create  a report in HFSS to plot the converge of freq and style it
+        Create a report inside HFSS to plot the converge of freq and style it.
+
+        Saves report to csv file.
 
         Returns a convergence vs pass number of the eignemode freqs.
         Returns a pandas dataframe:
@@ -1276,7 +1287,7 @@ class pyEPR_HFSS(object):
             logger.error('NO SETUP PRESENT - hfss_report_f_convergence.')
             return None
 
-        if not (self.design.solution_type == 'Eigenmode'):
+        if not self.design.solution_type == 'Eigenmode':
             return None
 
         oDesign = self.design
@@ -1298,35 +1309,50 @@ class pyEPR_HFSS(object):
         set_property(report, 'Scaling', f"{report_name}:AxisY1", 'Units', 'g')
         set_property(report, 'Legend', f"{report_name}:Legend", 'Show Solution Name', False)
 
-        if 1: # Save
+        if save_csv: # Save
             try:
                 path = Path(self.data_dir)/'hfss_eig_f_convergence.csv'
                 report.ExportToFile(report_name,path)
+                logger.info(f'Saved convergences to {path}')
                 return pd.read_csv(path, index_col= 0)
             except Exception as e:
-                logger.error(f"Error could not save and export hfss plot to {path}. Is the plot made in HFSS with the correct name. Check the HFSS error window. \t Error =  {e}")
+                logger.error(f"Error could not save and export hfss plot to {path}.\
+                               Is the plot made in HFSS with the correct name.\
+                               Check the HFSS error window. \t Error =  {e}")
 
         return None
 
-    def hfss_report_full_convergence(self, fig=None,_display=True):
+    def hfss_report_full_convergence(self, fig=None, _display=True):
+        """Plot a full report of teh convergences of an eigenmode analysis for a
+        a given variation. Makes a plot inside hfss too.
+
+        Keyword Arguments:
+            fig {matpllitb figure} -- Optional figure (default: {None})
+            _display {bool} -- Force display or not. (default: {True})
+
+        Returns:
+            [type] -- [description]
+        """
 
         if fig is None:
             fig = plt.figure(figsize=(11,3.))
             fig.clf()
-        gs = mpl.gridspec.GridSpec(1, 3, width_ratios=[1.2, 1.5, 1])#, height_ratios=[4, 1], wspace=0.5
+
+        #Grid spec and axes;    height_ratios=[4, 1], wspace=0.5
+        gs = mpl.gridspec.GridSpec(1, 3, width_ratios=[1.2, 1.5, 1])
         axs = [fig.add_subplot(gs[i]) for i in range(3)]
 
         for variation in self.variations:
-            print(variation)
+            logger.info(f'Creating report for variation {variation}')
             convergence_t = self.get_convergence()
             convergence_f = self.hfss_report_f_convergence()
+
             ax0t = axs[1].twinx()
             plot_convergence_f_vspass(axs[0], convergence_f)
             plot_convergence_max_df(axs[1], convergence_t.iloc[:,1])
             plot_convergence_solved_elem(ax0t, convergence_t.iloc[:,0])
             plot_convergence_maxdf_vs_sol(axs[2], convergence_t.iloc[:,1],
-                                                  convergence_t.iloc[:,0])
-
+                                          convergence_t.iloc[:,0])
 
         fig.tight_layout(w_pad=0.1)#pad=0.0, w_pad=0.1, h_pad=1.0)
         if _display:
@@ -1500,7 +1526,7 @@ class pyEPR_Analysis(object):
     #TODO make away to propgrate to the data analysis capablites of or to merge more than a single HDF file
     '''
         Defines an analysis object which loads and plots data from a h5 file
-        This data is obtained using pyEPR_HFSS
+        This data is obtained using pyEPR_HFSSAnalysis
     '''
     def __init__(self, data_filename, variations=None, do_print_info = True, Res_hamil_filename= None):
 
