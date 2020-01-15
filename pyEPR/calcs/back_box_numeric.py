@@ -16,9 +16,9 @@ from functools import reduce
 
 import numpy as np
 
-from .calcs.constants import Planck as h
-from .calcs.constants import fluxQ, hbar
-from .calcs.hamiltonian import MatrixOps
+from .constants import Planck as h
+from .constants import fluxQ, hbar
+from .hamiltonian import MatrixOps
 
 try:
     import qutip

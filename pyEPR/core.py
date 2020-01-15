@@ -39,8 +39,8 @@ from .toolbox.pythonic import print_NoNewLine, print_color, deprecated, fact,  n
                          sort_df_col, sort_Series_idx
 from .calcs.constants import epsilon_0, hbar, Planck, fluxQ
 from .calcs.basic import CalcsBasic
+from .calcs.back_box_numeric import bbq_hmt, make_dispersive
 from .toolbox.plotting import cmap_discrete, legend_translucent
-from .numeric_diag import bbq_hmt, make_dispersive
 from .reports import plot_convergence_f_vspass, plot_convergence_max_df,\
                      plot_convergence_solved_elem, plot_convergence_maxdf_vs_sol
 

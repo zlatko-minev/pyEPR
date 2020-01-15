@@ -134,7 +134,6 @@ from . import toolbox
 from . import calcs
 from . import hfss
 from . import core
-from . import numeric_diag
 
 from .toolbox.plotting import mpl_dpi
 from .hfss import load_ansys_project, get_active_design, get_active_project,\
