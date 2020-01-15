@@ -109,19 +109,6 @@ def deprecated(func):
     newFunc.__dict__.update(func.__dict__)
     return newFunc
 
-def is_using_ipython():
-    """Check if we're in IPython.
-
-    Returns:
-        bool -- True if ran in IPython
-    """
-    try:
-        __IPYTHON__  # pylint: disable=undefined-variable, pointless-statement
-        return True
-    except Exception:
-        return False
-
-
 def info_str_platform():
     return '''
 

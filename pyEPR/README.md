@@ -5,8 +5,8 @@ Zlatko Minev & Zaki Leghtas
 When using this packed directly, the directory containing this folder should be added to the Python search path.
 
 ##### config_user.py
-User specified configuration file. Overwrites `_default_config.py` dictionary.
-A user should not edit `_default_config.py` directly. A user should overwrite values in `config_user.py`
+User specified configuration file. Overwrites `_config_default.py` dictionary.
+A user should not edit `_config_default.py` directly. A user should overwrite values in `config_user.py`
 
 ##### core.py
 Contains the core analysis and run functions.

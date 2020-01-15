@@ -1,6 +1,6 @@
 # This file is part of pyEPR: Energy participation ratio (EPR) design of quantum circuits in python
 #
-#    Copyright (c) 2015 and later, Zlatko K. Minev and Zaki Leghtas
+#    Copyright (c) 2015-2020 and later, Zlatko K. Minev and Zaki Leghtas
 #    All rights reserved.
 #
 #    Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,8 @@
 #    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+# pylint: disable = wrong-import-position
+
 # Compatibility with python 2.7 and 3
 from __future__ import division, print_function, absolute_import
 
@@ -39,149 +41,100 @@ import warnings
 from pathlib import Path
 from collections import OrderedDict
 
-# Internal flags
-__imports_warn = False
+try:
+    from attrdict import AttrDict as Dict
+except (ImportError, ModuleNotFoundError):
+    raise ImportError("""Please install python package `AttrDict`.
+    AttrDict is in PyPI, so it can be installed directly
+    (https://github.com/bcj/AttrDict) using:
+        $ pip install attrdict""")
 
 ##############################################################################
-# Configure logging
+# Config setup
+from ._config_default import get_config
+config = get_config()
 
+x=5
+
+##############################################################################
+# Set up logging -- only on first loading of module, not on reloading.
 logger = logging.getLogger('pyEPR')  # singleton
-
 if not len(logger.handlers):
-    c_handler = logging.StreamHandler()
-    logger.propagate = False
-    # Jupyter notebooks already has a stream handler on the default log,
-    # Do not propage upstream to the root logger.
-    #  https://stackoverflow.com/questions/31403679/python-logging-module-duplicated-console-output-ipython-notebook-qtconsole
+    from .toolbox._logging import set_up_logger
+    set_up_logger(logger)
+    del set_up_logger
 
-    # Format
-    # unlike the root logger, a custom logger can’t be configured using basicConfig().
-    # c_format = logging.Formatter(
-    #    '%(name)s - %(levelname)s - %(message)s\n   ::%(pathname)s:%(lineno)d: %(funcName)s\n')
-    c_format = logging.Formatter('%(asctime)s %(levelname)s [%(funcName)s]: %(message)s',
-                                 datefmt='%I:%M%p %Ss')
-
-    c_handler.setFormatter(c_format)
-    logger.addHandler(c_handler)
-    logger.setLevel(logging.INFO)
 
 
 ##############################################################################
-# Import Checks Matplotlib & core packages
-__STD_END_MSG = """\n   If you need a part of pyEPR that uses this package,
-   then please install it. Then add it to the system path (if needed).
-   See online setup instructions at
-   github.com/zlatko-minev/pyEPR"""
+#
+# CHECK that required packages are available. If not raise log warning.
 
 try:
     import matplotlib as mpl
 except (ImportError, ModuleNotFoundError):
-    logger.warning("""IMPORT WARNING:
-   Could not find package `matplotlib`.
-   Default plotting will not work unless you install it. """ + __STD_END_MSG)
-    raise ImportError("Please install python package `matplotlib`")
-
+    raise ImportError(f"""IMPORT WARNING: Could not find package `matplotlib`.
+        Default plotting will not work unless you install it. Please install it.
+        {config.internal.error_msg_missing_import}""")
 
 try:
     import pandas as pd
-    warnings.filterwarnings(
-        'ignore', category=pd.io.pytables.PerformanceWarning)
+    warnings.filterwarnings('ignore', category=pd.io.pytables.PerformanceWarning)
 except (ImportError, ModuleNotFoundError):
-    if __imports_warn:
-        logger.warning(
-            "IMPORT WARNING: `pandas` python package not found. %s", __STD_END_MSG)
+    if config.internal.warn_missing_import:
+        logger.warning("IMPORT WARNING: `pandas` python package not found. %s",
+             config.internal.error_msg_missing_import)
 
-# Check for qutip
-try:
-    import qutip
-except (ImportError, ModuleNotFoundError):
-    if __imports_warn:
+
+# Check for a few usually troublesome packages
+if config.internal.warn_missing_import:
+
+    # Check for qutip
+    try:
+        import qutip
+        del qutip
+    except (ImportError, ModuleNotFoundError):
+        logger.warning("""IMPORT WARNING: `qutip` package not found.
+        Numerical diagonalization will not work. Please install, e.g.:
+            $ conda  install -c conda-forge qutip
+        %s""", config.internal.error_msg_missing_import)
+
+    try:
+        import pythoncom
+        del pythoncom
+    except (ImportError, ModuleNotFoundError):
         logger.warning("""IMPORT WARNING:
-   `qutip` package not found.
-   Numerical diagonalization will not work.
+        Python package 'pythoncom' could not be loaded
+        It is used in communicting with HFSS on PCs. If you wish to do this, please set it up.
+        For Linux, check the HFSS python linux files for the com module used. It is equivalent,
+        and can be used just as well.
+        %s""", config.internal.error_msg_missing_import)
 
-   You could try `conda install -c conda-forge qutip`
-                   """ + __STD_END_MSG)
-# else:
-#    del qutip, warnings
+    try:
+        from win32com.client import Dispatch, CDispatch
+        del Dispatch, CDispatch
+    except (ImportError, ModuleNotFoundError):
+        logger.warning("""IMPORT WARNING: Could not load from 'win32com.client'.
+        The communication to hfss won't work. If you want to use it, you need to set it up.
+        %s""", config.internal.error_msg_missing_import)
 
-# A few usually troublesome packages
-try:
-    import pythoncom
-except (ImportError, ModuleNotFoundError):
-    if __imports_warn:
-        logger.warning("""IMPORT WARNING:
-   Python package 'pythoncom' could not be loaded
-   It is used in communicting with HFSS on PCs. If you wish to do this, please set it up.
-   For Linux, check the HFSS python linux files for the com module used. It is equivalent,
-   and can be used just as well.
-   """ + __STD_END_MSG)
-
-try:
-    from win32com.client import Dispatch, CDispatch
-except (ImportError, ModuleNotFoundError):
-    if __imports_warn:
-        logger.warning("""IMPORT WARNING:
-   Could not load from 'win32com.client'.
-   The communication to hfss won't work. If you want to use it, you need to set it up.
-   """ + __STD_END_MSG)
-
-try:
-    from pint import UnitRegistry  # units
-except (ImportError, ModuleNotFoundError):
-    if __imports_warn:
+    try:
+        from pint import UnitRegistry  # units
+        del UnitRegistry
+    except (ImportError, ModuleNotFoundError):
         logger.error("""IMPORT ERROR:
-   Python package 'pint' could not be loaded
-   It is used in communicting with HFSS.
-   try  `conda install -c conda-forge pint`
-   """ + __STD_END_MSG)
-        #raise(ImportError("Please install python package `pint`"))
-
-
-try:
-    from attrdict import AttrDict as Dict
-except (ImportError, ModuleNotFoundError):
-    raise(ImportError("""
-    Please install python package `AttrDict`
-
-    AttrDict is in PyPI, so it can be installed directly using:
-
-    $ pip install attrdict
-
-    For more info, see https://github.com/bcj/AttrDict
-    """))
-
-# Check if the config is set up
-if 1:
-    path = Path(__path__[0])  # module path
-    if not (path/'config.py').is_file():
-        # if config does not exist copy default config
-        print(f'\n**** pyEPR WARNING: config.py does not exist. The user should set this up.\n \
-             We are now going to coopy config_default.py to config.py from:\n {path}\n\
-             Check the save_dir file path to make sure that it is corect. \n')
-        import shutil
-        shutil.copy(str(path/'_default_config.py'), str(path/'config.py'))
+        Python package 'pint' could not be loaded. It is used in communicting with HFSS. Try:
+            $ conda install -c conda-forge pint \n%s""", config.internal.error_msg_missing_import)
 
 
 ##############################################################################
-# pyEPR Specific
+# pyEPR convenience variable and function imports
 
-# Config setup
-from . import config
-try:  # Check if we're in IPython.
-    __IPYTHON__  # pylint: disable=undefined-variable, pointless-statement
-    config.ipython = True
-except Exception:
-    config.ipython = False
-config.__STD_END_MSG = __STD_END_MSG
-
-
-# Convenience variable and function imports
+from . import toolbox
+from . import calcs
 from . import hfss
 from . import core
 from . import numeric_diag
-from . import calcs
-from . import toolbox
 
 from .toolbox.plotting import mpl_dpi
 from .hfss import load_ansys_project, get_active_design, get_active_project,\
