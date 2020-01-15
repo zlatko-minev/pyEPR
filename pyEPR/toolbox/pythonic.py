@@ -109,7 +109,6 @@ def deprecated(func):
     newFunc.__dict__.update(func.__dict__)
     return newFunc
 
-
 def info_str_platform():
     return '''
 

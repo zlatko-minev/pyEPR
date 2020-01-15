@@ -21,7 +21,7 @@ if 1:
     project_info.dissipative.dielectric_surfaces = None         # supply names here, there are more options in  project_info.dissipative.
 
     # Run analysis
-    epr_hfss    = pyEPR_HFSS(project_info)
+    epr_hfss    = pyEPR_HFSSAnalysis(project_info)
     epr_hfss.do_EPR_analysis()
 
 if 0: # Hamiltonian analysis

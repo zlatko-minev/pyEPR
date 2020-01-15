@@ -1,19 +1,19 @@
 '''
-pyEPR.hfss
+pyEPR.ansys
     2014-present
 
 Purpose:
-    Handles HFSS interaction and control.
+    Handles Ansys interaction and control from version 2014 onward.
+    Tested most extensively with V2016 and V2019R3.
 
 @authors:
     Originally contributed by Phil Reinhold.
     Developed further by Zlatko Minev, Zaki Leghtas, and the pyEPR team.
     For the base version of hfss.py, see https://github.com/PhilReinhold/pyHFSS
 '''
-# TODO: Rename module to ansys, to specify its broader use
 
-from __future__ import (division,  # Python 2.7 and 3 compatibility
-                        print_function)
+# Python 2.7 and 3 compatibility
+from __future__ import (division, print_function)
 
 import atexit
 import os
@@ -153,13 +153,13 @@ def fix_units(x, unit_assumed=None):
 
 def parse_units(x):
     '''
-        Convert number, string, and lists/arrays/tuples to numbers scaled
-        in HFSS units.
+    Convert number, string, and lists/arrays/tuples to numbers scaled
+    in HFSS units.
 
-        Converts to                  LENGTH_UNIT = meters  [HFSS UNITS]
-        Assumes input units  LENGTH_UNIT_ASSUMED = mm      [USER UNITS]
+    Converts to                  LENGTH_UNIT = meters  [HFSS UNITS]
+    Assumes input units  LENGTH_UNIT_ASSUMED = mm      [USER UNITS]
 
-        [USER UNITS] ----> [HFSS UNITS]
+    [USER UNITS] ----> [HFSS UNITS]
     '''
     return parse_entry(fix_units(x))
 
@@ -553,6 +553,7 @@ class HfssProject(COMWrapper):
 
 
 class HfssDesign(COMWrapper):
+
     def __init__(self, project, design):
         super(HfssDesign, self).__init__()
         self.parent = project
@@ -564,7 +565,8 @@ class HfssDesign(COMWrapper):
             # This funciton does not exist if the desing is not HFSS
             self.solution_type = design.GetSolutionType()
         except Exception as e:
-            logger.debug(f'Exception occured at design.GetSolutionType() {e}. Assuming Q3D design')
+            logger.debug(
+                f'Exception occured at design.GetSolutionType() {e}. Assuming Q3D design')
             self.solution_type = 'Q3D'
 
         if design is None:
@@ -578,8 +580,9 @@ class HfssDesign(COMWrapper):
         self._modeler = design.SetActiveEditor("3D Modeler")
         self._optimetrics = design.GetModule("Optimetrics")
         self._mesh = design.GetModule("MeshSetup")
-        self.modeler = HfssModeler(
-            self, self._modeler, self._boundaries, self._mesh)
+        self.modeler = HfssModeler(self, self._modeler,\
+                                   self._boundaries, self._mesh)
+        self.optimetrics = Optimetrics(self)
 
     def rename_design(self, name):
         old_name = self._design.GetName()
@@ -701,12 +704,28 @@ class HfssDesign(COMWrapper):
                 "UserDef:=", True,
                 "Value:=", value]]]])
 
-    def set_variable(self, name, value, postprocessing=False):
+    def set_variable(self, name:str, value:str, postprocessing=False):
+        """Warning: THis is case sensitive,
+
+        Arguments:
+            name {str} -- Name of variable to set, such as 'Lj_1'.
+                          This is not the same as as 'LJ_1'.
+                          You must use the same casing.
+            value {str} -- Value, such as '10nH'
+
+        Keyword Arguments:
+            postprocessing {bool} -- Postprocessingh variable only or not.
+                          (default: {False})
+
+        Returns:
+            VariableString
+        """
         # TODO: check if variable does not exist and quit if it doesn't?
-        if name not in self._design.GetVariables()+self._design.GetPostProcessingVariables():
+        if name not in self.get_variable_names():
             self.create_variable(name, value, postprocessing=postprocessing)
         else:
             self._design.SetVariableValue(name, value)
+
         return VariableString(name)
 
     def get_variable_value(self, name):
@@ -811,6 +830,7 @@ class HfssSetup(HfssPropertyObject):
         '''
         if name is None:
             name = self.name
+        logger.info(f'Analyzing setup {name}')
         return self.parent._design.Analyze(name)
 
     def solve(self, name=None):
@@ -969,7 +989,8 @@ class HfssSetup(HfssPropertyObject):
         temp = tempfile.NamedTemporaryFile()
         temp.close()
         temp = temp.name + '.conv'
-        self.parent._design.ExportConvergence(self.name, variation, *pre_fn_args, temp, overwrite)
+        self.parent._design.ExportConvergence(
+            self.name, variation, *pre_fn_args, temp, overwrite)
 
         # Read File
         temp = Path(temp)
@@ -1490,6 +1511,46 @@ class HfssReport(COMWrapper):
         return np.loadtxt(fn, skiprows=1, delimiter=',').transpose()
         # warning for python 3 probably need to use genfromtxt
 
+class Optimetrics(COMWrapper):
+    """
+    Optimetrics script commands executed by the "Optimetrics" module.
+
+    Example use:
+    .. code-block python
+            opti = Optimetrics(pinfo.design)
+            names = opti.get_setup_names()
+            print('Names of optimetrics: ', names)
+            opti.solve_setup(names[0])
+
+    Note that running optimetrics requires the license for Optimetrics by Ansys.
+    """
+    def __init__(self, design):
+        super(Optimetrics, self).__init__()
+
+        self.design=design # parent
+        self._optimetrics = self.design._optimetrics # <COMObject GetModule>
+        self.setup_names = None
+
+    def get_setup_names(self):
+        """
+        Return list of Optimetrics setup names
+        """
+        self.setup_names = list(self._optimetrics.GetSetupNames())
+        return self.setup_names.copy()
+
+    def solve_setup(self, setup_name:str):
+        """
+        Solves the specified Optimetrics setup.
+        Corresponds to:  Right-click the setup in the project tree, and then click
+        Analyze on the shortcut menu.
+
+        setup_name (str) : name of setup, should be in get_setup_names
+
+        Blocks execution until ready to use.
+
+        Note that this requires the license for Optimetrics by Ansys.
+        """
+        return self._optimetrics.SolveSetup(setup_name)
 
 class HfssModeler(COMWrapper):
     def __init__(self, design, modeler, boundaries, mesh):
@@ -2565,20 +2626,20 @@ def load_ansys_project(proj_name, project_path=None, extension='.aedt'):
         project_path = Path(project_path)
 
         # Checks
-        assert project_path.is_dir(), "ERROR! project_path is not a valid directory.\
+        assert project_path.is_dir(), "ERROR! project_path is not a valid directory \N{loudly crying face}.\
             Check the path, and especially \\ charecters."
 
         project_path /= project_path / Path(proj_name + extension)
 
         if (project_path).is_file():
-            print('\tFile path to HFSS project found.')
+            logger.info('\tFile path to HFSS project found.')
         else:
             raise Exception(
-                "ERROR! Valid directory, but invalid project filename. Not found!\
+                "ERROR! Valid directory, but invalid project filename. \N{loudly crying face} Not found!\
                      Please check your filename.\n%s\n" % project_path)
 
         if (project_path/'.lock').is_file():
-            print('\t\tFile is locked. If connection fails, delete the .lock file.')
+            logger.warning('\t\tFile is locked. \N{fearful face} If connection fails, delete the .lock file.')
 
     app = HfssApp()
     logger.info("\tOpened Ansys App")

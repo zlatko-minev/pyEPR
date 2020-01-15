@@ -104,3 +104,7 @@ ENV/
 pyEPR/config.py
 __src__not_incl/
 pyEPR/.vscode/
+pyEPR/.pylintrc
+*.lock
+*.aedtresults/*
+*.aedtresults*

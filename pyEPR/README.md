@@ -4,6 +4,10 @@ Zlatko Minev & Zaki Leghtas
 
 When using this packed directly, the directory containing this folder should be added to the Python search path.
 
+##### _config_user.py
+User specified configuration file. Overwrites `_config_default.py` dictionary.
+A user should not edit `_config_default.py` directly. A user should overwrite values in `_config_user.py`
+
 ##### core.py
 Contains the core analysis and run functions.
 
@@ -20,9 +24,8 @@ Module that contains calculation useful sub-modules
 - convert:  conversion functions for Lj to Ej, Cj to Ej, and such.
 - transmon: transmon related functions
 
-
-##### hfss.py
-Interface functions with Ansoft HFSS.
+##### ansys.py
+Interface functions with Ansys. (A long time ago, this used to be Ansoft HFSS).
 Contributed by Phil Rheinhold. Originally part of [pyHFSS](https://github.com/PhilReinhold/pyHFSS).
 Updated and modified by Zlatko Minev & Zaki Leghtas.
 

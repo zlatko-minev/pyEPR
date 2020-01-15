@@ -1,10 +1,9 @@
 """
-Module for reporting utility function
+Module for reporting utility functions
 
 @author: Zlatko K Minev
 """
 
-#import numpy as np
 import pandas as pd
 
 from .toolbox.plotting import legend_translucent, plt

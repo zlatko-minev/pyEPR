@@ -4,7 +4,7 @@ Basic calculations that apply in general .
 
 import numpy as np
 from numpy import sqrt
-#from numpy.linalg import inv
+from .. import logger
 
 class CalcsBasic():
 
@@ -23,14 +23,19 @@ class CalcsBasic():
         '''
         (Pmj, SJ, Ω, EJ) = map(np.array, (Pmj, SJ, Ω, EJ))
 
-        assert (Pmj > 0).any(), "ND -- p_{mj} are not all > 0; \n %s" % (Pmj)
+        if (Pmj < 0).any():
+            print('BAD!')
+            logger.error(f"""The simulation is not converged!!! \N{nauseated face}
+            Some of the energy participations are less than zero.
+            This happens when some participations are tiny 10^-8 or less
+            or when not enough passes have been taken. The Pmj matrix is
+            {Pmj}""")
 
-        ''' technically, there the equation is hbar omega / 2J, but here we assume
-        that the hbar is absrobed in the units of omega, and omega and Ej have the same units.
-        PHI=np.zeros((3,3))
-        for m in range(3):
-            for j in range(3):
-                PHI[m,j] = SJ[m,j]*sqrt(PJ[m,j]*Om[m,m]/(2.*EJ[j,j]))
-        '''
+        # Technically, there the equation is hbar omega / 2J, but here we assume
+        # that the hbar is absrobed in the units of omega, and omega and Ej have the same units.
+        # PHI=np.zeros((3,3))
+        # for m in range(3):
+        #     for j in range(3):
+        #         PHI[m,j] = SJ[m,j]*sqrt(PJ[m,j]*Om[m,m]/(2.*EJ[j,j]))
 
         return SJ * sqrt(0.5 * Ω @ Pmj @ np.linalg.inv(EJ))

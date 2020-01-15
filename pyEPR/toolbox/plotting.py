@@ -12,9 +12,12 @@ from __future__ import absolute_import, division, print_function
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.axes import Axes
 from matplotlib.colors import rgb2hex
 
-from ..config import Plotting_Options
+from .. import config
+
+default_colormap = lambda: getattr(mpl.cm, config.plotting.default_color_map)
 
 # ==============================================================================
 # Plotting - MPL basics
@@ -29,11 +32,11 @@ def mpl_dpi(dpi=200):
     mpl.rcParams['savefig.dpi'] = dpi
 
 
-def plt_cla(ax):
+def plt_cla(ax: Axes):
     '''
     Clear all plotted objects on an axis
 
-    See https://dev.to/skotaro/artist-in-matplotlib---something-i-wanted-to-know-before-spending-tremendous-hours-on-googling-how-tos--31oo
+    ax : mapltlib axis
     '''
     ax = ax if not ax is None else plt.gca()
     for artist in ax.lines + ax.collections + ax.patches + ax.images + ax.texts:
@@ -42,7 +45,7 @@ def plt_cla(ax):
         ax.legend_.remove()
 
 
-def legend_translucent(ax, values=[], loc=0, alpha=0.5, leg_kw={}):
+def legend_translucent(ax: Axes, values=[], loc=0, alpha=0.5, leg_kw={}):
     '''
     values = [ ["%.2f" %k for k in RES] ]
 
@@ -62,7 +65,7 @@ def legend_translucent(ax, values=[], loc=0, alpha=0.5, leg_kw={}):
 #################################################################################
 # Color cycles
 
-def get_last_color(ax):
+def get_last_color(ax: Axes):
     '''
     gets the color fothe last plotted line
     use:
@@ -72,7 +75,7 @@ def get_last_color(ax):
     return ax.lines[-1].get_color()
 
 
-def get_next_color(ax):
+def get_next_color(ax: Axes):
     '''
     To reset color cycle
         ax.set_prop_cycle(None)
@@ -91,7 +94,7 @@ def get_color_cycle(n, colormap=None, start=0., stop=1., format='hex'):
     '''
     See also get_next_color
     '''
-    colormap = colormap or Plotting_Options.default_color_map
+    colormap = colormap or default_colormap()
 
     pts = np.linspace(start, stop, n)
     if format == 'hex':
@@ -110,7 +113,7 @@ def cmap_discrete(n, cmap_kw={}):
     if cmap_kw.pop('helix', False):
         return cmap_discrete_CubeHelix(n, helix_kw=cmap_kw)
 
-    cmap_KW = dict(colormap=Plotting_Options.default_color_map,
+    cmap_KW = dict(colormap=default_colormap(),
                    start=0.05, stop=.95)
     cmap_KW.update(cmap_kw)
 
@@ -133,7 +136,9 @@ def cmap_discrete_CubeHelix(n, helix_kw={}):
 
 
 def xarr_heatmap(fg, title=None, kwheat={}, fmt=('%.3f', '%.2f'), fig=None):
-    ''' Needs seaborn and xarray'''
+    '''
+    Needs seaborn and xarray
+    '''
     fig = plt.figure() if fig == None else fig
     df = fg.to_pandas()
     # format indecies
