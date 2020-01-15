@@ -153,13 +153,13 @@ def fix_units(x, unit_assumed=None):
 
 def parse_units(x):
     '''
-        Convert number, string, and lists/arrays/tuples to numbers scaled
-        in HFSS units.
+    Convert number, string, and lists/arrays/tuples to numbers scaled
+    in HFSS units.
 
-        Converts to                  LENGTH_UNIT = meters  [HFSS UNITS]
-        Assumes input units  LENGTH_UNIT_ASSUMED = mm      [USER UNITS]
+    Converts to                  LENGTH_UNIT = meters  [HFSS UNITS]
+    Assumes input units  LENGTH_UNIT_ASSUMED = mm      [USER UNITS]
 
-        [USER UNITS] ----> [HFSS UNITS]
+    [USER UNITS] ----> [HFSS UNITS]
     '''
     return parse_entry(fix_units(x))
 
@@ -2567,20 +2567,20 @@ def load_ansys_project(proj_name, project_path=None, extension='.aedt'):
         project_path = Path(project_path)
 
         # Checks
-        assert project_path.is_dir(), "ERROR! project_path is not a valid directory.\
+        assert project_path.is_dir(), "ERROR! project_path is not a valid directory \N{loudly crying face}.\
             Check the path, and especially \\ charecters."
 
         project_path /= project_path / Path(proj_name + extension)
 
         if (project_path).is_file():
-            print('\tFile path to HFSS project found.')
+            logger.info('\tFile path to HFSS project found.')
         else:
             raise Exception(
-                "ERROR! Valid directory, but invalid project filename. Not found!\
+                "ERROR! Valid directory, but invalid project filename. \N{loudly crying face} Not found!\
                      Please check your filename.\n%s\n" % project_path)
 
         if (project_path/'.lock').is_file():
-            print('\t\tFile is locked. If connection fails, delete the .lock file.')
+            logger.warning('\t\tFile is locked. \N{fearful face} If connection fails, delete the .lock file.')
 
     app = HfssApp()
     logger.info("\tOpened Ansys App")

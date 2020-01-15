@@ -10,6 +10,7 @@ GIT: Do not track changes here.
  Keep your changes only locally. Use the shell command
     $ git update-index --skip-worktree _config_user.py
  in the pyEPR/pyEPR folder to stop tracking this file.
+ To add changes back, use can use `git update-index --no-skip-worktree <file>`
 
 @author: Your name goes here
 """

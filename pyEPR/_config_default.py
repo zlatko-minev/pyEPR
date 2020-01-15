@@ -90,10 +90,11 @@ config = Dict( # pylint: disable=invalid-name
         ipython=None,
 
         # Error message for loading packages
-        error_msg_missing_import="""\n   If you need a part of pyEPR that uses this package,
+        error_msg_missing_import="""\N{face with head-bandage}
+        If you need a part of pyEPR that uses this package,
         then please install it. Then add it to the system path (if needed).
         See online setup instructions at
-        github.com/zlatko-minev/pyEPR""",
+            http://www.github.com/zlatko-minev/pyEPR""",
 
         # Warn on missing import
         warn_missing_import=False,
@@ -103,9 +104,9 @@ config = Dict( # pylint: disable=invalid-name
     log=Dict(
 
         # '%(name)s - %(levelname)s - %(message)s\n   ::%(pathname)s:%(lineno)d: %(funcName)s\n')
-        format='%(asctime)s %(levelname)s [%(funcName)s]: %(message)s',
+        format='%(levelname)s %(asctime)s [%(funcName)s]: %(message)s',
 
-        datefmt='%I:%M%p %Ss',
+        datefmt='%I:%M%p', #'%I:%M%p %Ss'
 
         level='INFO'
     )
