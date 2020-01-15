@@ -7,16 +7,16 @@ Welcome to pyEPR :beers:!
 
 ### Automated Python module for the design and quantization of Josephson quantum circuits
 
-**Abstract:** Superconducting circuits incorporating non-linear devices, such as Josephson junctions and nanowires, are among the leading platforms for emerging quantum technologies. Promising applications require designing and optimizing circuits with ever-increasing complexity and controlling their dissipative and Hamiltonian parameters to several significant digits. Therefore, there is a growing need for a systematic, simple, and robust approach for precise circuit design, extensible to increased complexity. The energy-participation ratio (EPR) approach presents such an approach to unify the design of dissipation and Hamiltonians around a single concept — the energy participation, a number between zero and one — in a single-step electromagnetic simulation. This markedly reduces the required number of simulations and allows for robust extension to complex systems. The approach is general purpose, derived ab initio, and valid for arbitrary non-linear devices and circuit architectures. Experimental results on a variety of circuit quantum electrodynamics (cQED) devices and architectures, 3D and flip-chip (2.5D), have been demonstrated to exhibit ten percent to percent-level agreement for non-linear coupling and modal Hamiltonian parameters over five-orders of magnitude and across a dozen samples. Here, in this package, all routines of the EPR approach are fully automated. 
+**Abstract:** Superconducting circuits incorporating non-linear devices, such as Josephson junctions and nanowires, are among the leading platforms for emerging quantum technologies. Promising applications require designing and optimizing circuits with ever-increasing complexity and controlling their dissipative and Hamiltonian parameters to several significant digits. Therefore, there is a growing need for a systematic, simple, and robust approach for precise circuit design, extensible to increased complexity. The energy-participation ratio (EPR) approach presents such an approach to unify the design of dissipation and Hamiltonians around a single concept — the energy participation, a number between zero and one — in a single-step electromagnetic simulation. This markedly reduces the required number of simulations and allows for robust extension to complex systems. The approach is general purpose, derived ab initio, and valid for arbitrary non-linear devices and circuit architectures. Experimental results on a variety of circuit quantum electrodynamics (cQED) devices and architectures, 3D and flip-chip (2.5D), have been demonstrated to exhibit ten percent to percent-level agreement for non-linear coupling and modal Hamiltonian parameters over five-orders of magnitude and across a dozen samples. Here, in this package, all routines of the EPR approach are fully automated.
 
 
 
 ### References
-* Z.K. Minev, Ph.D. Dissertation, Yale University (2018), see Chapter 4. [arXiv:1902.10355](https://arxiv.org/abs/1902.10355) 
+* Z.K. Minev, Ph.D. Dissertation, Yale University (2018), see Chapter 4. [arXiv:1902.10355](https://arxiv.org/abs/1902.10355)
 * Z.K. Minev, Z. Leghtas, _et al._ (to appear soon on arXiv) (2019)
 
 
-# Contents: 
+# Contents:
 * [Start here: Using `pyEPR`](#start-here-using-pyepr)
 * [Video Tutorials](#pyepr-video-tutorials)
 * [Setup and Installation](#installation-and-setup-of-pyepr)
@@ -33,23 +33,23 @@ Welcome to pyEPR :beers:!
 2. **Clone** :point_down: your forked repository locally. ([How to clone a GitHub repo?](https://help.github.com/en/articles/cloning-a-repository)). Setup the `pyEPR` python code by following [Installation and Python Setup](#installation-of-pyepr).
 3. **Tutorials**  Learn how to use using the [jupyter notebook tutorials](https://github.com/zlatko-minev/pyEPR/tree/master/_tutorial_notebooks)
 4. **Stay up to date** Enjoy and make sure to git add the master remote branch  `git remote add MASTER_MINEV git://github.com/zlatko-minev/pyEPR.git` [(help?)](https://stackoverflow.com/questions/11266478/git-add-remote-branch).
-5. **Cite `pyEPR`** [arXiv:1902.10355](https://arxiv.org/abs/1902.10355)  and enjoy! :birthday:  
+5. **Cite `pyEPR`** [arXiv:1902.10355](https://arxiv.org/abs/1902.10355)  and enjoy! :birthday:
 
-#### Start-up example 
+#### Start-up example
 
 [Jupyter notebook tutorials](https://github.com/zlatko-minev/pyEPR/tree/master/_tutorial_notebooks)
 
-The following code illustrates how to perform a complete analysis of a simple two-qubit, one-cavity device in just a few lines of code with `pyEPR`.  In the HFSS file, before running the script, first specify the non-linear junction rectangles and variables (see Sec. pyEPR Project Setup in HFSS). All operations in the eigen analysis and Hamiltonian computation are fully automated. The results are saved, printed, and succinctly plotted. 
+The following code illustrates how to perform a complete analysis of a simple two-qubit, one-cavity device in just a few lines of code with `pyEPR`.  In the HFSS file, before running the script, first specify the non-linear junction rectangles and variables (see Sec. pyEPR Project Setup in HFSS). All operations in the eigen analysis and Hamiltonian computation are fully automated. The results are saved, printed, and succinctly plotted.
 
 
 ```python
 from pyEPR import *
 
 # Connect to your HFSS project
-pinfo = Project_Info(r'C:/path-to-sims', 
-			    project_name = 'two_qubit_one_cavity', # Project file name (string). 
+pinfo = Project_Info(r'C:/path-to-sims',
+			    project_name = 'two_qubit_one_cavity', # Project file name (string).
 			    									   # "None" will get the current active one.
-			    design_name  = 'Alice_Bob'             # Design name (string). 
+			    design_name  = 'Alice_Bob'             # Design name (string).
 			     									   # "None" will get the current active one.
 			    ).conect()
 
@@ -60,7 +60,7 @@ pinfo.validate_junction_info() # Check that valid names of variables and objects
 
 # 2b. Dissipative elements. (see more options in Project_Info.dissipative)
 pinfo.dissipative.dielectrics_bulk    = ['si_substrate', 'dielectic_object2']    # supply names of hfss objects
-pinfo.dissipative.dielectric_surfaces = ['interface1', 'interface2']    
+pinfo.dissipative.dielectric_surfaces = ['interface1', 'interface2']
 
 # 3.  Run analysis
 epr_hfss = pyEPR_HFSS(pinfo)
@@ -88,15 +88,15 @@ epr.plot_Hresults()
 	Tutorial 2 - Setup of Conda & Git
 	<br>
 	<img src="https://img.youtube.com/vi/ZTi1pb6wSbE/0.jpg" alt="pyEPR Tutorial 2 - Setup of Conda & Git" width=250>
-	</a>	    
+	</a>
     </th>
     <th>
 	<a href="https://www.youtube.com/watch?v=L79nlXY2w4s&list=PLnak_fVcHp17tydgFosNtetDNjKbEaXtv&index=3">
 	Tutorial 3 - Setup of Packages & Config
 	<br>
 	<img src="https://img.youtube.com/vi/L79nlXY2w4s/0.jpg" alt="pyEPR Tutorial 3 - Setup of Packages & Config" width=250>
-	</a>	    
-    </th> 
+	</a>
+    </th>
   </tr>
 </table>
 </div>
@@ -107,7 +107,7 @@ epr.plot_Hresults()
 
 # Installation and setup of `pyEPR`
 -------------
-Use `pyEPR` directly from the source, and pull updates from the master git repo, since we often update it. The following steps explain how to set up Python 3, fork the `pyEPR` repo and use it. 
+Use `pyEPR` directly from the source, and pull updates from the master git repo, since we often update it. The following steps explain how to set up Python 3, fork the `pyEPR` repo and use it.
 Please keep up to date with `pyEPR` by using git. We like to make it simple using a git-gui manager, [SourceTree](sourcetree.com) or [GitHub Desktop](https://desktop.github.com/).
 
 **Recommended procedure.**   <br />
@@ -126,11 +126,11 @@ Please keep up to date with `pyEPR` by using git. We like to make it simple usin
  pip install attrdict
  ```
  3. Fork this pyEPR repository on GitHub with your GitHub account. You may clone the fork to your PC and manage it using the [SourceTree](https://www.sourcetreeapp.com/) git-gui manager.
- 4. Add the pyEPR repository folder to your python search path. Make sure to add the git remote to the master is set up,  `git remote add MASTER_MINEV git://github.com/zlatko-minev/pyEPR.git`!  [(Help?)](https://stackoverflow.com/questions/11266478/git-add-remote-branch) 
- 5. Edit pyEPR module `config.py`  to set your data-saving directory and other parameters of interest.
+ 4. Add the pyEPR repository folder to your python search path. Make sure to add the git remote to the master is set up,  `git remote add MASTER_MINEV git://github.com/zlatko-minev/pyEPR.git`!  [(Help?)](https://stackoverflow.com/questions/11266478/git-add-remote-branch)
+ 5. Edit pyEPR module `config_user.py`  to set your data-saving directory and other parameters of interest.  (To keep your changes local, use the shell command `git update-index --skip-worktree config_user.py` in the `pyEPR/pyEPR` folder)
  6. **ENJOY and cite pyEPR! **  :+1:
 
- 
+
 #### Note for Mac/Linux.
 Follow the same instructions above. You shouldn't have to install mingw or modify distutils.cfg, since your distribution should come with gcc as the default compiler.
 
@@ -179,7 +179,7 @@ If this doesn't work, try  installing from conda forge
 ```sh
 conda install -c conda-forge qutip
 ```
-######  Qutip installation -- alternative, manual install 
+######  Qutip installation -- alternative, manual install
 If you wish to install manually, follow the following procedure. Some of this can get a bit tricky at times.
 First, you need to install a C compiler, since qutip uses Cython. If you dont have VS9, gcc, or mingw installed, the following works:
 ```sh
@@ -211,16 +211,16 @@ If your script terminates improperly, this can happen. pyHFSS tries to catch ter
 ###### Parametric Sweep Error
 When running a parametric sweep in HFSS, make sure you are actually saving the fields for each variation before running pyEPR. This can be done by right-clicking on your ParametricSetup -> properties -> options -> "Save Fields and Mesh".
 
-###### Spyder pops up command window cmd with tput.exe executed 
+###### Spyder pops up command window cmd with tput.exe executed
 This problem is due to pandas 0.20.1, update to 0.20.3 or better solves this issue.
 <br>
 
 ###### `ValueError: cannot set WRITEABLE flag to True of this array`
-This error happens when trying to read in an hdf file with numpy version 1.16, see [git issue here](https://github.com/numpy/numpy/issues/12791). A solution is to downgrade numpy to 1.15.4 or upgrade to newer versions of hdf and numpy.  
+This error happens when trying to read in an hdf file with numpy version 1.16, see [git issue here](https://github.com/numpy/numpy/issues/12791). A solution is to downgrade numpy to 1.15.4 or upgrade to newer versions of hdf and numpy.
 
 # Authors and Contributors
 * _Authors:_ [Zlatko Minev](https://www.zlatko-minev.com/) & [Zaki Leghtas](http://cas.ensmp.fr/~leghtas/), with contributions from many friends and colleagues.
-* 2015 - present. 
+* 2015 - present.
 * Contributors: [Phil Rheinhold](https://github.com/PhilReinhold), Lysander Christakis, [Devin Cody](https://github.com/devincody), ...
 Original versions of pyHFSS.py and pyNumericalDiagonalization.py contributed by [Phil Rheinhold](https://github.com/PhilReinhold), excellent original [repo](https://github.com/PhilReinhold/pyHFSS).
 * Terms of use: Use freely and kindly cite the paper (arXiv link to be posted here) and/or this package.
