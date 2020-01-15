@@ -32,15 +32,48 @@
 #    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-# pylint: disable = wrong-import-position
+"""
+**pyEPR**
+
+Automated Python module for the design and quantization of Josephson quantum circuits
+
+Abstract: Superconducting circuits incorporating non-linear devices, such as Josephson
+junctions and nanowires, are among the leading platforms for emerging quantum technologies.
+Promising applications require designing and optimizing circuits with ever-increasing
+complexity and controlling their dissipative and Hamiltonian parameters to several
+significant digits. Therefore, there is a growing need for a systematic, simple, and robust
+approach for precise circuit design, extensible to increased complexity.
+The energy-participation ratio (EPR) approach presents such an approach to unify the design
+of dissipation and Hamiltonians around a single concept — the energy participation, a number
+between zero and one — in a single-step electromagnetic simulation. This markedly reduces
+the required number of simulations and allows for robust extension to complex systems.
+The approach is general purpose, derived ab initio, and valid for arbitrary non-linear
+devices and circuit architectures. Experimental results on a variety of circuit quantum
+electrodynamics (cQED) devices and architectures, 3D and flip-chip (2.5D), have been
+demonstrated to exhibit ten percent to percent-level agreement for non-linear coupling
+and modal Hamiltonian parameters over five-orders of magnitude and across a dozen samples.
+
+Here, in this package, all routines of the EPR approach are fully automated.
+An interface with ansys is provided.
+Automated analysis of lumped and distributed circuits is provided.
+
+@author: Zlatko Minev, Zaki Leghas, ... and the pyEPR team
+@site: https://github.com/zlatko-minev/pyEPR
+@license: "BSD-3-Clause"
+@version: 0.8
+@maintainer: Zlatko K. Minev and  Asaf Diringer
+@email: zlatko.minev@aya.yale.edu
+@url: https://github.com/zlatko-minev/pyEPR
+@status: "Dev-Production"
+"""
+# pylint: disable= wrong-import-position, invalid-name
 
 # Compatibility with python 2.7 and 3
-from __future__ import division, print_function, absolute_import
+#from __future__ import division, print_function, absolute_import
 
 import logging
 import warnings
 from pathlib import Path
-from collections import OrderedDict
 
 try:
     from attrdict import AttrDict as Dict
@@ -51,11 +84,24 @@ except (ImportError, ModuleNotFoundError):
         $ pip install attrdict""")
 
 ##############################################################################
+# Python header
+
+__author__ = "Zlatko Minev, Zaki Leghas, and the pyEPR team"
+__copyright__ = "Copyright 2015-2020, pyEPR team"
+__credits__ = ["Zlatko Minev", "Zaki Leghtas,", "Phil Rheinhold",
+               "Asaf Diringer", "Will Livingston", "Steven Touzard"]
+__license__ = "BSD-3-Clause"
+__version__ = "0.8"
+__maintainer__ = "Zlatko K. Minev and  Asaf Diringer"
+__email__ = "zlatko.minev@aya.yale.edu"
+__url__ = r'https://github.com/zlatko-minev/pyEPR'
+__status__ = "Dev-Production"
+
+##############################################################################
 # Config setup
 from ._config_default import get_config
 config = get_config()
 
-x=5
 
 ##############################################################################
 # Set up logging -- only on first loading of module, not on reloading.
@@ -69,22 +115,16 @@ if not len(logger.handlers):
 
 ##############################################################################
 #
-# CHECK that required packages are available. If not raise log warning.
-
-try:
-    import matplotlib as mpl
-except (ImportError, ModuleNotFoundError):
-    raise ImportError(f"""IMPORT WARNING: Could not find package `matplotlib`.
-        Default plotting will not work unless you install it. Please install it.
-        {config.internal.error_msg_missing_import}""")
+# Check that required packages are available. If not raise log warning.
 
 try:
     import pandas as pd
     warnings.filterwarnings('ignore', category=pd.io.pytables.PerformanceWarning)
+    del pd
 except (ImportError, ModuleNotFoundError):
     if config.internal.warn_missing_import:
         logger.warning("IMPORT WARNING: `pandas` python package not found. %s",
-             config.internal.error_msg_missing_import)
+                       config.internal.error_msg_missing_import)
 
 
 # Check for a few usually troublesome packages
@@ -113,20 +153,24 @@ if config.internal.warn_missing_import:
 
     try:
         from win32com.client import Dispatch, CDispatch
-        del Dispatch, CDispatch
+        del Dispatch
+        del CDispatch
     except (ImportError, ModuleNotFoundError):
         logger.warning("""IMPORT WARNING: Could not load from 'win32com.client'.
         The communication to hfss won't work. If you want to use it, you need to set it up.
         %s""", config.internal.error_msg_missing_import)
 
     try:
-        from pint import UnitRegistry  # units
-        del UnitRegistry
+        import pint # units
+        del pint
     except (ImportError, ModuleNotFoundError):
         logger.error("""IMPORT ERROR:
         Python package 'pint' could not be loaded. It is used in communicting with HFSS. Try:
             $ conda install -c conda-forge pint \n%s""", config.internal.error_msg_missing_import)
 
+
+# remove unused
+del Path, warnings, logging,
 
 ##############################################################################
 # pyEPR convenience variable and function imports
@@ -136,8 +180,11 @@ from . import calcs
 from . import ansys
 from . import core
 
-from .toolbox.plotting import mpl_dpi
-from .ansys import load_ansys_project, get_active_design, get_active_project,\
-    HfssProject, CalcObject, parse_units, parse_units_user
-from .ansys import release as hfss_release
+from .ansys import parse_units, parse_units_user
 from .core import Project_Info, pyEPR_HFSS, pyEPR_Analysis
+
+
+__all__ = ['logger', 'config',
+           'toolbox', 'calcs', 'ansys', 'core',
+           'Project_Info', 'pyEPR_HFSS', 'pyEPR_Analysis'
+           ]

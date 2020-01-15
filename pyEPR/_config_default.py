@@ -17,7 +17,7 @@ from . import Dict
 __config_defined__ = 'config' in locals()
 
 
-config = Dict(
+config = Dict( # pylint: disable=invalid-name
 
     # Folder to save result data to.
     root_dir=r'C:\data-pyEPR',
@@ -122,7 +122,7 @@ def is_using_ipython():
     try:
         __IPYTHON__  # pylint: disable=undefined-variable, pointless-statement
         return True
-    except Exception:
+    except NameError:
         return False
 
 
@@ -130,7 +130,7 @@ def get_config():
     """Returns the config pointer.
 
     If the config is not yet loaded, it will load the defualt config and then
-    update it with the config_user.config dictionary.
+    update it with the _config_user.config dictionary.
 
     Else, it will just return the pointer to the above-updated config, which the
     user could have modified. The modificaitons will be kept.
@@ -139,16 +139,16 @@ def get_config():
         Dict : the config dictionary
     """
     if __config_defined__:
-        print('Config is already defined.')
+        #print('Config is already defined.') # not sure we ever make it here
         return config
 
     else:
         # Config is only loaded for the first time, set it up.
-        print('First time load of config')
+        #print('First time load of config')
 
         # Update with user config
-        from . import config_user
-        config.update(config_user.config)
+        from . import _config_user
+        config.update(_config_user.config)
 
         # Add to config any bootup params
         config.internal.ipython = is_using_ipython()

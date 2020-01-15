@@ -8,7 +8,7 @@ Do not edit `_config_default.py` directly. Rather, overwrite attributes here.
 
 GIT: Do not track changes here.
  Keep your changes only locally. Use the shell command
-    $ git update-index --skip-worktree config_user.py
+    $ git update-index --skip-worktree _config_user.py
  in the pyEPR/pyEPR folder to stop tracking this file.
 
 @author: Your name goes here
@@ -16,7 +16,7 @@ GIT: Do not track changes here.
 
 from . import Dict
 
-config = Dict(
+config = Dict( # pylint: disable=invalid-name
 
     # Folder to save result data to.
     # PLEASE CHANGE THIS

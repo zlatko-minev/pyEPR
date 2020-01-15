@@ -14,5 +14,6 @@ setup(name='pyEPR',
       packages=['pyEPR'],
       author_email='zlatko.minev@aya.yale.edu',
       license='BSD-3-Clause',
-      install_requires=['numpy','pandas','pint','matplotlib','attrdict']
+      install_requires=['numpy','pandas','pint','matplotlib','attrdict'],
+      url=r'https://github.com/zlatko-minev/pyEPR'
       )
