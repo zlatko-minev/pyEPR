@@ -1693,7 +1693,7 @@ class pyEPR_Analysis(object):
             raise ValueError('No variations have the variable-' + swpvar +\
                               '= {}'.format(value))
 
-        return lv
+        return list(lv)
 
     def get_variation_of_multiple_variables_value(self, Var_dic, lv=None):
         """
