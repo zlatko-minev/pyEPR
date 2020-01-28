@@ -160,6 +160,13 @@ Please update to pint version newer than 0.7.2. You may use
 pip install pint --upgrade
 ```
 
+###### No attribute `StringIO` during do_EPR_analysis()
+
+`AttributeError: module 'pandas.compat' has no attribute 'StringIO'`
+
+Caleb pointed this out, see [here](https://stackoverflow.com/questions/58372475/attributeerror-module-pandas-compat-has-no-attribute-iteritems) and here for [solution](https://github.com/zlatko-minev/pyEPR/issues/21). You need to change the pandas version. [pyEPR to be upgraded]
+
+
 ###### When importing qutip an error occurs `AttributeError: module 'numpy' has no attribute '__config__'`
 You probably have to update your numpy installation. For me, the following bash sequence worked:
 ```
