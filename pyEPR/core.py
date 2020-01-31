@@ -749,13 +749,18 @@ class pyEPR_HFSS(object):
         j_2_norm = self.fields.Vector_Jsurf.norm_2()
         int_j_2 = j_2_norm.integrate_line(seam)
         int_j_2_val = int_j_2.evaluate(lv=lv, phase=90)
-        yseam = int_j_2_val/self.U_H/self.omega
+        yseam = int_j_2_val/self.U_H/self.omega/1e9
 
         Qseam['Qseam_'+seam+'_' +
               str(mode)] = config.Dissipation_params.gseam/yseam
 
         print('Qseam_' + seam + '_' + str(mode) + str(' = ') +
-              str(config.Dissipation_params.gseam/config.Dissipation_params.yseam))
+              str(config.Dissipation_params.gseam/yseam))
+        
+        # print(yseam)
+        # print(self.U_H)
+        # print(self.omega/2/np.pi)
+        # print(int_j_2_val)
 
         return Series(Qseam)
 
@@ -783,7 +788,7 @@ class pyEPR_HFSS(object):
             j_2_norm = self.fields.Vector_Jsurf.norm_2()
             int_j_2 = j_2_norm.integrate_line(seam)
             int_j_2_val = int_j_2.evaluate(lv=lv, phase=90)
-            yseam = int_j_2_val/self.U_H/self.omega
+            yseam = int_j_2_val/self.U_H/self.omega/1e9
             Qseamsweep.append(config.Dissipation_params.gseam/yseam)
 #        Qseamsweep['Qseam_sweep_'+seam+'_'+str(mode)] = gseam/yseam
             #Cprint 'Qseam_' + seam + '_' + str(mode) + str(' = ') + str(gseam/yseam)
