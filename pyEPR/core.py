@@ -1507,7 +1507,8 @@ class pyEPR_Analysis(object):
     def analyze_all_variations(self,
                                cos_trunc     = None,
                                fock_trunc    = None,
-                               print_result  = True):
+                               print_result  = True,
+                               modes         = None, ):
         '''
             See analyze_variation
         '''
@@ -1516,7 +1517,8 @@ class pyEPR_Analysis(object):
             result[variation] = self.analyze_variation(variation=variation,
                                                         cos_trunc=cos_trunc,
                                                         fock_trunc=fock_trunc,
-                                                        print_result=print_result)
+                                                        print_result=print_result, 
+                                                        modes=modes,)
         return result
 
     def get_Pmj(self, variation, _renorm_pj=None, print_=False):
@@ -1645,7 +1647,8 @@ class pyEPR_Analysis(object):
                                      Ljs,
                                      PHI_zpf,
                                      cos_trunc     = cos_trunc,
-                                     fock_trunc    = fock_trunc)
+                                     fock_trunc    = fock_trunc
+                                     )
         else:
             f1_ND, CHI_ND = None, None
 
