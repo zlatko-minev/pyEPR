@@ -1536,7 +1536,7 @@ class Results_Hamiltonian(OrderedDict):
             [type] -- [description]
         """
         res = OrderedDict()
-        if variations is None: variations = self.keys() 
+        if variations is None: variations = self.keys()
         for key in variations:  # variation
             if vs is 'variation':
                 res[key] = self[key][quantity]
@@ -1852,7 +1852,9 @@ class pyEPR_Analysis(object):
         # Junction energies
         EJ = np.diagflat(self.get_Ejs(variation).values) # GHz
 
-        logger.debug(PJ, SJ, Om, EJ)
+        for x in ("PJ", "SJ", "Om", "EJ"):
+            logger.debug(f"{x}=")
+            logger.debug(locals()[x])
 
         PHI_zpf = CalcsBasic.epr_to_zpf(PJ, SJ, Om, EJ)
 
