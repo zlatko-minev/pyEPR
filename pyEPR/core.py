@@ -1431,6 +1431,7 @@ class Results_Hamiltonian(OrderedDict):
     Class to store and process results from the analysis of $H_nl$.
     '''
     file_name_extra = ' Results_Hamiltonian.npz'
+    
     def __init__(self, dict_file=None, data_dir=None):
         """ input:
            dict file - 1. ethier None to create an empty results hamilitoninan as
@@ -1467,22 +1468,24 @@ class Results_Hamiltonian(OrderedDict):
         elif isinstance(dict_file, str):
             try:
                 self.file_name = str(data_dir)+'\\' + dict_file
-                self.load_from_npz()
+                self.load()
             except:
                 self.file_name = dict_file
-                self.load_from_npz()
+                self.load()
 
         elif isinstance(dict_file, dict):
             # Depreciated
-            self.inject_dic(dict_file)
+            self._inject_dic(dict_file)
             self.file_name = str(data_dir)+self.file_name_extra
 
         else:
             raise ValueError('type dict_file is of type {}'.format(type(dict_file)))
             #load file
 
-    #TODO: make this savable and loadable
-    def save_to_npz(self, filename=None):
+    def save(self, filename:str=None):
+        """
+        Uses numpy npz file.
+        """
 
         if filename is None:
             filename = self.file_name
@@ -1490,15 +1493,17 @@ class Results_Hamiltonian(OrderedDict):
         np.savez(filename, Res_Hamil=dict(self))
         return filename
 
-    def load_from_npz(self, filename=None):
-
+    def load(self, filename=None):
+        """
+        Uses numpy npz file.
+        """
         if filename is None:
             filename = self.file_name
 
-        self.inject_dic(extract_dic(file_name=filename)[0])
+        self._inject_dic(extract_dic(file_name=filename)[0])
         return filename
 
-    def inject_dic(self, add_dic):
+    def _inject_dic(self, add_dic):
         Init_number_of_keys = len(self.keys())
         for key, val in add_dic.items():
             ###TODO remove all copies of same data
@@ -1508,7 +1513,7 @@ class Results_Hamiltonian(OrderedDict):
         return 1
 
     @staticmethod
-    def do_sort_index(z:pd.DataFrame):
+    def _do_sort_index(z:pd.DataFrame):
         """Overwrite to sort by custom function
 
         Arguments:
@@ -1522,8 +1527,15 @@ class Results_Hamiltonian(OrderedDict):
         else:
             return z
 
-    def get_vs_variations(self, quantity: str, variations: list = None, vs='variation'):
+    def get_vs_variations(self, quantity: str, variations: list = None, vs='variation',
+                          to_dataframe=False):
         """
+
+        QUANTITIES: 
+            `f_0`  : HFSS Frequencies
+            `f_1`  : Analyutical first order PT on the p=4 term of the cosine 
+            `f_ND` : Numerically diagonalized 
+            `chi_O1`: chi matrix from 1st order PT 
 
         Arguments:
             quantity {[type]} -- [description]
@@ -1531,6 +1543,9 @@ class Results_Hamiltonian(OrderedDict):
         Keyword Arguments:
             variations {list of strings} -- Variations (default: {None} -- means all)
             vs {str} -- Swept against (default: {'variation'})
+            to_dataframe {bool} -- convert or not the result to dataframe.
+                         Make sure to call only if it can be converted to a DataFrame or can 
+                         be concatinated into a multi-index DataFrame 
 
         Returns:
             [type] -- [description]
@@ -1544,43 +1559,34 @@ class Results_Hamiltonian(OrderedDict):
                 res[str(ureg.Quantity(self[key]['hfss_variables']['_'+vs]).magnitude
                         )] = self[key][quantity]
 
-        return res
+        # Convert to dataframe
+        z = res
+        if to_dataframe: # only call if z can be converted to a dataframe 
+            z = sort_df_col(pd.DataFrame(z))
+            if self.sort_index:
+                z = self._do_sort_index(z)
+            z.index.name = 'eigenmode'
+            z.columns.name = vs
+
+        return z
 
     def get_frequencies_HFSS(self, variations: list = None, vs='variation'):
-        z = sort_df_col(pd.DataFrame(self.get_vs_variations('f_0', variations=variations, vs=vs)))
-        if self.sort_index:
-            z = self.do_sort_index(z)
-        z.index.name = 'eigenmode'
-        z.columns.name = vs
-        return z
+        '''See help for `get_vs_variations`'''
+        return self.get_vs_variations('f_0', variations=variations, vs=vs, to_dataframe=True)
 
     def get_frequencies_O1(self, variations: list = None, vs='variation'):
-        z = sort_df_col(pd.DataFrame(self.get_vs_variations('f_1', variations=variations, vs=vs)))
-        if self.sort_index:
-            z = self.do_sort_index(z)
-        z.index.name = 'eigenmode'
-        z.columns.name = vs
-        return z
+        '''See help for `get_vs_variations`'''
+        return self.get_vs_variations('f_1', variations=variations, vs=vs, to_dataframe=True)
 
     def get_frequencies_ND(self, variations: list = None, vs='variation'):
-        z = sort_df_col(pd.DataFrame(self.get_vs_variations('f_ND', variations=variations, vs=vs)))
-        if self.sort_index:
-            z = self.do_sort_index(z)
-        z.index.name = 'eigenmode'
-        z.columns.name = vs
-        return z
+        '''See help for `get_vs_variations`'''
+        return self.get_vs_variations('f_ND', variations=variations, vs=vs, to_dataframe=True)
 
     def get_chi_O1(self, variations: list = None, vs='variation'):
-        z = self.get_vs_variations('chi_O1', variations=variations, vs=vs)
-        #if self.sort_index:
-        #    z = self.do_sort_index(z)
-        return z
+        return self.get_vs_variations('chi_O1', variations=variations, vs=vs)
 
     def get_chi_ND(self, variations: list = None, vs='variation'):
-        z = self.get_vs_variations('chi_ND', variations=variations, vs=vs)
-        #if self.sort_index:
-        #    z = self.do_sort_index(z)
-        return z
+        return self.get_vs_variations('chi_ND', variations=variations, vs=vs)
 
 
 class pyEPR_Analysis(object):
@@ -1792,7 +1798,7 @@ class pyEPR_Analysis(object):
                 result[variation] = self.results[variation]
             else:
                 result[variation] = self.analyze_variation(variation, **kwargs)
-        self.results.save_to_npz()
+        self.results.save()
         return result
 
     def get_Pmj(self, variation, _renorm_pj=None, print_=False):
@@ -1950,7 +1956,7 @@ class pyEPR_Analysis(object):
         result['cos_trunc']      = cos_trunc
 
         self.results[variation]  = result
-        self.results.save_to_npz()
+        self.results.save()
 
         if print_result:
             self.print_variation(variation)
