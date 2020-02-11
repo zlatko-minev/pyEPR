@@ -71,6 +71,8 @@ def sort_df_col(df):
     col_names = df.columns
     if np.all(col_names.map(isint)):
         return df[col_names.astype(int).sort_values().astype(str)]
+    elif np.all(col_names.map(isfloat)):
+        return df[col_names.astype(float).sort_values().astype(str)]
     else:
         return df
 
@@ -80,6 +82,8 @@ def sort_Series_idx(sr):
     idx_names = sr.index
     if np.all(idx_names.map(isint)):
         return sr[idx_names.astype(int).sort_values().astype(str)]
+    if np.all(idx_names.map(isfloat)):
+        return sr[idx_names.astype(float).sort_values().astype(str)]
     else:
         return sr
 
