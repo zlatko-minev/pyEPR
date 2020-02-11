@@ -1536,7 +1536,7 @@ class Results_Hamiltonian(OrderedDict):
             [type] -- [description]
         """
         res = OrderedDict()
-        variations = variations or self.keys()
+        if variations is None: variations = self.keys() 
         for key in variations:  # variation
             if vs is 'variation':
                 res[key] = self[key][quantity]
@@ -1693,7 +1693,7 @@ class pyEPR_Analysis(object):
             raise ValueError('No variations have the variable-' + swpvar +\
                               '= {}'.format(value))
 
-        return lv
+        return list(lv)
 
     def get_variation_of_multiple_variables_value(self, Var_dic, lv=None):
         """
@@ -1792,7 +1792,7 @@ class pyEPR_Analysis(object):
                 result[variation] = self.results[variation]
             else:
                 result[variation] = self.analyze_variation(variation, **kwargs)
-
+        self.results.save_to_npz()
         return result
 
     def get_Pmj(self, variation, _renorm_pj=None, print_=False):
