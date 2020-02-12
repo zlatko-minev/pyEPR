@@ -131,7 +131,9 @@ def make_dispersive(H, fock_trunc, fzpfs=None, f0s=None, chi_prime=False,
         assert type(
             H) == qutip.qobj.Qobj, "Please pass in either  a list of Qobjs or Qobj for the Hamiltonian"
 
+    print("Starting the diagonalization")
     evals, evecs = H.eigenstates()
+    print("Finished the diagonalization")
     evals -= evals[0]
 
     N = int(np.log(H.shape[0]) / np.log(fock_trunc))    # number of modes
