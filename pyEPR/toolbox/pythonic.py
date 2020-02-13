@@ -9,6 +9,7 @@ import platform         # Which OS we run
 import numpy as np
 import pandas as pd
 import warnings
+import matplotlib.pyplot as plt
 
 # Constants
 from collections import OrderedDict
@@ -66,15 +67,25 @@ def get_above_diagonal(M):
     return M[np.triu_indices(M.shape[0], k=1)]
 
 
-def df_find_index(s: pd.Series, find):
+def df_find_index(s: pd.Series, find, degree=2, ax=False):
     """
     Given a Pandas Series such as of freq with index Lj,
     find the Lj that would give the right frequency
     """
-    z = pd.Series(list(s.index.values)+[np.NaN], index=list(s) + [find])
-    z = z.sort_index()
-    z = z.interpolate()
-    return z[find], z
+    max_ = max(s.index.values)
+    min_ = min(s.index.values)
+    if find <= max_ and  find >= min_:
+        # interpolate
+        z = pd.Series(list(s.index.values)+[np.NaN], index=list(s) + [find])
+        z = z.sort_index()
+        z = z.interpolate()
+        return z[find], z
+    else:
+        print('extrapolating')
+        z = pd.Series(list(s.index.values), index=list(s))
+        p = df_extrapolate(z, degree = degree, ax=False)
+        value = p(find)
+        return value, p
 
 
 def df_interpolate_value(s: pd.Series, find):
@@ -86,6 +97,46 @@ def df_interpolate_value(s: pd.Series, find):
     z = z.sort_index()
     z = z.interpolate()
     return z[find], z
+
+
+
+def df_extrapolate(s, degree = 2, ax=False):
+    """
+    For a pandas series
+
+    Returns np.poly1d
+    """
+    z=np.polyfit(s.index.values, s.values, degree)
+    p = np.poly1d(z)
+
+    if ax:
+        if ax is True:
+            ax=plt.gca()
+
+        max_ = max(s.index.values)
+        min_ = min(s.index.values)
+        rng = max_ - min_
+        xp = np.linspace(min_-2*rng, max_+2*rng, 100)
+        ys = p(xp)
+        ax.plot(xp,ys)
+        s.plot(marker='o')
+
+    return p
+
+def df_regress_value(s:pd.Series, index, degree=2):
+    """
+    for pandas series.
+    calls either  df_interpolate_value or df_extrapolate
+    """
+    max_ = max(s.index.values)
+    min_ = min(s.index.values)
+    if index > max_ or index < min_:
+        #print('extrapolate')
+        p = df_extrapolate(s, degree = degree, ax=False)
+        value  = p(index)
+    else:
+        value = df_interpolate_value(s, index)[0]
+    return value
 
 
 def sort_df_col(df):
