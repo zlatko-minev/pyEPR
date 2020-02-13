@@ -6,7 +6,7 @@ My First pyEPR Script
 from pyEPR import *
 
 # 1.  Project and design. Open link to HFSS controls.
-project_info = Project_Info(r'C:\zkm\my-first-pyEPR\\',
+project_info = ProjectInfo(r'C:\zkm\my-first-pyEPR\\',
 			     project_name = 'HelloWorld-pyEPR', # Project file name (string). "None" will get the current active one.
 			     design_name  = 'MyFirstTest'       # Design name (string). "None" will get the current active one.
 			    )
@@ -24,11 +24,11 @@ project_info.connect_to_project()
 #project_info.dissipative.dielectric_surfaces = ['interface']
 #
 ## 3.  Run analysis
-#epr_hfss = pyEPR_HFSSAnalysis(project_info)
+#epr_hfss = DistributedAnalysis(project_info)
 #epr_hfss.do_EPR_analysis()
 #
 ## 4.  Hamiltonian analysis
-#epr      = pyEPR_Analysis(epr_hfss.data_filename)
+#epr      = QuantumAnalysis(epr_hfss.data_filename)
 #epr.analyze_all_variations(cos_trunc = 8, fock_trunc = 7)
-#epr.plot_Hresults()
+#epr.plot_hamiltonian_results()
 #

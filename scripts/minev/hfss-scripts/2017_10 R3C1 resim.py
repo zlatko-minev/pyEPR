@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 if 1:
     # Specify the HFSS project to be analyzed
-    project_info = Project_Info(r"C:\Users\rslqulab\Desktop\zkm\2017_pyEPR_data\\")
+    project_info = ProjectInfo(r"C:\Users\rslqulab\Desktop\zkm\2017_pyEPR_data\\")
     project_info.project_name  = '2017-10 re-sim SM22-R3C1'
     project_info.design_name   = '3. sweep both'
     project_info.setup_name    = None
@@ -18,20 +18,20 @@ if 1:
     project_info.dissipative.dielectric_surfaces = None         # supply names here, there are more options in  project_info.dissipative.
 
     # Run analysis
-    epr_hfss    = pyEPR_HFSSAnalysis(project_info)
+    epr_hfss    = DistributedAnalysis(project_info)
     epr_hfss.do_EPR_analysis()
 
 if 1: # Analysis result
     filename = epr_hfss.data_filename
     #filename = r'C:\Users\rslqulab\Desktop\zkm\2017_pyEPR_data\\/2017-10 re-sim SM22-R3C1/1. R3C1/1. R3C1_20171016_110756.hdf5'
-    epr      = pyEPR_Analysis(filename)
+    epr      = QuantumAnalysis(filename)
     epr.plot_convergence_f_lin()
 
     epr._renorm_pj = True
 
     plt.close('all')
     epr.analyze_all_variations(cos_trunc = 10, fock_trunc = 8)
-    epr.plot_Hresults()
+    epr.plot_hamiltonian_results()
     print(epr.data_filename)
 
 

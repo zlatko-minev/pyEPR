@@ -9,7 +9,7 @@ from pyEPR import *
 
 if 0:
     # Specify the HFSS project to be analyzed
-    project_info = Project_Info(r"X:\Simulation\\hfss\\KC\\")
+    project_info = ProjectInfo(r"X:\Simulation\\hfss\\KC\\")
     project_info.project_name  = '2013-12-03_9GHzCavity'  # Name of the project file (string). "None" will get the current active one.
     project_info.design_name   = '9GHz_EM_center_SNAIL'  # Name of the desgin file (string). "None" will get the current active one.
     project_info.setup_name    = None       # Name of the setup(string). "None" will get the current active one.
@@ -22,18 +22,18 @@ if 0:
     project_info.dissipative.dielectric_surfaces = None         # supply names here, there are more options in  project_info.dissipative.
 
     # Run analysis
-    epr_hfss    = pyEPR_HFSSAnalysis(project_info)
+    epr_hfss    = DistributedAnalysis(project_info)
     epr_hfss.do_EPR_analysis() #variations = ['1', '70']
 
 if 1: # Hamiltonian analysis
 #    filename = epr_hfss.data_filename
     filename = r'X:\Simulation\hfss\KC\pyEPR_results_2018\2013-12-03_9GHzCavity\9GHz_EM_center_SNAIL\9GHz_EM_center_SNAIL_20180726_170049.hdf5'
     #filename = r'C:\\Users\\rslqulab\\Desktop\\zkm\\2017_pyEPR_data\\\\/2017_08_Zlatko_Shyam_AutStab/2 pyEPR/2 pyEPR_20170825_170550.hdf5'
-    epr      = pyEPR_Analysis(filename)
+    epr      = QuantumAnalysis(filename)
 
     #result = epr.analyze_variation('1', cos_trunc = 8, fock_trunc = 7)
     epr.analyze_all_variations(cos_trunc = None, fock_trunc = 4) # only quadratic part
-    epr.plot_Hresults()
+    epr.plot_hamiltonian_results()
 
     if 1:
         f0 = epr.results.get_frequencies_HFSS()

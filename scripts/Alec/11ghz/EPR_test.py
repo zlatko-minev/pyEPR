@@ -9,7 +9,7 @@ from pyEPR import *
 
 if 0:
     # Specify the HFSS project to be analyzed
-    project_info = Project_Info(r"C:\Users\awe4\Documents\Backed\hfss_simulations\11ghz\\")
+    project_info = ProjectInfo(r"C:\Users\awe4\Documents\Backed\hfss_simulations\11ghz\\")
     project_info.project_name  = '11ghz_alec'  # Name of the project file (string). "None" will get the current active one.
     project_info.design_name   = '11ghz_design1'  # Name of the desgin file (string). "None" will get the current active one.
     project_info.setup_name    = None    # Name of the setup(string). "None" will get the current active one.
@@ -19,12 +19,12 @@ if 0:
 
     project_info.dissipative.dielectric_surfaces = None         # supply names here, there are more options in  project_info.dissipative.
 
-    epr_hfss    = pyEPR_HFSSAnalysis(project_info)
+    epr_hfss    = DistributedAnalysis(project_info)
     epr_hfss.do_EPR_analysis()
 
 #%%
 if 1:
-    epr    = pyEPR_Analysis(epr_hfss.data_filename)   # Analysis results
+    epr    = QuantumAnalysis(epr_hfss.data_filename)   # Analysis results
     #result = epr.analyze_variation('1', cos_trunc = 8, fock_trunc = 7)
     epr.analyze_all_variations(cos_trunc = 10, fock_trunc = 7);
 

@@ -686,6 +686,11 @@ class HfssDesign(COMWrapper):
         self._design.DeleteFullVariation("All", False)
 
     def get_nominal_variation(self):
+        """
+        Use: Gets the nominal variation string
+        Return Value: Returns a string representing the nominal variation
+        Returns string such as "Height='0.06mm' Lj='13.5nH'"
+        """
         return self._design.GetNominalVariation()
 
     def create_variable(self, name, value, postprocessing=False):
@@ -786,7 +791,7 @@ class HfssDesign(COMWrapper):
 class HfssSetup(HfssPropertyObject):
     prop_tab = "HfssTab"
     passes = make_int_prop("Passes")  # see EditSetup
-    nmodes = make_int_prop("Modes")
+    n_modes = make_int_prop("Modes")
     pct_refinement = make_float_prop("Percent Refinement")
     delta_f = make_float_prop("Delta F")
     min_freq = make_float_prop("Min Freq")
@@ -1333,7 +1338,7 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
     self._solutions.ExportEigenmodes(soln_name, ['Pass:=5'], fn) # ['Pass:=5'] fails  can do with ''
     """
 
-    def set_mode(self, n, phase=0):
+    def set_mode(self, n, phase=0, FieldType='EigenStoredEnergy'):
         '''
         Indicates which source excitations should be used for fields post processing.
         HFSS>Fields>Edit Sources
@@ -1343,6 +1348,8 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
         Amplitude is set to 1
 
         No error is thorwn if a number exceeding number of modes is set
+
+            FieldType -- EigenStoredEnergy or EigenPeakElecticField
         '''
         n_modes = int(self.parent.n_modes)
 
@@ -1355,6 +1362,10 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
             err = f'ERROR: You tried to set a mode > number of modes {n}/{n_modes}'
             logger.error(err)
             raise Exception(err)
+
+        ### TODO: WARNING: Note that the syntax has changed for AEDT 18.2.
+        # see https://ansyshelp.ansys.com/account/secured?returnurl=/Views/Secured/Electronics/v195//Subsystems/HFSS/Subsystems/HFSS%20Scripting/HFSS%20Scripting.htm
+
 
         self._solutions.EditSources(
             "EigenStoredEnergy",
@@ -1388,7 +1399,7 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
         ------------------------------------------------------
         Exammple plot for a single vareiation all pass converge of mode freq
         .. code-block python
-            ycomp = [f"re(Mode({i}))" for i in range(1,1+epr_hfss.nmodes)]
+            ycomp = [f"re(Mode({i}))" for i in range(1,1+epr_hfss.n_modes)]
             params = ["Pass:=", ["All"]]+variation
             setup.create_report("Freq. vs. pass", "Pass", ycomp, params, pass_name='AdaptivePass')
         '''

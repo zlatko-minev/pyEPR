@@ -170,7 +170,7 @@ if config.internal.warn_missing_import:
 
 
 # remove unused
-del Path, warnings, logging,
+del Path, warnings, logging
 
 ##############################################################################
 # pyEPR convenience variable and function imports
@@ -181,11 +181,13 @@ from . import ansys
 from . import core
 
 from .ansys import parse_units, parse_units_user, parse_entry
-from .core import Project_Info, pyEPR_HFSSAnalysis, pyEPR_Analysis
+from .core import ProjectInfo, DistributedAnalysis, QuantumAnalysis,\
+                  Project_Info, pyEPR_HFSSAnalysis, pyEPR_Analysis # names to be depricated
 
 
 __all__ = ['logger', 'config',
            'toolbox', 'calcs', 'ansys', 'core',
-           'Project_Info', 'pyEPR_HFSSAnalysis', 'pyEPR_Analysis',
+           'ProjectInfo',  'DistributedAnalysis', 'QuantumAnalysis',
+           'Project_Info', 'pyEPR_HFSSAnalysis','pyEPR_Analysis', # names to be depricated
            'parse_units', 'parse_units_user', 'parse_entry'
            ]

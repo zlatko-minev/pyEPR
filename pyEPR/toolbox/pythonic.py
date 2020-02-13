@@ -66,12 +66,38 @@ def get_above_diagonal(M):
     return M[np.triu_indices(M.shape[0], k=1)]
 
 
+def df_find_index(s: pd.Series, find):
+    """
+    Given a Pandas Series such as of freq with index Lj,
+    find the Lj that would give the right frequency
+    """
+    z = pd.Series(list(s.index.values)+[np.NaN], index=list(s) + [find])
+    z = z.sort_index()
+    z = z.interpolate()
+    return z[find], z
+
+
+def df_interpolate_value(s: pd.Series, find):
+    """
+    Given a Pandas Series such as of freq with index Lj,
+    find the freq that would correspnd to Lj given a value not in the index
+    """
+    z = pd.Series(list(s) + [np.NaN], index=list(s.index.values)+[find])
+    z = z.sort_index()
+    z = z.interpolate()
+    return z[find], z
+
+
 def sort_df_col(df):
     '''         sort by numerical int order    '''
+    return df.sort_index(axis=1)
+
+    # Buggy code, deosnt handles ints as inputs or floats as inpts
     col_names = df.columns
     if np.all(col_names.map(isint)):
         return df[col_names.astype(int).sort_values().astype(str)]
     elif np.all(col_names.map(isfloat)):
+        # raises error in some cases
         return df[col_names.astype(float).sort_values().astype(str)]
     else:
         return df
@@ -112,6 +138,7 @@ def deprecated(func):
     newFunc.__doc__ = func.__doc__
     newFunc.__dict__.update(func.__dict__)
     return newFunc
+
 
 def info_str_platform():
     return '''
@@ -295,7 +322,7 @@ def robust_percentile(calc_data, ROBUST_PERCENTILE=2.):
 
 
 __all__ = ['fact', 'nck', 'combinekw',
-           'divide_diagonal_by_2',
+           'divide_diagonal_by_2', 'df_find_index',
            'sort_df_col', 'sort_Series_idx',
            'print_matrix', 'print_NoNewLine',
            'DataFrame_col_diff', 'xarray_unravel_levels', 'robust_percentile']

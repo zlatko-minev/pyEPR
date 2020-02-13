@@ -4,11 +4,11 @@ extraction.
 
 @author: Phil Reinhold, Zlatko Minev, Lysander Christakis
 
-Original code by Phil Reinhold
-Revised and updated by Zlatko Minev & Lysander Christakis
-This file is tricky, use caution to modify.
+Original code on black_box_hamiltonian and make_dispersive functions by Phil Reinhold
+Revisions and updates by Zlatko Minev & Lysander Christakis
 '''
 # pylint: disable=invalid-name
+
 
 from __future__ import print_function
 
@@ -26,13 +26,54 @@ try:
 except (ImportError, ModuleNotFoundError):
     pass
 
-__all__ = ['bbq_hmt', 'make_dispersive', 'bbq_nq']
+__all__ = [ 'epr_numerical_diagonalization',
+            'make_dispersive',
+            'black_box_hamiltonian',
+            'black_box_hamiltonian_nq']
 
 dot = MatrixOps.dot
 cos_approx = MatrixOps.cos_approx
 
 
-def bbq_hmt(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual=False):
+# ==============================================================================
+# ANALYSIS FUNCTIONS
+# ==============================================================================
+
+def epr_numerical_diagonalization(freqs, Ljs, ϕzpf,
+             cos_trunc=8,
+             fock_trunc=9,
+             use_1st_order=False,
+             return_H=False):
+    '''
+    Numerical diagonalizaiton for pyEPR. Ask Zlatko for details.
+
+    :param fs: (GHz, not radians) Linearized model, H_lin, normal mode frequencies in Hz, length M
+    :param ljs: (Henries) junction linerized inductances in Henries, length J
+    :param fzpfs: (reduced) Reduced Zero-point fluctutation of the junction fluxes for each mode
+                across each junction, shape MxJ
+
+    :return: Hamiltonian mode freq and dispersive shifts. Shifts are in MHz.
+             Shifts have flipped sign so that down shift is positive.
+    '''
+
+    freqs, Ljs, ϕzpf = map(np.array, (freqs, Ljs, ϕzpf))
+    assert(all(freqs < 1E6)
+           ), "Please input the frequencies in GHz. \N{nauseated face}"
+    assert(all(Ljs < 1E-3)
+           ), "Please input the inductances in Henries. \N{nauseated face}"
+
+    Hs = black_box_hamiltonian(freqs * 1E9, Ljs.astype(np.float), fluxQ*ϕzpf,
+                 cos_trunc, fock_trunc, individual=use_1st_order)
+    f_ND, χ_ND, _, _ = make_dispersive(
+        Hs, fock_trunc, ϕzpf, freqs, use_1st_order=use_1st_order)
+    χ_ND = -1*χ_ND * 1E-6  # convert to MHz, and flip sign so that down shift is positive
+
+    return (f_ND, χ_ND, Hs) if return_H else (f_ND, χ_ND)
+
+
+
+
+def black_box_hamiltonian(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual=False):
     r"""
     :param fs: Linearized model, H_lin, normal mode frequencies in Hz, length N
     :param ljs: junction linerized inductances in Henries, length M
@@ -45,7 +86,7 @@ def bbq_hmt(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual=False):
      Takes the linear mode frequencies, $\omega_m$, and the zero-point fluctuations, ZPFs, and
      builds the Hamiltonian matrix of $H_full$, assuming cos potential.
     """
-    nmodes = len(fs)
+    n_modes = len(fs)
     njuncs = len(ljs)
     fs, ljs, fzpfs = map(np.array, (fs, ljs, fzpfs))
     ejs = fluxQ**2 / ljs
@@ -59,22 +100,22 @@ def bbq_hmt(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual=False):
     ) == False, "Ljs has NAN, this is NOT allowed! Fix me."
     assert np.isnan(
         fs).any() == False, "freqs has NAN, this is NOT allowed! Fix me."
-    assert fzpfs.shape == (njuncs, nmodes), "incorrect shape for zpf array, {} not {}".format(
-        fzpfs.shape, (njuncs, nmodes))
-    assert fs.shape == (nmodes,), "incorrect number of mode frequencies"
+    assert fzpfs.shape == (njuncs, n_modes), "incorrect shape for zpf array, {} not {}".format(
+        fzpfs.shape, (njuncs, n_modes))
+    assert fs.shape == (n_modes,), "incorrect number of mode frequencies"
     assert ejs.shape == (njuncs,), "incorrect number of qubit frequencies"
 
     def tensor_out(op, loc):
         "Make operator <op> tensored with identities at locations other than <loc>"
-        op_list = [qutip.qeye(fock_trunc) for i in range(nmodes)]
+        op_list = [qutip.qeye(fock_trunc) for i in range(n_modes)]
         op_list[loc] = op
         return reduce(qutip.tensor, op_list)
 
     a = qutip.destroy(fock_trunc)
     ad = a.dag()
     n = qutip.num(fock_trunc)
-    mode_fields = [tensor_out(a + ad, i) for i in range(nmodes)]
-    mode_ns = [tensor_out(n, i) for i in range(nmodes)]
+    mode_fields = [tensor_out(a + ad, i) for i in range(n_modes)]
+    mode_ns = [tensor_out(n, i) for i in range(n_modes)]
 
     def cos(x):
         return cos_approx(x, cos_trunc=cos_trunc)
@@ -87,6 +128,7 @@ def bbq_hmt(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual=False):
     else:
         return linear_part + nonlinear_part
 
+bbq_hmt = black_box_hamiltonian
 
 def make_dispersive(H, fock_trunc, fzpfs=None, f0s=None, chi_prime=False,
                     use_1st_order=False):
@@ -204,7 +246,7 @@ def make_dispersive(H, fock_trunc, fzpfs=None, f0s=None, chi_prime=False,
         return np.array(f1s), np.array(chis), np.array(fzpfs), np.array(f0s)
 
 
-def bbq_nq(freqs, zmat, ljs, cos_trunc=6, fock_trunc=8, show_fit=False):
+def black_box_hamiltonian_nq(freqs, zmat, ljs, cos_trunc=6, fock_trunc=8, show_fit=False):
     """
     N-Qubit version of bbq, based on the full Z-matrix
     Currently reproduces 1-qubit data, untested on n-qubit data
@@ -250,5 +292,7 @@ def bbq_nq(freqs, zmat, ljs, cos_trunc=6, fock_trunc=8, show_fit=False):
     zsigns = np.sign(zmat[zeros, 0, :])
     fzpfs = zsigns.transpose() * np.sqrt(hbar * abs(zeffs) / 2)
 
-    H = bbq_hmt(f0s, ljs, fzpfs, cos_trunc, fock_trunc)
+    H = black_box_hamiltonian(f0s, ljs, fzpfs, cos_trunc, fock_trunc)
     return make_dispersive(H, fock_trunc, fzpfs, f0s)
+
+black_box_hamiltonian_nq = black_box_hamiltonian_nq

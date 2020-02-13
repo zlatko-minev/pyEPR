@@ -6,10 +6,10 @@ The results are saved, printed, and nicely plotted.
 @author: Zlatko
 """
 
-from pyEPR import Project_Info, pyEPR_HFSSAnalysis, pyEPR_Analysis
+from pyEPR import ProjectInfo, DistributedAnalysis, QuantumAnalysis
 
 # 1.  Project and design. Open link to HFSS controls.
-project_info = Project_Info('D:\LOGIQ-IBMQ\Cranes\HFSS simulation\\',
+project_info = ProjectInfo('D:\LOGIQ-IBMQ\Cranes\HFSS simulation\\',
                             project_name = '2018-12-03 Zlatko pyEPR',               # Project file name (string). "None" will get the current active one.
                             design_name  = 'L-4 bus-EPR'     # Design name (string). "None" will get the current active one.
                             )
@@ -27,7 +27,7 @@ for i in range(1,3+1): # specify N number of junctions
 # 3.  Run analysis
 if 1:
     passes   = range(1,20,1)
-    epr_hfss = pyEPR_HFSSAnalysis(project_info)
+    epr_hfss = DistributedAnalysis(project_info)
 
     # CLEAR DATA
     # if not 'RES' in locals():
@@ -51,7 +51,7 @@ def do_analysis(pass_, variation = '0'):
     epr_hfss.do_EPR_analysis(variations=[variation])
     RES[pass_] = OrderedDict()
 
-    epr = pyEPR_Analysis(epr_hfss.data_filename)
+    epr = QuantumAnalysis(epr_hfss.data_filename)
     RES[pass_]['epr'] = epr
     #epr = RES[pass_]['epr']
     RES[pass_]['freq_hfss'] = epr.freqs_hfss[variation]
@@ -325,6 +325,6 @@ if 0:
     epr_hfss.do_EPR_analysis()
 
     # 4.  Hamiltonian analysis
-    epr      = pyEPR_Analysis(epr_hfss.data_filename)
+    epr      = QuantumAnalysis(epr_hfss.data_filename)
     epr.analyze_all_variations(cos_trunc = 8, fock_trunc = 7)
-    epr.plot_Hresults()
+    epr.plot_hamiltonian_results()

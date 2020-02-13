@@ -47,7 +47,7 @@ The following code illustrates how to perform a complete analysis of a simple tw
 import pyEPR as epr
 
 # 1. Connect to your Ansys, and load your design
-pinfo = epr.Project_Info(project_path = r'C:\sim_folder',
+pinfo = epr.ProjectInfo(project_path = r'C:\sim_folder',
                          project_name = r'cavity_with_two_qubits',
                          design_name  = r'Alice_Bob')
 
@@ -61,13 +61,13 @@ pinfo.dissipative.dielectrics_bulk    = ['si_substrate', 'dielectic_object2'] # 
 pinfo.dissipative.dielectric_surfaces = ['interface1', 'interface2']
 
 # 3.  Perform microwave analysis on eigenmode solutions
-eprh = epr.pyEPR_HFSSAnalysis(pinfo)
+eprh = epr.DistributedAnalysis(pinfo)
 eprh.do_EPR_analysis()
 
 # 4.  Perform Hamiltonian spectrum post-analysis, building on mw solutions using EPR
-epra = epr.pyEPR_Analysis(eprh.data_filename)
+epra = epr.QuantumAnalysis(eprh.data_filename)
 epra.analyze_all_variations(cos_trunc = 8, fock_trunc = 7)
-epra.plot_Hresults()
+epra.plot_hamiltonian_results()
 ```
 
 # `pyEPR` Video Tutorials <img src="https://developers.google.com/site-assets/logo-youtube.svg" height=30>

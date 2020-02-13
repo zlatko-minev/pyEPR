@@ -1,0 +1,959 @@
+"""
+Main interface module to use pyEPR.
+
+Contains code that works on the analysis after hfss, ansys, etc. These can now be closed.
+
+Copyright Zlatko Minev, Zaki Leghtas, and the pyEPR team
+2015, 2016, 2017, 2018, 2019, 2020
+"""
+# pylint: disable=invalid-name
+# todo remove this pylint hack later
+
+from __future__ import print_function  # Python 2.7 and 3 compatibility
+
+from typing import List
+import pickle
+import sys
+import time
+from collections import OrderedDict
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from IPython.display import Markdown, display
+from numpy.linalg import inv
+
+# pyEPR custom imports
+from . import Dict, config, logger
+from .ansys import ureg
+from .calcs.back_box_numeric import epr_numerical_diagonalization
+from .calcs.basic import CalcsBasic
+from .calcs.constants import Planck, fluxQ
+from .core_distributed_analysis import DistributedAnalysis
+from .toolbox.plotting import cmap_discrete, legend_translucent
+from .toolbox.pythonic import (DataFrame_col_diff, divide_diagonal_by_2,
+                               print_color, print_matrix, sort_df_col,
+                               sort_Series_idx, df_find_index)
+
+
+class HamiltonianResultsContainer(OrderedDict):
+    """
+    The user should only use the QuantumAnalysis class interface.
+
+    This class is largely for internal use.
+
+    It is a dictionary based class to contain the results stored.
+    """
+
+    file_name_extra = ' HamiltonianResultsContainer.npz'
+
+    def __init__(self, dict_file=None, data_dir=None):
+        """ input:
+           dict file - 1. ethier None to create an empty results hamilitoninan as
+                       as was done in the original code
+
+                       2. or a string with the name of the file where the file of the
+                       previously saved HamiltonianResultsContainer instatnce we wish
+                       to load
+
+                       3. or an existing instance of a dict class which will be
+                       upgraded to the HamiltonianResultsContainer class
+
+            data_dir -  the directory in which the file is to be saved or loaded
+                        from, defults to the config.root_dir
+        """
+
+        super().__init__()
+
+        self.sort_index = True  # for retrieval
+
+        if data_dir is None:
+            data_dir = Path(config.root_dir) / 'temp' / \
+                time.strftime('%Y-%m-%d %H-%M-%S', time.localtime())
+
+        data_dir = Path(data_dir).resolve()
+        file_name = data_dir.stem
+        directory = data_dir.parents[0]
+        if not directory.is_dir():
+            directory.mkdir(parents=True, exist_ok=True)
+
+        if dict_file is None:
+            self.file_name = str(
+                directory/(str(file_name)+self.file_name_extra))
+            #logger.info(f'Filename hamiltonian params to {self.file_name }')
+
+        elif isinstance(dict_file, str):
+            try:
+                self.file_name = str(data_dir)+'\\' + dict_file
+                self.load()
+            except:
+                self.file_name = dict_file
+                self.load()
+
+        elif isinstance(dict_file, dict):
+            # Depreciated
+            self._inject_dic(dict_file)
+            self.file_name = str(data_dir)+self.file_name_extra
+
+        else:
+            raise ValueError(
+                'type dict_file is of type {}'.format(type(dict_file)))
+            # load file
+
+    def save(self, filename: str = None):
+        """
+        Uses numpy npz file.
+        """
+
+        if filename is None:
+            filename = self.file_name
+
+        np.savez(filename, Res_Hamil=dict(self))
+        return filename
+
+    def load(self, filename=None):
+        """
+        Uses numpy npz file.
+        """
+        if filename is None:
+            filename = self.file_name
+
+        self._inject_dic(extract_dic(file_name=filename)[0])
+        return filename
+
+    def _inject_dic(self, add_dic):
+        Init_number_of_keys = len(self.keys())
+        for key, val in add_dic.items():
+            # TODO remove all copies of same data
+            #  if key in self.keys():
+                #raise ValueError('trying to overwrite an exsiting varation')
+            self[str(int(key)+Init_number_of_keys)] = val
+        return 1
+
+    @staticmethod
+    def _do_sort_index(z: pd.DataFrame):
+        """Overwrite to sort by custom function
+
+        Arguments:
+            z {pd.DataFrame} -- Input
+
+        Returns:
+            Sorted DtaaFrame
+        """
+        if isinstance(z, pd.DataFrame):
+            return z.sort_index(axis=1)
+        else:
+            return z
+
+    def vs_variations(self,
+                      quantity: str,
+                      variations: list = None,
+                      vs='variation',
+                      to_dataframe=False):
+        """
+
+        QUANTITIES:
+            `f_0`  : HFSS Frequencies
+            `f_1`  : Analyutical first order PT on the p=4 term of the cosine
+            `f_ND` : Numerically diagonalized
+            `chi_O1`: chi matrix from 1st order PT
+
+        Arguments:
+            quantity {[type]} -- [description]
+
+        Keyword Arguments:
+            variations {list of strings} -- Variations (default: {None} -- means all)
+            vs {str} -- Swept against (default: {'variation'})
+            to_dataframe {bool} -- convert or not the result to dataframe.
+                         Make sure to call only if it can be converted to a DataFrame or can
+                         be concatinated into a multi-index DataFrame
+
+        Returns:
+            [type] -- [description]
+        """
+        variations = variations or self.keys()
+
+        res = OrderedDict()
+        for key in variations:
+            if vs is 'variation':
+                res[key] = self[key][quantity]
+            else:
+                # convert the key to numeric if possible
+                key_new = ureg.Quantity(
+                    self[key]['hfss_variables']['_'+vs]).magnitude
+                res[key_new] = self[key][quantity]
+
+        # Convert to dataframe
+        z = res
+        if to_dataframe:  # only call if z can be converted to a dataframe
+            z = sort_df_col(pd.DataFrame(z))
+            if self.sort_index:
+                z = self._do_sort_index(z)
+            z.index.name = 'eigenmode'
+            z.columns.name = vs
+
+        return z
+
+    # Quick lookup function
+
+    def get_frequencies_HFSS(self, variations: list = None, vs='variation'):
+        '''See help for `vs_variations`'''
+        return self.vs_variations('f_0', variations=variations, vs=vs, to_dataframe=True)
+
+    def get_frequencies_O1(self, variations: list = None, vs='variation'):
+        '''See help for `vs_variations`'''
+        return self.vs_variations('f_1', variations=variations, vs=vs, to_dataframe=True)
+
+    def get_frequencies_ND(self, variations: list = None, vs='variation'):
+        '''See help for `vs_variations`'''
+        return self.vs_variations('f_ND', variations=variations, vs=vs, to_dataframe=True)
+
+    def get_chi_O1(self, variations: list = None, vs='variation'):
+        return self.vs_variations('chi_O1', variations=variations, vs=vs)
+
+    def get_chi_ND(self, variations: list = None, vs='variation'):
+        return self.vs_variations('chi_ND', variations=variations, vs=vs)
+
+
+class QuantumAnalysis(object):
+    '''
+    Defines an analysis object which loads and plots data from a h5 file
+    This data is obtained using DistributedAnalysis
+    '''
+
+    def __init__(self, data_filename,
+                 variations: list = None,
+                 do_print_info=True,
+                 Res_hamil_filename=None):
+
+        self.data_filename = data_filename
+        self.results = HamiltonianResultsContainer(dict_file=Res_hamil_filename,
+                                                   data_dir=data_filename)
+
+        with open(str(data_filename), 'rb') as handle:
+            # Contain everything: project_info and results
+            self.data = Dict(pickle.load(handle))
+
+        # Reverse from variations on outside to on inside
+        results = DistributedAnalysis.results_variations_on_inside(
+            self.data.results)
+
+        # Convinience functions
+        self.variations = variations or list(self.data.results.keys())
+        self._hfss_variables = results['hfss_variables']
+        self.freqs_hfss = results['freqs_hfss_GHz']
+        self.Qs = results['Qs']
+        self.Qm_coupling = results['Qm_coupling']
+        self.Ljs = results['Ljs']  # DataFrame
+        self.Cjs = results['Cjs']  # DataFrame
+        self.OM = results['Om']  # dict of dataframes
+        self.PM = results['Pm']  # participation matrices
+        self.SM = results['Sm']  # sign matrices
+        self.sols = results['sols']
+        self.mesh_stats = results['mesh']
+        self.convergence = results['convergence']
+        self.convergence_f_pass = results['convergence_f_pass']
+
+        self.n_modes = self.sols[self.variations[0]].shape[0]
+        self._renorm_pj = config.epr.renorm_pj
+
+        # Unique variation params -- make a get function
+        dum = DataFrame_col_diff(self._hfss_variables)
+        self.hfss_vars_diff_idx = dum if not (dum.any() == False) else []
+        try:
+            self.Num_hfss_vars_diff_idx = len(
+                self.hfss_vars_diff_idx[self.hfss_vars_diff_idx == True])
+        except:
+            e = sys.exc_info()[0]
+            logger.warning("<p>Error: %s</p>" % e)
+            self.Num_hfss_vars_diff_idx = 0
+
+        if do_print_info:
+            self.print_info()
+
+    @property
+    def project_info(self):
+        return self.data.project_info
+
+    def print_info(self):
+        print("\t Differences in variations:")
+        if len(self.hfss_vars_diff_idx) > 0:
+            display(self._hfss_variables[self.hfss_vars_diff_idx])
+        print('\n')
+
+    def get_variable_vs(self, swpvar, lv=None):
+        """ lv is list of variations (example ['0', '1']), if None it takes all variations
+            swpvar is the variable by which to orginize
+
+            return:
+            ordered dicitonary of key which is the variation number and the magnitude
+            of swaver as the item
+        """
+        ret = OrderedDict()
+        if lv is None:
+            for key, varz in self._hfss_variables.items():
+                ret[key] = ureg.Quantity(varz['_'+swpvar]).magnitude
+        else:
+            try:
+                for key in lv:
+                    ret[key] = ureg.Quantity(
+                        self._hfss_variables[key]['_'+swpvar]).magnitude
+            except:
+                print(' No such variation as ' + key)
+        return ret
+
+    def get_variable_value(self, swpvar, lv=None):
+
+        var = self.get_variable_vs(swpvar, lv=lv)
+        return [var[key] for key in var.keys()]
+
+    def get_variations_of_variable_value(self, swpvar, value, lv=None):
+        """A function to return all the variations in which one of the variables
+            has a specific value lv is list of variations (example ['0', '1']),
+            if None it takes all variations
+            swpvar is a string and the name of the variable we wish to filter
+            value is the value of swapvr in which we are intrested
+
+            returns lv - a list of the variations for which swavr==value
+            """
+
+        if lv is None:
+            lv = self.variations
+
+        ret = self.get_variable_vs(swpvar, lv=lv)
+
+        lv = np.array(list(ret.keys()))[np.array(list(ret.values())) == value]
+
+        #lv = lv_temp if not len(lv_temp) else lv
+        if not (len(lv)):
+            raise ValueError('No variations have the variable-' + swpvar +
+                             '= {}'.format(value))
+
+        return list(lv)
+
+    def get_variation_of_multiple_variables_value(self, Var_dic, lv=None):
+        """
+                SEE get_variations_of_variable_value
+            A function to return all the variations in which one of the variables has a specific value
+            lv is list of variations (example ['0', '1']), if None it takes all variations
+            Var_dic is a dic with the name of the variable as key and the value to filter as item
+            """
+
+        if lv is None:
+            lv = self.variations
+
+        var_str = None
+        for key, var in Var_dic.items():
+            lv = self.get_variations_of_variable_value(key, var, lv)
+            if var_str is None:
+                var_str = key + '= {}'.format(var)
+            else:
+                var_str = var_str + ' & ' + key + '= {}'.format(var)
+        return lv, var_str
+
+    def get_convergences_Max_Tets(self):
+        ''' Index([u'Pass Number', u'Solved Elements', u'Max Delta Freq. %' ])  '''
+        ret = OrderedDict()
+        for key, df in self.convergence.items():
+            ret[key] = df['Solved Elements'].iloc[-1]
+        return ret
+
+    def get_convergences_Tets_vs_pass(self):
+        ''' Index([u'Pass Number', u'Solved Elements', u'Max Delta Freq. %' ])  '''
+        ret = OrderedDict()
+        for key, df in self.convergence.items():
+            s = df['Solved Elements']
+            #s.index = df['Pass Number']
+            ret[key] = s
+        return ret
+
+    def get_convergences_MaxDeltaFreq_vs_pass(self):
+        ''' Index([u'Pass Number', u'Solved Elements', u'Max Delta Freq. %' ])  '''
+        ret = OrderedDict()
+        for key, df in self.convergence.items():
+            s = df['Max Delta Freq. %']
+            #s.index = df['Pass Number']
+            ret[key] = s
+        return ret
+
+    def get_mesh_tot(self):
+        ret = OrderedDict()
+        for key, m in self.mesh_stats.items():
+            ret[key] = m['Num Tets  '].sum()
+        return ret
+
+    def get_Ejs(self, variation):
+        ''' EJs in GHz '''
+        Ljs = self.Ljs[variation]
+        Ejs = fluxQ**2/Ljs/Planck*10**-9
+        return Ejs
+
+    def analyze_all_variations(self,
+                               variations: List[str] = None,
+                               analyze_previous=False,
+                               **kwargs):
+        '''
+        See analyze_variation for full documentation
+
+        Specific params:
+        --------------------
+            variations : None returns all_variations otherwis this is a list with number
+                         as strings ['0', '1']
+            nalyze_previous :set to true if you wish to overwrite previous analysis
+        '''
+
+        result = OrderedDict()
+
+        if variations is None:
+            variations = self.variations
+
+        for variation in variations:
+            if (not analyze_previous) and (variation in self.results.keys()):
+                result[variation] = self.results[variation]
+            else:
+                result[variation] = self.analyze_variation(variation, **kwargs)
+
+        self.results.save()
+
+        return result
+
+    def get_Pmj(self, variation, _renorm_pj=None, print_=False):
+        '''
+            Get normalized Pmj Matrix
+
+            Return DataFrame object for PJ
+        '''
+        if _renorm_pj is None:
+            _renorm_pj = self._renorm_pj
+
+        Pm = self.PM[variation].copy()   # EPR matrix from Jsurf avg, DataFrame
+
+        if self._renorm_pj:  # Renormalize
+            s = self.sols[variation]
+            # sum of participations as calculated by global UH and UE
+            Pm_glb_sum = (s['U_E'] - s['U_H'])/s['U_E']
+            Pm_norm = Pm_glb_sum/Pm.sum(axis=1)
+            # Should we still do this when Pm_glb_sum is very small
+            if print_:
+                print("Pm_norm = %s " % str(Pm_norm))
+            Pm = Pm.mul(Pm_norm, axis=0)
+
+        else:
+            Pm_norm = 1
+            if print_:
+                print('NO renorm!')
+
+        if np.any(Pm < 0.0):
+            print_color("  ! Warning:  Some p_mj was found <= 0. This is probably a numerical error, or a super low-Q mode.  We will take the abs value.  Otherwise, rerun with more precision, inspect, and do due dilligence.)")
+            print(Pm, '\n')
+            Pm = np.abs(Pm)
+
+        return {'PJ': Pm, 'Pm_norm': Pm_norm}
+
+    def get_matrices(self, variation, _renorm_pj=None, print_=False):
+        r'''
+        All as matrices
+            :PJ: Participatuion matrix, p_mj
+            :SJ: Sign matrix, s_mj
+            :Om: Omega_mm matrix (in GHz) (\hbar = 1) Not radians.
+            :EJ: E_jj matrix of Josephson energies (in same units as hbar omega matrix)
+            :PHI_zpf: ZPFs in units of \phi_0 reduced flux quantum
+
+            Return all as *np.array*
+                PM, SIGN, Om, EJ, Phi_ZPF
+        '''
+        # TODO: superseed by Convert.ZPF_from_EPR
+
+        PJ = self.get_Pmj(variation, _renorm_pj=_renorm_pj, print_=print_)
+        PJ = np.array(PJ['PJ'])
+        # Sign bits
+        SJ = np.array(self.SM[variation])                # DataFrame
+        #  Frequencies of HFSS linear modes.
+        #  Input in dataframe but of one line. Output nd array
+        Om = np.diagflat(self.OM[variation].values)      # GHz
+        # Junction energies
+        EJ = np.diagflat(self.get_Ejs(variation).values)  # GHz
+
+        for x in ("PJ", "SJ", "Om", "EJ"):
+            logger.debug(f"{x}=")
+            logger.debug(locals()[x])
+
+        PHI_zpf = CalcsBasic.epr_to_zpf(PJ, SJ, Om, EJ)
+
+        return PJ, SJ, Om, EJ, PHI_zpf                   # All as np.array
+
+    def analyze_variation(self,
+                          variation: List[str],
+                          cos_trunc: int = None,
+                          fock_trunc: int = None,
+                          print_result: bool = True,
+                          junctions: List = None,
+                          modes: List[int] = None):
+        # TODO avoide analyzing a previously analyzed variation
+        '''
+        Can also print results neatly.
+
+        Args:
+        ---------------
+            junctions: list or slice of junctions to include in the analysis.
+                None defaults to analysing all junctions
+            modes: list or slice of modes to include in the analysis.
+                    None defaults to analysing all modes
+
+
+        Returns:
+        ----------------
+            f_0 [MHz]    : Eigenmode frequencies computed by HFSS; i.e., linear freq returned in GHz
+            f_1 [MHz]    : Dressed mode frequencies (by the non-linearity; e.g., Lamb shift, etc. ).
+                           If numerical diagonalizaiton is run, then we return the numerically diagonalizaed
+                           frequencies, otherwise, use 1st order pertuirbation theory on the 4th order
+                           expansion of the cosine.
+            f_ND [MHz]   : Numerical diagonalizaiton
+            chi_O1 [MHz] : Analytic expression for the chis based on a cos trunc to 4th order, and using 1st
+                           order perturbation theory. Diag is anharmonicity, off diag is full cross-Kerr.
+            chi_ND [MHz] : Numerically diagonalized chi matrix. Diag is anharmonicity, off diag is full
+                           cross-Kerr.
+        '''
+
+        # ensuring proper matrix dimensionality when slicing
+        junctions = (junctions,) if type(junctions) is int else junctions
+
+        # ensuring proper matrix dimensionality when slicing
+        modes = (modes,) if type(modes) is int else modes
+
+        if (fock_trunc is None) or (cos_trunc is None):
+            fock_trunc = cos_trunc = None
+
+        if print_result:
+            print('\n', '. '*40)
+            print('Variation %s\n' % variation)
+        else:
+            print('%s, ' % variation, end='')
+
+        # Get matrices
+        PJ, SJ, Om, EJ, PHI_zpf = self.get_matrices(variation)
+        freqs_hfss = self.freqs_hfss[variation].values
+        Ljs = self.Ljs[variation].values
+
+        # reduce matrices to only include certain modes/junctions
+        if junctions is not None:
+            Ljs = Ljs[junctions, ]
+            PJ = PJ[:, junctions]
+            SJ = SJ[:, junctions]
+            EJ = EJ[:, junctions][junctions, :]
+            PHI_zpf = PHI_zpf[:, junctions]
+        if modes is not None:
+            freqs_hfss = freqs_hfss[modes, ]
+            PJ = PJ[modes, :]
+            SJ = SJ[modes, :]
+            Om = Om[modes, :][:, modes]
+            PHI_zpf = PHI_zpf[modes, :]
+
+        # Analytic 4-th order
+        CHI_O1 = 0.25 * Om @ PJ @ inv(EJ) @ PJ.T @ Om * 1000.  # MHz
+        f1s = np.diag(Om) - 0.5*np.ndarray.flatten(np.array(CHI_O1.sum(1))) / \
+            1000.                  # 1st order PT expect freq to be dressed down by alpha
+        CHI_O1 = divide_diagonal_by_2(CHI_O1)   # Make the diagonals alpha
+
+        # Numerical diag
+        if cos_trunc is not None:
+            f1_ND, CHI_ND = epr_numerical_diagonalization(freqs_hfss,
+                                                          Ljs,
+                                                          PHI_zpf,
+                                                          cos_trunc=cos_trunc,
+                                                          fock_trunc=fock_trunc)
+        else:
+            f1_ND, CHI_ND = None, None
+
+        result = OrderedDict()
+        result['f_0'] = self.freqs_hfss[variation] * \
+            1E3  # MHz - obtained directly from HFSS
+        result['f_1'] = pd.Series(f1s)*1E3     # MHz
+        result['f_ND'] = pd.Series(f1_ND)*1E-6  # MHz
+        result['chi_O1'] = pd.DataFrame(CHI_O1)
+        result['chi_ND'] = pd.DataFrame(CHI_ND)   # why dataframe?
+        result['ZPF'] = PHI_zpf
+        result['Pm_normed'] = PJ
+        result['_Pm_norm'] = self.get_Pmj(variation, _renorm_pj=self._renorm_pj,
+                                          print_=print_result)['Pm_norm']  # calling again
+        # just propagate
+        result['hfss_variables'] = self._hfss_variables[variation]
+        result['Ljs'] = self.Ljs[variation]
+        result['Q_coupling'] = self.Qm_coupling[variation]
+        result['Qs'] = self.Qs[variation]
+        result['fock_trunc'] = fock_trunc
+        result['cos_trunc'] = cos_trunc
+
+        self.results[variation] = result
+        self.results.save()
+
+        if print_result:
+            self.print_variation(variation)
+            self.print_result(result)
+
+        return result
+
+    def print_variation(self, variation):
+        if len(self.hfss_vars_diff_idx) > 0:
+            print('\n*** Different parameters')
+            display(self._hfss_variables[self.hfss_vars_diff_idx][variation])
+            print('\n')
+
+        print('*** P (participation matrix, not normlz.)')
+        print(self.PM[variation])
+
+        print('\n*** S (sign-bit matrix)')
+        print(self.SM[variation])
+
+    def print_result(self, result):
+        # TODO: actually make into dataframe with mode labela and junction labels
+        pritm = lambda x, frmt="{:9.2g}": print_matrix(x, frmt=frmt)
+
+        print('*** P (participation matrix, normalized.)')
+        pritm(result['Pm_normed'])
+
+        print('\n*** Chi matrix O1 PT (MHz)\n    Diag is anharmonicity, off diag is full cross-Kerr.')
+        pritm(result['chi_O1'], "{:9.3g}")
+
+        print('\n*** Chi matrix ND (MHz) ')
+        pritm(result['chi_ND'], "{:9.3g}")
+
+        print('\n*** Frequencies O1 PT (MHz)')
+        print(result['f_1'])
+
+        print('\n*** Frequencies ND (MHz)')
+        print(result['f_ND'])
+
+        print('\n*** Q_coupling')
+        print(result['Q_coupling'])
+
+    def plotting_dic_x(self, Var_dic, var_name):
+        dic = {}
+
+        if (len(Var_dic.keys())+1) == self.Num_hfss_vars_diff_idx:
+            lv, lv_str = self.get_variation_of_multiple_variables_value(
+                Var_dic)
+            dic['label'] = lv_str
+            dic['x_label'] = var_name
+            dic['x'] = self.get_variable_value(var_name, lv=lv)
+        else:
+            raise ValueError('more than one hfss variablae changes each time')
+
+        return lv, dic
+
+    # Does not seem used. What is Var_dic and var_name going to?
+    # def plotting_dic_data(self, Var_dic, var_name, data_name):
+    #    lv, dic = self.plotting_dic_x()
+    #    dic['y_label'] = data_name
+
+    def plot_results(self, result, Y_label, variable, X_label, variations: list = None):
+        # TODO?
+        pass
+
+    def plot_hamiltonian_results(self,
+                                 swp_variable: str = 'variation',
+                                 variations: list = None,
+                                 fig=None,
+                                 x_label: str = None):
+        """Plot results versus variation
+
+        Keyword Arguments:
+            swp_variable {str} -- Variable against which we swept. If noen, then just
+                                    take the variation index (default: {None})
+            variations {list} -- [description] (default: {None})
+            fig {[type]} -- [description] (default: {None})
+
+        Returns:
+            fig, axs
+        """
+
+        x_label = x_label or swp_variable
+
+        # Create figure and axes
+        if not fig:
+            fig, axs = plt.subplots(2, 2, figsize=(10, 6))
+        else:
+            axs = fig.axs
+
+        ############################################################################
+        ### Axis: Frequencies
+        f0 = self.results.get_frequencies_HFSS(
+            variations=variations, vs=swp_variable).transpose()
+        f1 = self.results.get_frequencies_O1(
+            variations=variations, vs=swp_variable).transpose()
+        f_ND = self.results.get_frequencies_ND(
+            variations=variations, vs=swp_variable).transpose()
+        # changed by Asaf from f0 as not all modes are always analyzed
+        mode_idx = list(f1.columns)
+        n_modes = len(mode_idx)
+
+        ax = axs[0, 0]
+        ax.set_title('Modal frequencies (MHz)')
+
+        # TODO: shouldmove these kwargs to the config
+        cmap = cmap_discrete(n_modes)
+        kw = dict(ax=ax, color=cmap, legend=False, lw=0, ms=0)
+
+        # Choose which freq should have the solid line drawn with it. ND if present, else f1
+        if f_ND.empty:
+            plt_me_line = f1
+            markerf1 = 'o'
+        else:
+            plt_me_line = f_ND
+            markerf1 = '.'
+
+            # plot the ND as points if present
+            f_ND.plot(**{**kw, **dict(marker='o', ms=4, zorder=30)})
+
+        f0.plot(**{**kw, **dict(marker='x', ms=2, zorder=10)})
+        f1.plot(**{**kw, **dict(marker=markerf1, ms=4, zorder=20)})
+        plt_me_line.plot(**{**kw, **dict(lw=1, alpha=0.6, color='grey')})
+
+        ############################################################################
+        # Axis: Quality factors'
+        Qs = self.get_quality_factors(swp_variable=swp_variable)
+        Qs = Qs if variations is None else Qs[variations]
+        Qs = Qs.transpose()
+
+        ax = axs[1, 0]
+        ax.set_title('Quality factors')
+        Qs.plot(ax=ax, lw=0, marker=markerf1, ms=4,
+                legend=True, zorder=20, color=cmap)
+        Qs.plot(ax=ax, lw=1, alpha=0.2, color='grey', legend=False)
+        ax.set_yscale('log')
+
+        ############################################################################
+        ### Axis: Alpha and chi
+
+        axs[0][1].set_title('Anharmonicities (MHz)')
+        axs[1][1].set_title('Cross-Kerr frequencies (MHz)')
+
+        def plot_chi_alpha(chi, primary):
+            """
+            Intenral function to plot chi and then also to plot alpha
+            """
+            idx = pd.IndexSlice
+            kw1 = dict(lw=0, ms=4,  marker='o' if primary else 'x')
+            kw2 = dict(lw=1, alpha=0.2, color='grey', label='_nolegend_')
+            # ------------------------
+            # Plot anharmonicity
+            ax = axs[0, 1]
+            for i, mode in enumerate(mode_idx):  # mode index number, mode index
+                alpha = chi.loc[idx[:, mode], mode].unstack(1)
+                alpha.plot(ax=ax, label=mode, color=cmap[i], **kw1)
+                if primary:
+                    alpha.plot(ax=ax, **kw2)
+
+            # ------------------------
+            # Plot chi
+            ax = axs[1, 1]
+            for mode in mode_idx:  # mode index number, mode index
+                # restart the color counter i; n= mode2
+                for i, mode2 in enumerate(mode_idx):
+                    if int(mode2) > int(mode):
+                        chi_element = chi.loc[idx[:, mode], mode2].unstack(1)
+                        chi_element.plot(
+                            ax=ax, label=f"{mode},{mode2}", color=cmap[i], **kw1)
+
+                        if primary:
+                            chi_element.plot(ax=ax, **kw2)
+
+        def do_legends():
+            legend_translucent(axs[0][1],  leg_kw=dict(
+                fontsize=7, title='Mode'))
+            legend_translucent(axs[1][1],  leg_kw=dict(fontsize=7))
+
+        chiO1 = self.get_chis(variations=variations,
+                              swp_variable=swp_variable, numeric=False)
+        chiND = self.get_chis(variations=variations,
+                              swp_variable=swp_variable, numeric=True)
+
+        use_ND = not np.any(
+            [r['fock_trunc'] == None for k, r in self.results.items()])
+        if use_ND:
+            plot_chi_alpha(chiND, True)
+            do_legends()
+            plot_chi_alpha(chiO1, False)
+        else:
+            plot_chi_alpha(chiO1, True)
+            do_legends()
+
+        for ax1 in axs:
+            for ax in ax1:
+                ax.set_xlabel(x_label)
+
+        # Wrap up
+        fig.tight_layout()
+
+        return fig, axs
+
+    def report_results(self, swp_variable='variation', numeric=True):
+        """
+        Report in table form the results in a markdown friendly way in Jupyter notebook
+        using the pandas interface.
+        """
+
+        with pd.option_context('display.precision', 2):
+            display(Markdown(("#### Mode frequencies (MHz)")))
+            display(Markdown(("###### Numerical diagonalization")))
+            display(self.get_frequencies(
+                swp_variable=swp_variable, numeric=numeric))
+
+            display(Markdown(("#### Kerr Non-linear coefficient table (MHz)")))
+            display(Markdown(("###### Numerical diagonalization")))
+            display(self.get_chis(swp_variable=swp_variable, numeric=numeric))
+
+    def get_chis(self, swp_variable='variation', numeric=True, variations: list = None,
+                 m=None, n=None):
+        """return as multiindex data table
+
+        If you provide m and n as integers or mode labels, then the chi between these modes will
+        be returned as a pandas Series.
+        """
+        label = 'chi_ND' if numeric else 'chi_O1'
+        df = pd.concat(self.results.vs_variations(
+            label, vs=swp_variable, variations=variations),
+            names=[swp_variable])
+        if m is None and n is None:
+            return df
+        else:
+            s = df.loc[pd.IndexSlice[:, m], n].unstack(1)[m]
+            return s
+
+    def get_frequencies(self, swp_variable='variation', numeric=True, variations: list = None):
+        """return as multiindex data table
+            index: eigenmode label
+            columns: variation label
+        """
+        label = 'f_1' if numeric else 'f_ND'
+        return self.results.vs_variations(label, vs=swp_variable, to_dataframe=True, variations=variations)
+
+    def get_quality_factors(self, swp_variable='variation', variations: list = None):
+        """return as pd.Series
+            index: eigenmode label
+            columns: variation label
+        """
+        return self.results.vs_variations('Qs', vs=swp_variable, to_dataframe=True, variations=variations)
+
+    def get_participations(self, swp_variable='variation', variations: list = None):
+        """
+        Returns:
+        ----------------
+        Returns a multindex dataframe:
+            index 0: sweep variable
+            index 1: mode number
+            column: junction number
+
+        Example use:
+        ---------------
+        Plot the participation ratio of all junctions for a given mode vs a sweep of Lj.
+
+        .. code-block language:python
+
+            df=epra.get_participations(swp_variable='Lj')
+            df.loc[pd.IndexSlice[:,0],0].unstack(1).plot(marker='o')
+        """
+
+        participations = self.results.vs_variations(
+            'Pm_normed', vs=swp_variable)
+        p2 = OrderedDict()
+        for key, val in participations.items():
+            df = pd.DataFrame(val)
+            df.index.name = 'mode'
+            df.columns.name = 'junc_idx'
+            p2[key] = df
+
+        participations = pd.concat(p2, names=[swp_variable])
+
+        return participations
+
+    def quick_plot_participation(self, mode, junction, swp_variable='variation', ax=None, kw=None):
+        """Quick plot participation for one mode
+
+            kw : extra plot arguments
+        """
+        df = self.get_participations(swp_variable=swp_variable)
+        kw = kw or {}
+        ax = ax or plt.gca()
+        df.loc[pd.IndexSlice[:, mode], junction].unstack(
+            1).plot(marker='o', ax=ax, **kw)
+        ax.set_ylabel(f'p_({mode},{junction})')
+
+    def quick_plot_frequencies(self, mode, swp_variable='variation', ax=None, kw=None, numeric=False):
+        """Quick plot freq for one mode
+
+            kw : extra plot arguments
+        """
+        kw = kw or {}
+        ax = ax or plt.gca()
+
+        s = self.get_frequencies(
+            numeric=numeric, swp_variable=swp_variable).transpose()[mode]
+        s.plot(marker='o', ax=ax, **kw)
+
+        ax.set_ylabel(f'$\\omega_{mode}$ (MHz)')
+
+    def quick_plot_chi_alpha(self, mode1, mode2, swp_variable='variation', ax=None, kw=None, numeric=False):
+        """Quick plot chi between mode 1 and mode 2.
+
+        If you select mode1=mode2, then you will plot the alpha
+
+            kw : extra plot arguments
+        """
+        kw = kw or {}
+        ax = ax or plt.gca()
+
+        s = self.get_chis(swp_variable=swp_variable,
+                          numeric=numeric).loc[pd.IndexSlice[:, mode1], mode2].unstack(1)
+        s.plot(marker='o', ax=ax, **kw)
+
+        if mode1 == mode2:
+            ax.set_ylabel(f'$\\alpha$({mode1}) (MHz) [anharmonicity]')
+        else:
+            ax.set_ylabel(f'$\\chi$({mode1,mode2}) (MHz) [total split]')
+
+    def quick_plot_mode(self, mode, junction, mode1=None, swp_variable='variation', numeric=False, sharex=True):
+        r"""Create a quick report to see mode parameters for only a single mode and a
+        cross-kerr coupling to another mode.
+        Plots the participation and cross participation
+        Plots the frequencie
+        plots the anharmonicity
+
+        The values are either for the numeric or the non-numeric results, set by `numeric`
+        """
+
+        fig, axs = plt.subplots(2, 2, figsize=(12*0.9, 7*0.9))
+        self.quick_plot_frequencies(
+            mode, swp_variable=swp_variable, numeric=numeric, ax=axs[0, 1])
+        self.quick_plot_participation(
+            mode, junction, swp_variable=swp_variable, ax=axs[0, 0])
+        self.quick_plot_chi_alpha(mode, mode, numeric=numeric, swp_variable=swp_variable, ax=axs[1, 0],
+                                  kw=dict(sharex=sharex))
+        if mode1:
+            self.quick_plot_chi_alpha(
+                mode, mode1, numeric=numeric, swp_variable=swp_variable, ax=axs[1, 1])
+            twinax = axs[0, 0].twinx()
+            self.quick_plot_participation(mode1, junction, swp_variable=swp_variable, ax=twinax,
+                                          kw=dict(alpha=0.7, color='maroon', sharex=sharex))
+
+        for ax in np.ndarray.flatten(axs):
+            ax.grid(alpha=0.2)
+
+        axs[0, 1].set_title('Frequency (MHz)')
+        axs[0, 0].set_title('Self- and cross-EPR')
+        axs[1, 0].set_title('Anharmonicity')
+        axs[1, 1].set_title('Cross-Kerr')
+
+        fig.suptitle(f'Mode {mode}', y=1.025)
+        fig.tight_layout()
+
+
+def extract_dic(name=None, file_name=None):
+    """#name is the name of the dictionry as saved in the npz file if it is None,
+    the function will return a list of all dictionaries in the npz file
+    file name is the name of the npz file"""
+    with np.load(file_name, allow_pickle=True) as f:
+        if name is None:
+            return [f[i][()] for i in f.keys()]
+        return [f[name][()]]
