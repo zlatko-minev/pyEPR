@@ -765,7 +765,7 @@ variation mode
             # save results
             I_peak_[j_name] = I_peak
             V_peak_[j_name] = V_peak
-            Sj['s_' + j_name] = Smj =  1 if V_peak > 0 else - 1
+            Sj['s_' + j_name] = _Smj =  1 if V_peak > 0 else - 1
 
             # REPORT prelimnary
             pmj_ind = 0.5*Ljs[j_name] * I_peak**2 / U_E
