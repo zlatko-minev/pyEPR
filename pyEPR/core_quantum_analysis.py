@@ -249,11 +249,18 @@ class QuantumAnalysis(object):
         self.Cjs = results['Cjs']  # DataFrame
         self.OM = results['Om']  # dict of dataframes
         self.PM = results['Pm']  # participation matrices
+        self.PM_cap = results['Pm_cap'] # participation matrices for capactive elements
         self.SM = results['Sm']  # sign matrices
+        self.I_peak = results['I_peak']
+        self.V_peak = results['V_peak']
+
         self.sols = results['sols']
+        self.ansys_energies = results.get('ansys_energies',{})
+
         self.mesh_stats = results['mesh']
         self.convergence = results['convergence']
         self.convergence_f_pass = results['convergence_f_pass']
+
 
         self.n_modes = self.sols[self.variations[0]].shape[0]
         self._renorm_pj = config.epr.renorm_pj
@@ -352,14 +359,14 @@ class QuantumAnalysis(object):
                 var_str = var_str + ' & ' + key + '= {}'.format(var)
         return lv, var_str
 
-    def get_convergences_Max_Tets(self):
+    def get_convergences_max_tets(self):
         ''' Index([u'Pass Number', u'Solved Elements', u'Max Delta Freq. %' ])  '''
         ret = OrderedDict()
         for key, df in self.convergence.items():
             ret[key] = df['Solved Elements'].iloc[-1]
         return ret
 
-    def get_convergences_Tets_vs_pass(self):
+    def get_convergences_tets_vs_pass(self):
         ''' Index([u'Pass Number', u'Solved Elements', u'Max Delta Freq. %' ])  '''
         ret = OrderedDict()
         for key, df in self.convergence.items():
@@ -368,7 +375,7 @@ class QuantumAnalysis(object):
             ret[key] = s
         return ret
 
-    def get_convergences_MaxDeltaFreq_vs_pass(self):
+    def get_convergences_max_delta_freq_vs_pass(self):
         ''' Index([u'Pass Number', u'Solved Elements', u'Max Delta Freq. %' ])  '''
         ret = OrderedDict()
         for key, df in self.convergence.items():
@@ -418,7 +425,16 @@ class QuantumAnalysis(object):
 
         return result
 
-    def get_Pmj(self, variation, _renorm_pj=None, print_=False):
+    def _get_ansys_total_energies(self,variation ):
+        res = {}
+        for getkey in ['U_tot_cap','U_tot_ind', 'U_H','U_E', 'U_norm']:
+            res[getkey] = pd.Series({mode:self.ansys_energies[variation][mode][getkey] for mode in self.ansys_energies[variation]})
+        df = pd.DataFrame(res)
+        df.index.name='modes'
+        return df
+
+
+    def _get_participation_normalized(self, variation, _renorm_pj=None, print_=False):
         '''
             Get normalized Pmj Matrix
 
@@ -427,46 +443,73 @@ class QuantumAnalysis(object):
         if _renorm_pj is None:
             _renorm_pj = self._renorm_pj
 
-        Pm = self.PM[variation].copy()   # EPR matrix from Jsurf avg, DataFrame
+        # Columns are junctions; rows are modes
+        Pm = self.PM[variation].copy()   # EPR matrix DataFrame
+        Pm_cap = self.PM_cap[variation].copy()   # EPR matrix for capacitor DataFrame
 
-        if self._renorm_pj:  # Renormalize
-            s = self.sols[variation]
-            # sum of participations as calculated by global UH and UE
-            Pm_glb_sum = (s['U_E'] - s['U_H'])/s['U_E']
-            Pm_norm = Pm_glb_sum/Pm.sum(axis=1)
+        if self._renorm_pj:
+            ### Renormalize
             # Should we still do this when Pm_glb_sum is very small
+            #s = self.sols[variation]
+            # sum of participation energies as calculated by global UH and UE
+            #U_mode = s['U_E'] # peak mode energy; or U bar as i denote it sometimes
+            # We need to add the capactiro here, and maybe take the mean of that
+
+            energies = self._get_ansys_total_energies(variation)
+
+            U_mode = (energies['U_tot_cap'] + energies['U_tot_ind'])/2.
+
+            # global sums of participations
+            Pm_glb_sum = abs((U_mode-energies['U_H'])/U_mode)
+            Pm_cap_glb_sum = abs((U_mode-energies['U_E'])/U_mode)
+
+            # norms
+            Pm_norm = Pm_glb_sum/Pm.sum(axis=1)
+            Pm_cap_norm = Pm_cap_glb_sum/Pm_cap.sum(axis=1) # this is not the correct scaling yet! WARNING
+
             if print_:
-                print("Pm_norm = %s " % str(Pm_norm))
+                print(f"Pm_norm=\n{Pm_norm}\nPm_cap_norm=\n{Pm_cap_norm}")
+
             Pm = Pm.mul(Pm_norm, axis=0)
+            Pm_cap = Pm_cap.mul(Pm_cap_norm, axis=0)
 
         else:
             Pm_norm = 1
+            Pm_cap_norm = 1
             if print_:
                 print('NO renorm!')
 
         if np.any(Pm < 0.0):
-            print_color("  ! Warning:  Some p_mj was found <= 0. This is probably a numerical error, or a super low-Q mode.  We will take the abs value.  Otherwise, rerun with more precision, inspect, and do due dilligence.)")
+            print_color("  ! Warning:  Some p_mj was found <= 0. This is probably a numerical error,'\
+                'or a super low-Q mode.  We will take the abs value.  Otherwise, rerun with more precision,'\
+                'inspect, and do due dilligence.)")
             print(Pm, '\n')
             Pm = np.abs(Pm)
 
-        return {'PJ': Pm, 'Pm_norm': Pm_norm}
+        return {'PJ': Pm, 'Pm_norm': Pm_norm, 'PJ_cap': Pm_cap, 'Pm_cap_norm': Pm_cap_norm}
 
-    def get_matrices(self, variation, _renorm_pj=None, print_=False):
+    def get_epr_base_matrices(self, variation, _renorm_pj=None, print_=False):
         r'''
+        Return the key matricies used in the EPR method for analytic calcualtions.
+
         All as matrices
             :PJ: Participatuion matrix, p_mj
             :SJ: Sign matrix, s_mj
             :Om: Omega_mm matrix (in GHz) (\hbar = 1) Not radians.
             :EJ: E_jj matrix of Josephson energies (in same units as hbar omega matrix)
             :PHI_zpf: ZPFs in units of \phi_0 reduced flux quantum
+            :PJ_cap: capactive particiaption matrix
 
             Return all as *np.array*
                 PM, SIGN, Om, EJ, Phi_ZPF
         '''
         # TODO: superseed by Convert.ZPF_from_EPR
 
-        PJ = self.get_Pmj(variation, _renorm_pj=_renorm_pj, print_=print_)
-        PJ = np.array(PJ['PJ'])
+        res = self._get_participation_normalized(variation, _renorm_pj=_renorm_pj, print_=print_)
+
+        PJ = np.array(res['PJ'])
+        PJ_cap = np.array(res['PJ_cap'])
+
         # Sign bits
         SJ = np.array(self.SM[variation])                # DataFrame
         #  Frequencies of HFSS linear modes.
@@ -481,7 +524,7 @@ class QuantumAnalysis(object):
 
         PHI_zpf = CalcsBasic.epr_to_zpf(PJ, SJ, Om, EJ)
 
-        return PJ, SJ, Om, EJ, PHI_zpf                   # All as np.array
+        return PJ, SJ, Om, EJ, PHI_zpf, PJ_cap                   # All as np.array
 
     def analyze_variation(self,
                           variation: List[str],
@@ -492,7 +535,7 @@ class QuantumAnalysis(object):
                           modes: List[int] = None):
         # TODO avoide analyzing a previously analyzed variation
         '''
-        Can also print results neatly.
+        Core analysis function to call!
 
         Args:
         ---------------
@@ -532,7 +575,7 @@ class QuantumAnalysis(object):
             print('%s, ' % variation, end='')
 
         # Get matrices
-        PJ, SJ, Om, EJ, PHI_zpf = self.get_matrices(variation)
+        PJ, SJ, Om, EJ, PHI_zpf, PJ_cap = self.get_epr_base_matrices(variation)
         freqs_hfss = self.freqs_hfss[variation].values
         Ljs = self.Ljs[variation].values
 
@@ -543,12 +586,15 @@ class QuantumAnalysis(object):
             SJ = SJ[:, junctions]
             EJ = EJ[:, junctions][junctions, :]
             PHI_zpf = PHI_zpf[:, junctions]
+            PJ_cap = PJ_cap[:, junctions]
+
         if modes is not None:
             freqs_hfss = freqs_hfss[modes, ]
             PJ = PJ[modes, :]
             SJ = SJ[modes, :]
             Om = Om[modes, :][:, modes]
             PHI_zpf = PHI_zpf[modes, :]
+            PJ_cap = PJ_cap[:, junctions]
 
         # Analytic 4-th order
         CHI_O1 = 0.25 * Om @ PJ @ inv(EJ) @ PJ.T @ Om * 1000.  # MHz
@@ -575,11 +621,15 @@ class QuantumAnalysis(object):
         result['chi_ND'] = pd.DataFrame(CHI_ND)   # why dataframe?
         result['ZPF'] = PHI_zpf
         result['Pm_normed'] = PJ
-        result['_Pm_norm'] = self.get_Pmj(variation, _renorm_pj=self._renorm_pj,
-                                          print_=print_result)['Pm_norm']  # calling again
+        result['Pm_cap'] = PJ_cap # normed
+        _temp = self._get_participation_normalized(variation, _renorm_pj=self._renorm_pj, print_=print_result)
+        result['_Pm_norm'] = _temp['Pm_norm']
+        result['_Pm_cap_norm'] = _temp['Pm_cap_norm']
+
         # just propagate
         result['hfss_variables'] = self._hfss_variables[variation]
         result['Ljs'] = self.Ljs[variation]
+        result['Cjs'] = self.Cjs[variation]
         result['Q_coupling'] = self.Qm_coupling[variation]
         result['Qs'] = self.Qs[variation]
         result['fock_trunc'] = fock_trunc
@@ -595,6 +645,9 @@ class QuantumAnalysis(object):
         return result
 
     def print_variation(self, variation):
+        """
+        Utility reporting function
+        """
         if len(self.hfss_vars_diff_idx) > 0:
             print('\n*** Different parameters')
             display(self._hfss_variables[self.hfss_vars_diff_idx][variation])
@@ -607,6 +660,10 @@ class QuantumAnalysis(object):
         print(self.SM[variation])
 
     def print_result(self, result):
+        """
+        Utility reporting function
+        """
+
         # TODO: actually make into dataframe with mode labela and junction labels
         pritm = lambda x, frmt="{:9.2g}": print_matrix(x, frmt=frmt)
 
@@ -642,9 +699,9 @@ class QuantumAnalysis(object):
 
         return lv, dic
 
-    # Does not seem used. What is Var_dic and var_name going to?
-    # def plotting_dic_data(self, Var_dic, var_name, data_name):
-    #    lv, dic = self.plotting_dic_x()
+    #Does not seem used. What is Var_dic and var_name going to?
+    #def plotting_dic_data(self, Var_dic, var_name, data_name):
+    #   lv, dic = self.plotting_dic_x()
     #    dic['y_label'] = data_name
 
     def plot_results(self, result, Y_label, variable, X_label, variations: list = None):
@@ -788,6 +845,9 @@ class QuantumAnalysis(object):
 
         return fig, axs
 
+
+    # Below are functions introduced in v0.8 and newer
+
     def report_results(self, swp_variable='variation', numeric=True):
         """
         Report in table form the results in a markdown friendly way in Jupyter notebook
@@ -836,8 +896,11 @@ class QuantumAnalysis(object):
         """
         return self.results.vs_variations('Qs', vs=swp_variable, to_dataframe=True, variations=variations)
 
-    def get_participations(self, swp_variable='variation', variations: list = None):
+    def get_participations(self, swp_variable='variation', variations: list = None, inductive=True):
         """
+
+            inductive (bool): EPR forjunciton inductance when True, else for capactiors
+
         Returns:
         ----------------
         Returns a multindex dataframe:
@@ -856,7 +919,8 @@ class QuantumAnalysis(object):
         """
 
         participations = self.results.vs_variations(
-            'Pm_normed', vs=swp_variable)
+            'Pm_normed' if inductive else 'Pm_cap', vs=swp_variable)
+
         p2 = OrderedDict()
         for key, val in participations.items():
             df = pd.DataFrame(val)

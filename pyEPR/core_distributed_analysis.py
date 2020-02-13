@@ -115,10 +115,6 @@ class DistributedAnalysis(object):
         if self.pinfo.check_connected() is False:
             self.pinfo.connect()
 
-        self.append_analysis = True
-        """ When we run the ansys anslysis, should we redo any variations
-         that we have already done? """
-
         # hfss connect module
         self.fields = None
         self.solutions = None
@@ -507,9 +503,11 @@ variation mode
         # self.design.Clear_Field_Clac_Stack()
         return I
 
-    def calc_current_using_line_voltage(self, variation: str, junc_line_name: str, junc_L_Henries: float, Cj_Farads: float):
+    def calc_current_using_line_voltage(self, variation: str, junc_line_name: str, junc_L_Henries: float, Cj_Farads: float=None):
         '''
         Peak current I_max for prespecified mode calculating line voltage across junction.
+
+        Make sure that oyu have set the correct variaitonin hFSS before running this
 
         Parameters:
         ------------------------------------------------
@@ -533,9 +531,11 @@ variation mode
         omega = 2*np.pi*freq  # in SI radian Hz units
 
         Z = omega*junc_L_Henries
-        if not abs(float(Cj_Farads)) is 0.0:
+        if abs(float(Cj_Farads)) > 1E-29: # zero
             #print('Non-zero Cj used in calc_current_using_line_voltage')
-            Z += 1/(omega*Cj_Farads)
+            #Z += 1./(omega*Cj_Farads)
+            print('\t\t'f'Energy fraction (Lj over Lj&Cj)= {100./(1.+omega**2 *Cj_Farads*junc_L_Henries):.2f}%')
+                 #f'Z_L= {omega*junc_L_Henries:.1f} Ohms Z_C= {1./(omega*Cj_Farads):.1f} Ohms')
 
         I_peak = V/Z  # I=V/(wL)s
 
@@ -703,6 +703,7 @@ variation mode
 
     def calc_p_junction(self, variation, U_H, U_E, Ljs, Cjs):
         '''
+        For a single specific mode.
         Expected that you have specified the mode before calling this, `self.set_mode(num)`
 
         Expected to precalc U_H and U_E for mode, will retunr pandas pd.Series object
@@ -741,16 +742,16 @@ variation mode
 
                 _I_peak_1 = self.calc_avg_current_J_surf_mag(
                     variation, j_props['rect'], line_name)
-                # could also use this to back out the V_peak using the impedences as in the line below
-                # for now, keep both methods
+                # could also use this to back out the V_peak using the impedences as in the line
+                # below for now, keep both methods
 
                 _I_peak_2, _V_peak_2, _ = self.calc_current_using_line_voltage(
                     variation, line_name, Lj, Cj)
 
                 logger.debug(
-                    f'Differnece in I_Peak calculation ala the two methods: {(_I_peak_1, _I_peak_2)}')
+                    f'Differnece in I_Peak calculation ala the two methods: {(_I_peak_1,_I_peak_2)}')
 
-                V_peak = _V_peak_2 # make sure this is signed
+                V_peak = _V_peak_2  # make sure this is signed
                 I_peak = _I_peak_1
 
             elif method is 'line_voltage':
@@ -765,12 +766,18 @@ variation mode
             # save results
             I_peak_[j_name] = I_peak
             V_peak_[j_name] = V_peak
-            Sj['s_' + j_name] = _Smj =  1 if V_peak > 0 else - 1
+            Sj['s_' + j_name] = _Smj = 1 if V_peak > 0 else - 1
 
             # REPORT prelimnary
             pmj_ind = 0.5*Ljs[j_name] * I_peak**2 / U_E
             pmj_cap = 0.5*Cjs[j_name] * V_peak**2 / U_E
-            print(f'\t 1st est: {pmj_ind:>8.6g}{("+"if _Smj else "-"):>5s} {pmj_cap:>8.6g}')
+            #print('\tpmj_ind=',pmj_ind, Ljs[j_name], U_E)
+
+            self.I_peak=I_peak
+            self.V_peak=V_peak
+            self.Ljs = Ljs
+            self.Cjs = Cjs
+            print(f'\t{j_name:<15} {pmj_ind:>8.6g}{("(+)"if _Smj else "(-)"):>5s}        {pmj_cap:>8.6g}')
             #print('\tV_peak=', V_peak)
 
         # ------------------------------------------------------------
@@ -778,30 +785,30 @@ variation mode
         #
 
         # All junction capactive and inductive lumped energies - all peak
-        U_J_inds = {j_name: 0.5*Ljs[j_name] * I_peak_[j_name]**2  for j_name in  self.pinfo.junctions}
-        U_J_caps = {j_name: 0.5*Cjs[j_name] * V_peak_[j_name]**2  for j_name in  self.pinfo.junctions}
+        U_J_inds = {j_name: 0.5*Ljs[j_name] * I_peak_[j_name]**2 for j_name in self.pinfo.junctions}
+        U_J_caps = {j_name: 0.5*Cjs[j_name] * V_peak_[j_name]**2 for j_name in self.pinfo.junctions}
 
-        U_tot_ind = U_H + sum(list(U_J_inds.values())) # total
+        U_tot_ind = U_H + sum(list(U_J_inds.values()))  # total
         U_tot_cap = U_E + sum(list(U_J_caps.values()))
 
         # what to use for the norm?  U_tot_cap or the mean of  U_tot_ind and  U_tot_cap?
         # i.e., (U_tot_ind + U_tot_cap)/2
         U_norm = U_tot_cap
-        print(f"DEBUG: difference in (U_tot_cap-U_tot_ind)/U_tot_cap={(U_tot_cap-U_tot_ind)/U_tot_cap*100}%%")
+        print("\t\t(U_tot_cap-U_tot_ind)/mean=",
+                f'{(U_tot_cap-U_tot_ind)/(U_tot_cap+U_tot_ind)*100:.2f}%')
 
-        Pj = pd.Series(OrderedDict([(j_name, Uj_ind/U_norm)\
-                for j_name, Uj_ind in U_J_inds.items() ]))
+        Pj = pd.Series(OrderedDict([(j_name, Uj_ind/U_norm)
+                                    for j_name, Uj_ind in U_J_inds.items()]))
 
-        PCj = pd.Series(OrderedDict([(j_name, Uj_cap/U_norm)\
-                for j_name, Uj_cap in U_J_caps.items() ]))
+        PCj = pd.Series(OrderedDict([(j_name, Uj_cap/U_norm)
+                                     for j_name, Uj_cap in U_J_caps.items()]))
 
-        #print('\t{:<15} {:>8.6g} {:>5s}'.format(
+        # print('\t{:<15} {:>8.6g} {:>5s}'.format(
         #    j_name,
         #    Pj['p_' + j_name],
         #    '+' if Sj['s_' + j_name] > 0 else '-'))
 
-
-        return Pj, Sj, PCj, I_peak, V_peak
+        return Pj, Sj, PCj, pd.Series(I_peak), pd.Series(V_peak), {'U_J_inds':U_J_inds, 'U_J_caps':U_J_caps, 'U_H':U_H,'U_E':U_E,'U_tot_ind':U_tot_ind, 'U_tot_cap':U_tot_cap,'U_norm':U_norm}
 
     def get_previously_analyzed(self):
         """
@@ -835,14 +842,15 @@ variation mode
                 def _parse(name): return ureg.Quantity(
                     _variables['_'+val[name]]).to_base_units().magnitude
                 Ljs[junc_name] = _parse('Lj_variable')
-                Cjs[junc_name] = _parse(
-                    'Cj_variable') if 'Cj_variable' in val else 0
+                Cjs[junc_name] = 2E-15 #_parse(
+                    #'Cj_variable') if 'Cj_variable' in val else 0
 
         return Ljs, Cjs
 
     def do_EPR_analysis(self,
                         variations: list = None,
-                        modes=None):
+                        modes=None,
+                        append_analysis = True):
         """
         Main analysis routine
 
@@ -862,6 +870,9 @@ variation mode
                 Modes to analyze
                 for example  modes = [0, 2, 3]
 
+            append_analysis (bool) : When we run the ansys anslysis, should we redo any variations
+                 that we have already done?
+
         Ansys Notes:
         ------------------------
             Assumptions:
@@ -877,8 +888,6 @@ variation mode
 
         # Update the latest hfss variation information
         self.update_ansys_info()
-
-        # Define local variables
         variations = variations or self.variations
         modes = modes or range(self.n_modes)
 
@@ -890,7 +899,7 @@ variation mode
             print(f'\nVariation {variation}  [{ii+1}/{len(variations)}]')
 
             # Previously analyzed and we should re analyze
-            if self.append_analysis and variation in self.get_previously_analyzed():
+            if append_analysis and variation in self.get_previously_analyzed():
                 print_NoNewLine('  previously analyzed ...\n')
                 continue
 
@@ -927,6 +936,7 @@ variation mode
             Pm_cap = OrderedDict()
             I_peak = OrderedDict()
             V_peak = OrderedDict()
+            ansys_energies = OrderedDict()
 
             for mode in modes:  # integer of mode number [0,1,2,3,..]
 
@@ -938,8 +948,7 @@ variation mode
                 temp_freq = freqs_bare_GHz[mode]
                 _Om['freq_GHz'] = temp_freq  # freq
                 Om[mode] = _Om
-                print(
-                    f'  Mode {mode} at {"%.2f" % temp_freq} GHz   [{mode+1}/{self.n_modes}]')
+                print('\n'f'  \033[1mMode {mode} at {"%.2f" % temp_freq} GHz   [{mode+1}/{self.n_modes}]\033[0m')
 
                 # EPR Hamiltonian calculations
                 # Calculation global energies and report
@@ -960,7 +969,7 @@ variation mode
                 print('ℰ_electric')
                 self.U_E = self.calc_energy_electric(variation)
 
-                sol = pd.Series({'U_H': self.U_H, 'U_E': self.U_E})
+                sol = pd.Series({'U_H': self.U_H, 'U_E': self.U_E}) # the unnormed
 
                 # Fraction - report the peak energy, properly normalized
                 # the 2 is from the calcualtion methods
@@ -969,10 +978,10 @@ variation mode
 
                 # Calcualte EPR for each of the junctions
                 print(
-                    f'    Calculating junction EPR [method={self.pinfo.options.method_calc_P_mj}]')
-                print(f"\t{'junction':<15s} EPR p_{mode}j   sign s_{mode}j")
+                    f'    Calculating junction energy participation ration (EPR)\n\t method={self.pinfo.options.method_calc_P_mj}. First estimates:')
+                print(f"\t{'junction':<15s} EPR p_{mode}j   sign s_{mode}j    (p_capacitive)")
 
-                Pm[mode], Sm[mode], Pm_cap[mode], I_peak[mode], V_peak[mode] = self.calc_p_junction(
+                Pm[mode], Sm[mode], Pm_cap[mode], I_peak[mode], V_peak[mode], ansys_energies[mode] = self.calc_p_junction(
                     variation, self.U_H/2., self.U_E/2., Ljs, Cjs)
 
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1016,7 +1025,7 @@ variation mode
             self._update_results(variation, Om, Pm, Sm, Qm_coupling, SOL,
                                  freqs_bare_GHz, Qs_bare, Ljs, Cjs,
                                  Pm_cap, I_peak, V_peak,
-                                 self.U_E/2., self.U_H/2., #properly normalzied
+                                 ansys_energies,
                                  self._hfss_variables[variation])
             self.save()
 
@@ -1029,7 +1038,7 @@ variation mode
 
     def _update_results(self, variation: str, Om, Pm, Sm, Qm_coupling, sols,
                         freqs_bare_GHz, Qs_bare, Ljs, Cjs, Pm_cap, I_peak, V_peak,
-                        U_E, U_H, _hfss_variables):
+                        ansys_energies, _hfss_variables):
         '''
         Save variation
         '''
@@ -1039,19 +1048,19 @@ variation mode
         self.results[variation]['Sm'] = pd.DataFrame(Sm).transpose()
         self.results[variation]['Om'] = pd.DataFrame(Om)
         self.results[variation]['sols'] = pd.DataFrame(sols).transpose()
-        self.results[variation]['Qm_coupling'] = pd.DataFrame(Qm_coupling).transpose()
+        self.results[variation]['Qm_coupling'] = pd.DataFrame(
+            Qm_coupling).transpose()
 
-        self.results[variation]['Ljs'] = Ljs # pd.Series
-        self.results[variation]['Cjs'] = Cjs # pd.Series
+        self.results[variation]['Ljs'] = Ljs  # pd.Series
+        self.results[variation]['Cjs'] = Cjs  # pd.Series
         self.results[variation]['Qs'] = Qs_bare
         self.results[variation]['freqs_hfss_GHz'] = freqs_bare_GHz
         self.results[variation]['hfss_variables'] = _hfss_variables
 
         # mostly for debug info
-        self.results[variation]['I_peak'] = I_peak # pd.Series
-        self.results[variation]['V_peak'] = V_peak # pd.Series
-        self.results[variation]['U_E'] = U_E # float, properly normalzied
-        self.results[variation]['U_H'] = U_H # float
+        self.results[variation]['I_peak'] = pd.Series(I_peak)
+        self.results[variation]['V_peak'] = pd.Series(V_peak)
+        self.results[variation]['ansys_energies'] = ansys_energies  # dict
 
         self.results[variation]['mesh'] = None
         self.results[variation]['convergence'] = None
@@ -1071,7 +1080,7 @@ variation mode
         Switches the order on result of variations. Reverse dict.
 
         """
-        #TODO: THis need to be changed, wont work in the future with updating result etc.
+        # TODO: THis need to be changed, wont work in the future with updating result etc.
         # if i want to make a base class
 
         keys = set()
@@ -1368,13 +1377,13 @@ variation mode
 
         return fig
 
-    def quick_plot_frequencies(self,swp_variable='variations',ax=None):
+    def quick_plot_frequencies(self, swp_variable='variations', ax=None):
         """
         Quick plot of frequencies from HFSS
         """
         fs = self.get_ansys_frequencies_all(swp_variable)
         ax = ax or plt.gca()
-        fs['Freq. (GHz)'].unstack(0).transpose().plot(marker='o',ax=ax)
+        fs['Freq. (GHz)'].unstack(0).transpose().plot(marker='o', ax=ax)
         ax.set_ylabel('Ansys frequencies (MHz)')
-        ax.grid(alpha = 0.2)
+        ax.grid(alpha=0.2)
         return fs
