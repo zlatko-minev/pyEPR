@@ -15,6 +15,9 @@ Welcome to pyEPR :beers:!
 * Z.K. Minev, Ph.D. Dissertation, Yale University (2018), see Chapter 4. [arXiv:1902.10355](https://arxiv.org/abs/1902.10355)
 * Z.K. Minev, Z. Leghtas, _et al._ (to appear soon on arXiv) (2019)
 
+### Documentation
+
+[Read the docs here.](pyepr-docs.readthedocs.io)
 
 # Contents:
 * [Start here: Using `pyEPR`](#start-here-using-pyepr)
