@@ -8,7 +8,7 @@ pyEPR: Python Energy Participation Ratio
 *********************************************
 
 Power full-suite quantum microwave circuit analysis
-**********************
+*******************************************************
 **Date**: |today| **Version**: |version|
 
 
@@ -24,8 +24,6 @@ Contents
    :caption: Contents:
    :numbered:
 
-   reference/pyEPR
-
 	
 
 Indices and tables
@@ -35,6 +33,3 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-
-..  .. automodule:: pyEPR.core
-..     Comment :members:
