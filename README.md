@@ -17,7 +17,7 @@ Welcome to pyEPR :beers:!
 
 ### Documentation
 
-[Read the docs here.](pyepr-docs.readthedocs.io)
+[Read the docs here.](https://pyepr-docs.readthedocs.io)
 
 # Contents:
 * [Start here: Using `pyEPR`](#start-here-using-pyepr)
