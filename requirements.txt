@@ -4,3 +4,4 @@ pint
 matplotlib
 attrdict
 sympy
+IPython
