@@ -17,51 +17,11 @@ Subpackages
 Submodules
 ----------
 
-pyEPR.ansys module
-------------------
+.. toctree::
 
-.. automodule:: pyEPR.ansys
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pyEPR.core module
------------------
-
-.. automodule:: pyEPR.core
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pyEPR.core\_distributed\_analysis module
-----------------------------------------
-
-.. automodule:: pyEPR.core_distributed_analysis
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pyEPR.core\_quantum\_analysis module
-------------------------------------
-
-.. automodule:: pyEPR.core_quantum_analysis
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pyEPR.project\_info module
---------------------------
-
-.. automodule:: pyEPR.project_info
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pyEPR.reports module
---------------------
-
-.. automodule:: pyEPR.reports
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
+   pyEPR.ansys
+   pyEPR.core
+   pyEPR.core_distributed_analysis
+   pyEPR.core_quantum_analysis
+   pyEPR.project_info
+   pyEPR.reports

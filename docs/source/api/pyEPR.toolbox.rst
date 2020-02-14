@@ -9,19 +9,7 @@ pyEPR.toolbox package
 Submodules
 ----------
 
-pyEPR.toolbox.plotting module
------------------------------
+.. toctree::
 
-.. automodule:: pyEPR.toolbox.plotting
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pyEPR.toolbox.pythonic module
------------------------------
-
-.. automodule:: pyEPR.toolbox.pythonic
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
+   pyEPR.toolbox.plotting
+   pyEPR.toolbox.pythonic

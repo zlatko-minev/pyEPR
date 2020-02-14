@@ -24,6 +24,12 @@ Contents
    :caption: Contents:
    :numbered:
 
+.. toctree::
+   :caption: API Reference:
+   :glob:
+
+   api/*
+
 	
 
 Indices and tables

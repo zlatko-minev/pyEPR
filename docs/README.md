@@ -41,7 +41,7 @@ Notes for developers.
 
 3. Set up autodoc [tut](https://medium.com/@eikonomega/getting-started-with-sphinx-autodoc-part-1-2cebbbca5365) and create full module [doc](https://docs-python2readthedocs.readthedocs.io/en/master/code-doc.html). In the `docs` directory 
 ```
-  sphinx-apidoc -f -o source/ ../pyEPR -o source/api --no-toc -M
+  sphinx-apidoc -f -o source/ ../pyEPR -o source/api --no-toc -M -e
   make html
 ```
 You can alos use this to update the doc tree.
