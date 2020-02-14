@@ -302,16 +302,7 @@ variation mode
         # TODO: maybe sort column and index? # todo: maybe generalize
         return pd.concat(df, names=[vs])
 
-    def get_ansys_variables(self):
-        """
-        Return a dataframe of variables as index and columns as the variations
-        """
-        vs = 'variation'
-        df = pd.DataFrame(self._hfss_variables, columns=self.variations)
-        df.columns.name = vs
-        df.index = [x[1:] if x.startswith('_') else x for x in df.index]
-        #df.index.name = 'variable'
-        return df
+
 
     def _get_lv(self, variation=None):
         '''
@@ -359,7 +350,23 @@ variation mode
         lv = lv.split(",")
         return lv
 
+    def get_ansys_variables(self):
+        """
+        Get ansys variables for all variaitons
+
+        Return a dataframe of variables as index and columns as the variations
+        """
+        vs = 'variation'
+        df = pd.DataFrame(self._hfss_variables, columns=self.variations)
+        df.columns.name = vs
+        df.index = [x[1:] if x.startswith('_') else x for x in df.index]
+        #df.index.name = 'variable'
+        return df
+
     def get_variables(self, variation=None):
+        """
+        Get ansys variables
+        """
         lv = self._get_lv(variation)
         variables = OrderedDict()
         for ii in range(int(len(lv)/2)):
@@ -369,6 +376,8 @@ variation mode
 
     def get_variable_vs_variations(self, variable: str, convert: bool = True):
         """
+        Get ansys variables
+
         Return HFSS variable from self.get_ansys_variables() as a
         pandas series vs variations.
 
@@ -902,6 +911,8 @@ variation mode
             if append_analysis and variation in self.get_previously_analyzed():
                 print_NoNewLine('  previously analyzed ...\n')
                 continue
+
+            # QUESTION! should we set the current variaiton, can this save time, set the variables
 
             # If not, clear the results
             self.results[variation] = Dict()

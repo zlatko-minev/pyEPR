@@ -39,3 +39,11 @@ class CalcsBasic():
         #         PHI[m,j] = SJ[m,j]*sqrt(PJ[m,j]*Om[m,m]/(2.*EJ[j,j]))
 
         return SJ * sqrt(0.5 * Ω @ Pmj @ np.linalg.inv(EJ))
+
+    @staticmethod
+    def epr_cap_to_nzpf(Pmj_cap, SJ, Ω, Ec):
+        """
+        Expeirmental. To be tested
+        """
+        (Pmj, SJ, Ω, EJ) = map(np.array, (Pmj_cap, SJ, Ω, Ec))
+        return SJ * sqrt(Ω @ Pmj @ np.linalg.inv(Ec) /(4*4))

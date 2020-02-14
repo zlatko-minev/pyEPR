@@ -17,6 +17,7 @@ import sys
 import time
 from collections import OrderedDict
 from pathlib import Path
+from .calcs.convert import Convert
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -391,10 +392,19 @@ class QuantumAnalysis(object):
         return ret
 
     def get_Ejs(self, variation):
-        ''' EJs in GHz '''
+        ''' EJs in GHz
+        See calcs.convert
+        '''
         Ljs = self.Ljs[variation]
         Ejs = fluxQ**2/Ljs/Planck*10**-9
         return Ejs
+
+    def get_Ecs(self, variation):
+        ''' ECs in GHz
+        Returns as padnas series
+        '''
+        Cs = self.Cjs[variation]
+        return  Convert.Ec_from_Cs(Cs,  units_in='F', units_out='GHz')
 
     def analyze_all_variations(self,
                                variations: List[str] = None,
@@ -465,7 +475,9 @@ class QuantumAnalysis(object):
 
             # norms
             Pm_norm = Pm_glb_sum/Pm.sum(axis=1)
-            Pm_cap_norm = Pm_cap_glb_sum/Pm_cap.sum(axis=1) # this is not the correct scaling yet! WARNING
+            Pm_cap_norm = Pm_cap_glb_sum/Pm_cap.sum(axis=1)
+            # this is not the correct scaling yet! WARNING. Factors of 2 laying around too
+            # these numbers are a bit all over the place for now. very small
 
             if print_:
                 print(f"Pm_norm=\n{Pm_norm}\nPm_cap_norm=\n{Pm_cap_norm}")
@@ -517,14 +529,16 @@ class QuantumAnalysis(object):
         Om = np.diagflat(self.OM[variation].values)      # GHz
         # Junction energies
         EJ = np.diagflat(self.get_Ejs(variation).values)  # GHz
+        Ec = np.diagflat(self.get_Ecs(variation).values)  # GHz
 
         for x in ("PJ", "SJ", "Om", "EJ"):
             logger.debug(f"{x}=")
             logger.debug(locals()[x])
 
         PHI_zpf = CalcsBasic.epr_to_zpf(PJ, SJ, Om, EJ)
+        n_zpf = CalcsBasic.epr_cap_to_nzpf(PJ, SJ, Om, Ec)
 
-        return PJ, SJ, Om, EJ, PHI_zpf, PJ_cap                   # All as np.array
+        return PJ, SJ, Om, EJ, PHI_zpf, PJ_cap, n_zpf                 # All as np.array
 
     def analyze_variation(self,
                           variation: List[str],
@@ -575,7 +589,7 @@ class QuantumAnalysis(object):
             print('%s, ' % variation, end='')
 
         # Get matrices
-        PJ, SJ, Om, EJ, PHI_zpf, PJ_cap = self.get_epr_base_matrices(variation)
+        PJ, SJ, Om, EJ, PHI_zpf, PJ_cap, n_zpf = self.get_epr_base_matrices(variation)
         freqs_hfss = self.freqs_hfss[variation].values
         Ljs = self.Ljs[variation].values
 
