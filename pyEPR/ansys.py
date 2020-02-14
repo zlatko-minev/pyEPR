@@ -580,7 +580,7 @@ class HfssDesign(COMWrapper):
         self._modeler = design.SetActiveEditor("3D Modeler")
         self._optimetrics = design.GetModule("Optimetrics")
         self._mesh = design.GetModule("MeshSetup")
-        self.modeler = HfssModeler(self, self._modeler,\
+        self.modeler = HfssModeler(self, self._modeler,
                                    self._boundaries, self._mesh)
         self.optimetrics = Optimetrics(self)
 
@@ -709,7 +709,7 @@ class HfssDesign(COMWrapper):
                 "UserDef:=", True,
                 "Value:=", value]]]])
 
-    def set_variable(self, name:str, value:str, postprocessing=False):
+    def set_variable(self, name: str, value: str, postprocessing=False):
         """Warning: THis is case sensitive,
 
         Arguments:
@@ -1363,9 +1363,8 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
             logger.error(err)
             raise Exception(err)
 
-        ### TODO: WARNING: Note that the syntax has changed for AEDT 18.2.
+        # TODO: WARNING: Note that the syntax has changed for AEDT 18.2.
         # see https://ansyshelp.ansys.com/account/secured?returnurl=/Views/Secured/Electronics/v195//Subsystems/HFSS/Subsystems/HFSS%20Scripting/HFSS%20Scripting.htm
-
 
         self._solutions.EditSources(
             "EigenStoredEnergy",
@@ -1522,6 +1521,7 @@ class HfssReport(COMWrapper):
         return np.loadtxt(fn, skiprows=1, delimiter=',').transpose()
         # warning for python 3 probably need to use genfromtxt
 
+
 class Optimetrics(COMWrapper):
     """
     Optimetrics script commands executed by the "Optimetrics" module.
@@ -1535,11 +1535,12 @@ class Optimetrics(COMWrapper):
 
     Note that running optimetrics requires the license for Optimetrics by Ansys.
     """
+
     def __init__(self, design):
         super(Optimetrics, self).__init__()
 
-        self.design=design # parent
-        self._optimetrics = self.design._optimetrics # <COMObject GetModule>
+        self.design = design  # parent
+        self._optimetrics = self.design._optimetrics  # <COMObject GetModule>
         self.setup_names = None
 
     def get_setup_names(self):
@@ -1549,7 +1550,7 @@ class Optimetrics(COMWrapper):
         self.setup_names = list(self._optimetrics.GetSetupNames())
         return self.setup_names.copy()
 
-    def solve_setup(self, setup_name:str):
+    def solve_setup(self, setup_name: str):
         """
         Solves the specified Optimetrics setup.
         Corresponds to:  Right-click the setup in the project tree, and then click
@@ -1562,6 +1563,68 @@ class Optimetrics(COMWrapper):
         Note that this requires the license for Optimetrics by Ansys.
         """
         return self._optimetrics.SolveSetup(setup_name)
+
+    def create_setup(self, variable, swp_params, name="ParametricSetup1", swp_type='linear_step',
+                     setup_name=None,
+                     save_fields=True, copy_mesh=True, solve_with_copied_mesh_only=True,
+                     setup_type='parametric'
+                     ):
+        """
+        Inserts a new parametric setup.
+
+
+        For  type_='linear_step' swp_params is start, stop, step:
+             swp_params = ("12.8nH" "13.6nH", "0.2nH")
+
+        Corresponds to ui access:
+            Right-click the Optimetrics folder in the project tree,
+            and then click Add> Parametric on the shortcut menu.
+        """
+        setup_name = setup_name or self.design.get_setup_names()[0]
+        print(f"Inserting optimetrics setup `{name}` for simulation setup: {setup_name}")
+
+        if not setup_type is 'parametric':
+            raise NotImplementedError()
+
+        if swp_type is 'linear_step':
+            assert len(swp_params) is 3
+            # e.g., "LIN 12.8nH 13.6nH 0.2nH"
+            swp_str = f"LIN {swp_params[0]} {swp_params[1]} {swp_params[2]}"
+        else:
+            raise NotImplementedError()
+
+        self._optimetrics.InsertSetup("OptiParametric",
+                                      [
+                                          f"NAME:{name}",
+                                          "IsEnabled:="		, True,
+                                          [
+                                              "NAME:ProdOptiSetupDataV2",
+                                              "SaveFields:="		, save_fields,
+                                              "CopyMesh:="		, copy_mesh,
+                                              "SolveWithCopiedMeshOnly:=", solve_with_copied_mesh_only,
+                                          ],
+                                          [
+                                              "NAME:StartingPoint"
+                                          ],
+                                          "Sim. Setups:="		, [setup_name],
+                                          [
+                                              "NAME:Sweeps",
+                                              [
+                                                  "NAME:SweepDefinition",
+                                                  "Variable:="		, variable,
+                                                  "Data:="		, swp_str,
+                                                  "OffsetF1:="		, False,
+                                                  "Synchronize:="		, 0
+                                              ]
+                                          ],
+                                          [
+                                              "NAME:Sweep Operations"
+                                          ],
+                                          [
+                                              "NAME:Goals"
+                                          ]
+                                      ])
+
 
 class HfssModeler(COMWrapper):
     def __init__(self, design, modeler, boundaries, mesh):
@@ -2650,7 +2713,8 @@ def load_ansys_project(proj_name, project_path=None, extension='.aedt'):
                      Please check your filename.\n%s\n" % project_path)
 
         if (project_path/'.lock').is_file():
-            logger.warning('\t\tFile is locked. \N{fearful face} If connection fails, delete the .lock file.')
+            logger.warning(
+                '\t\tFile is locked. \N{fearful face} If connection fails, delete the .lock file.')
 
     app = HfssApp()
     logger.info("\tOpened Ansys App")
