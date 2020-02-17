@@ -1378,7 +1378,8 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
                                n else "0" for i in range(n_modes)]
             ]
         ])
-
+        
+        """
         # TODO: WARNING: Note that the syntax has changed for AEDT 18.2.
         # see https://ansyshelp.ansys.com/account/secured?returnurl=/Views/Secured/Electronics/v195//Subsystems/HFSS/Subsystems/HFSS%20Scripting/HFSS%20Scripting.htm
 
