@@ -1379,13 +1379,9 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
             ]
         ])
 
-<<<<<<< HEAD:pyEPR/ansys.py
         # TODO: WARNING: Note that the syntax has changed for AEDT 18.2.
         # see https://ansyshelp.ansys.com/account/secured?returnurl=/Views/Secured/Electronics/v195//Subsystems/HFSS/Subsystems/HFSS%20Scripting/HFSS%20Scripting.htm
 
-=======
-        """
->>>>>>> 397635e3fb87165af88f83436de8597b283dbdf9:pyEPR/hfss.py
         self._solutions.EditSources(
             "EigenStoredEnergy",
             ["NAME:SourceNames", "EigenMode"],
