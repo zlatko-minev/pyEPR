@@ -1031,7 +1031,7 @@ class pyEPR_HFSS(object):
                 except Exception as e:
                     tb = sys.exc_info()[2]
                     print("\n\nError:\n", e)
-                    raise(Exception(' Did you save the field solutions?\n  Failed during calculation of the total magnetic energy. This is the first calculation step, and is indicative that there are no field solutions saved. ').with_traceback(tb))
+                    raise(Exception(' Did you save the field solutions?\n  Failed during calculation of the total electric energy. This is the first calculation step, and is indicative that there are no field solutions saved. ').with_traceback(tb))
 
                 print(' ℰ_magnetic')
                 self.U_H = self.calc_energy_magnetic(variation)
