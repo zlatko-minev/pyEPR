@@ -1057,6 +1057,9 @@ class HfssSetup(HfssPropertyObject):
 
 
 class HfssDMSetup(HfssSetup):
+    """
+    Driven modal setup
+    """
     solution_freq = make_float_prop("Solution Freq")
     delta_s = make_float_prop("Delta S")
     solver_type = make_str_prop("Solver Type")
@@ -1096,6 +1099,9 @@ class HfssDMSetup(HfssSetup):
 
 
 class HfssEMSetup(HfssSetup):
+    """
+    Eigenmode setup
+    """
     min_freq = make_float_prop("Min Freq")
     n_modes = make_int_prop("Modes")
     delta_f = make_float_prop("Delta F")
@@ -1105,6 +1111,9 @@ class HfssEMSetup(HfssSetup):
 
 
 class AnsysQ3DSetup(HfssSetup):
+    """
+    Q3D setup
+    """
     prop_tab = "CG"
     max_pass = make_int_prop("Max. Number of Passes")
     max_pass = make_int_prop("Min. Number of Passes")
@@ -1378,17 +1387,20 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
             ["NAME:Impedances"]
         )
 
-    def has_fields(self, variation=None):
+    def has_fields(self, variation_string=None):
         '''
         Determine if fields exist for a particular solution.
 
-        variation : str | None
-        If None, gets the nominal variation
+        variation_string : str | None
+            This must the string that describes the variaiton in hFSS, not 0 or 1, but
+            the string of variables, such as
+                "Cj='2fF' Lj='12.75nH'"
+            If None, gets the nominal variation
         '''
-        if variation is None:
-            variation = self.parent.parent.get_nominal_variation()
+        if variation_string is None:
+            variation_string = self.parent.parent.get_nominal_variation()
 
-        return bool(self._solutions.HasFields(self.parent.solution_name, variation))
+        return bool(self._solutions.HasFields(self.parent.solution_name, variation_string))
 
     def create_report(self, plot_name, xcomp, ycomp, params, pass_name='LastAdaptive'):
         '''
@@ -1581,7 +1593,7 @@ class Optimetrics(COMWrapper):
             and then click Add> Parametric on the shortcut menu.
         """
         setup_name = setup_name or self.design.get_setup_names()[0]
-        print(f"Inserting optimetrics setup `{name}` for simulation setup: {setup_name}")
+        print(f"Inserting optimetrics setup `{name}` for simulation setup: `{setup_name}`")
 
         if not setup_type is 'parametric':
             raise NotImplementedError()
@@ -2682,18 +2694,19 @@ def get_active_design():
     return project.get_active_design()
 
 
-def get_report_arrays(name):
+def get_report_arrays(name:str):
     d = get_active_design()
     r = HfssReport(d, name)
     return r.get_arrays()
 
 
-def load_ansys_project(proj_name, project_path=None, extension='.aedt'):
+def load_ansys_project(proj_name:str, project_path:str=None, extension:str='.aedt'):
     '''
-    proj_name : None  --> get active.
-    (make sure 2 run as admin)
+    Utility function to load an Ansys project.
 
-    extension : `aedt` is for 2016 version and newer
+    Args:
+        proj_name : None  --> get active. (make sure 2 run as admin)
+        extension : `aedt` is for 2016 version and newer
     '''
     if project_path:
         # convert slashes correctly for system

@@ -4,16 +4,22 @@
    contain the root `toctree` directive.
 
 *********************************************
-pyEPR: Python Energy Participation Ratio
+Welcome to pyEPR 🍻!
 *********************************************
 
-Power full-suite quantum microwave circuit analysis
-*******************************************************
-**Date**: |today| **Version**: |version|
+Powerfull analysis and design of quantum microwave devices
+***********************************************************
+**Version**: |version| | **Date**: |today|
 
 
-:mod:`pyEPR` is an open source, BSD-licensed library providing high-efficiency,
-easy-to-use quantum and classical microwave analysis for quantum integrated and dsitributed circits.
+**pyEPR** is an open source, BSD-licensed library providing high-efficiency,
+easy-to-use analysis functions and automation for the design of quantum chips based on superconducting quantum  circuits, both distributed and lumped.
+pyEPR interfaces the classical distributed microwave analysis with that of quantum structures and Hamiltonians.
+It is chiefly based on the `energy participation ratio <https://arxiv.org/abs/1902.10355>`_ approach; however, it has since v0.4 extended to cover a broad range of
+design approaches. pyEPR stradels the analysis from Maxwell's to Schrodinger's equations, and converts the solutions of distributed microwve (typically eignmode simulations)
+to a fully diagonalized spectrum of the energy levels, couplings, and key parameters of a many-body quantum Hamiltonian.
+
+pyEPR contains both analytic and numeric solutions.
 
 
 Contents
@@ -24,13 +30,16 @@ Contents
    :caption: Contents:
    :numbered:
 
+   about.rst
+   installation.rst
+
 .. toctree::
    :caption: API Reference:
    :glob:
 
    api/*
 
-	
+
 
 Indices and tables
 ==================

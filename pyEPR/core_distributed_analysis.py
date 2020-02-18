@@ -84,7 +84,24 @@ class DistributedAnalysis(object):
             pinfo = epr.ProjectInfo(project_path = path_to_project,
                                     project_name = 'pyEPR_tutorial1',
                                     design_name  = '1. single_transmon')
-            eprh = epr.DistributedAnalysis(pinfo)
+            eprd = epr.DistributedAnalysis(pinfo)
+
+        To now quickly see the result of a sweep of a variable in ansys, you can use:
+
+        .. code-block:: python
+            :linenos:
+
+            swp_var = 'Lj'
+            display(eprd.get_ansys_variables())
+            fs = eprd.quick_plot_frequencies(swp_var)
+            display(fs)
+
+        To perform distributed analysis
+
+        .. code-block:: python
+            :linenos:
+
+            eprd.do_EPR_analysis(append_analysis=True);
 
         Key internal paramters:
         -------------------
@@ -258,17 +275,19 @@ class DistributedAnalysis(object):
             frame {bool} -- if True returns dataframe, else tuple of series.
 
         Returns:
-           frame = True :  multi-index Dataframe that looks something like this
-```
-                  Freq. (GHz)  Quality Factor
-variation mode
-0         0        5.436892             1020
-          1        7.030932             50200
-1         0        5.490328             2010
-          1        7.032116             104500
-```
-           frame = False : Tuple of  two Series
-                Fs, Qs -- Tuple of pandas.Series objects; the row index is the mode number
+           If frame = True, then a multi-index Dataframe that looks something like this
+
+            .. code-block:: python
+
+                                Freq. (GHz)  Quality Factor
+                variation mode
+                0         0        5.436892             1020
+                        1        7.030932             50200
+                1         0        5.490328             2010
+                        1        7.032116             104500
+
+           If frame = False, then a tuple of  two Series, such as
+           (Fs, Qs) -- Tuple of pandas.Series objects; the row index is the mode number
         """
         freqs, kappa_over_2pis = self.solutions.eigenmodes(
             self._get_lv_EM(variation))
@@ -302,8 +321,6 @@ variation mode
         # TODO: maybe sort column and index? # todo: maybe generalize
         return pd.concat(df, names=[vs])
 
-
-
     def _get_lv(self, variation=None):
         '''
         List of variation variables in a format that is used when feeding back to ansys.
@@ -318,12 +335,22 @@ variation mode
         '''
 
         if variation is None:
-            lv = self._nominal_variation
+            lv = self._nominal_variation  # "Cj='2fF' Lj='12.5nH'"
             lv = self._parse_listvariations(lv)
         else:
             lv = self._list_variations[ureg(variation)]
             lv = self._parse_listvariations(lv)
         return lv
+
+    def get_variation_string(self, variation=None):
+        """
+        Return the list variation string of parameters in ansys used to identify the variation.
+            "Cj='2fF' Lj='12.5nH'"
+        """
+        if variation is None:
+            return self._nominal_variation  # "Cj='2fF' Lj='12.5nH'"
+
+        return self._list_variations[ureg(variation)]
 
     def _get_lv_EM(self, variation):
         if variation is None:
@@ -392,9 +419,9 @@ variation mode
         return s
 
     def calc_energy_electric(self,
-                             variation=None,
-                             volume='AllObjects',
-                             smooth=False):
+                             variation: str = None,
+                             volume: str = 'AllObjects',
+                             smooth: bool = False):
         r'''
         Calculates two times the peak electric energy, or 4 times the RMS,
         :math:`4*\mathcal{E}_{\mathrm{elec}}`
@@ -403,14 +430,15 @@ variation mode
         .. math::
             \mathcal{E}_{\mathrm{elec}}=\frac{1}{4}\mathrm{Re}\int_{V}\mathrm{d}v\vec{E}_{\text{max}}^{*}\overleftrightarrow{\epsilon}\vec{E}_{\text{max}}
 
-
-        volume : string | 'AllObjects'
-        smooth : bool | False
-            Smooth the electric field or not when performing calculation
+        Args:
+            volume (string | 'AllObjects'): Name of the volume to integrate over
+            smooth (bool | False) : Smooth the electric field or not when performing calculation
 
         Example use to calcualte the energy participation of a substrate
 
-        .. code-block python
+        .. code-block:: python
+            :linenos:
+
             ℰ_total  = epr_hfss.calc_energy_electric(volume='AllObjects')
             ℰ_substr = epr_hfss.calc_energy_electric(volume='Box1')
             print(f'Energy in substrate = {100*ℰ_substr/ℰ_total:.1f}%')
@@ -512,7 +540,7 @@ variation mode
         # self.design.Clear_Field_Clac_Stack()
         return I
 
-    def calc_current_using_line_voltage(self, variation: str, junc_line_name: str, junc_L_Henries: float, Cj_Farads: float=None):
+    def calc_current_using_line_voltage(self, variation: str, junc_line_name: str, junc_L_Henries: float, Cj_Farads: float = None):
         '''
         Peak current I_max for prespecified mode calculating line voltage across junction.
 
@@ -540,11 +568,12 @@ variation mode
         omega = 2*np.pi*freq  # in SI radian Hz units
 
         Z = omega*junc_L_Henries
-        if abs(float(Cj_Farads)) > 1E-29: # zero
+        if abs(float(Cj_Farads)) > 1E-29:  # zero
             #print('Non-zero Cj used in calc_current_using_line_voltage')
             #Z += 1./(omega*Cj_Farads)
-            print('\t\t'f'Energy fraction (Lj over Lj&Cj)= {100./(1.+omega**2 *Cj_Farads*junc_L_Henries):.2f}%')
-                 #f'Z_L= {omega*junc_L_Henries:.1f} Ohms Z_C= {1./(omega*Cj_Farads):.1f} Ohms')
+            print(
+                '\t\t'f'Energy fraction (Lj over Lj&Cj)= {100./(1.+omega**2 *Cj_Farads*junc_L_Henries):.2f}%')
+            # f'Z_L= {omega*junc_L_Henries:.1f} Ohms Z_C= {1./(omega*Cj_Farads):.1f} Ohms')
 
         I_peak = V/Z  # I=V/(wL)s
 
@@ -694,6 +723,10 @@ variation mode
         '''
         Calculate the coupling Q of mode m with each port p
         Expected that you have specified the mode before calling this
+
+        Args:
+            variation (str): A string identifier of the variation,
+            such as '0', '1', ...
         '''
 
         Qp = pd.Series({})
@@ -724,6 +757,10 @@ variation mode
         WARNING: Cjs is experimental.
 
         This function assumes there are no lumped capacitors in model.
+
+        Args:
+            variation (str): A string identifier of the variation,
+            such as '0', '1', ...
 
         Note:
         --------------
@@ -782,11 +819,12 @@ variation mode
             pmj_cap = 0.5*Cjs[j_name] * V_peak**2 / U_E
             #print('\tpmj_ind=',pmj_ind, Ljs[j_name], U_E)
 
-            self.I_peak=I_peak
-            self.V_peak=V_peak
+            self.I_peak = I_peak
+            self.V_peak = V_peak
             self.Ljs = Ljs
             self.Cjs = Cjs
-            print(f'\t{j_name:<15} {pmj_ind:>8.6g}{("(+)"if _Smj else "(-)"):>5s}        {pmj_cap:>8.6g}')
+            print(
+                f'\t{j_name:<15} {pmj_ind:>8.6g}{("(+)"if _Smj else "(-)"):>5s}        {pmj_cap:>8.6g}')
             #print('\tV_peak=', V_peak)
 
         # ------------------------------------------------------------
@@ -794,8 +832,10 @@ variation mode
         #
 
         # All junction capactive and inductive lumped energies - all peak
-        U_J_inds = {j_name: 0.5*Ljs[j_name] * I_peak_[j_name]**2 for j_name in self.pinfo.junctions}
-        U_J_caps = {j_name: 0.5*Cjs[j_name] * V_peak_[j_name]**2 for j_name in self.pinfo.junctions}
+        U_J_inds = {j_name: 0.5*Ljs[j_name] * I_peak_[j_name]
+                    ** 2 for j_name in self.pinfo.junctions}
+        U_J_caps = {j_name: 0.5*Cjs[j_name] * V_peak_[j_name]
+                    ** 2 for j_name in self.pinfo.junctions}
 
         U_tot_ind = U_H + sum(list(U_J_inds.values()))  # total
         U_tot_cap = U_E + sum(list(U_J_caps.values()))
@@ -804,7 +844,7 @@ variation mode
         # i.e., (U_tot_ind + U_tot_cap)/2
         U_norm = U_tot_cap
         print("\t\t(U_tot_cap-U_tot_ind)/mean=",
-                f'{(U_tot_cap-U_tot_ind)/(U_tot_cap+U_tot_ind)*100:.2f}%')
+              f'{(U_tot_cap-U_tot_ind)/(U_tot_cap+U_tot_ind)*100:.2f}%')
 
         Pj = pd.Series(OrderedDict([(j_name, Uj_ind/U_norm)
                                     for j_name, Uj_ind in U_J_inds.items()]))
@@ -817,7 +857,7 @@ variation mode
         #    Pj['p_' + j_name],
         #    '+' if Sj['s_' + j_name] > 0 else '-'))
 
-        return Pj, Sj, PCj, pd.Series(I_peak), pd.Series(V_peak), {'U_J_inds':U_J_inds, 'U_J_caps':U_J_caps, 'U_H':U_H,'U_E':U_E,'U_tot_ind':U_tot_ind, 'U_tot_cap':U_tot_cap,'U_norm':U_norm}
+        return Pj, Sj, PCj, pd.Series(I_peak), pd.Series(V_peak), {'U_J_inds': U_J_inds, 'U_J_caps': U_J_caps, 'U_H': U_H, 'U_E': U_E, 'U_tot_ind': U_tot_ind, 'U_tot_cap': U_tot_cap, 'U_norm': U_norm}
 
     def get_previously_analyzed(self):
         """
@@ -837,7 +877,9 @@ variation mode
         The values in the series are numeric and in SI base units, i.e., not nH but Henries,
         and not fF but Farads.
 
-        variation : label such as '0' or 'all', in which case return pandas table for all variations
+        Args:
+            variation (str) : label such as '0' or 'all', in which case return
+            pandas table for all variations
         """
         if variation is 'all':
             # for all variations and concat
@@ -851,23 +893,21 @@ variation mode
                 def _parse(name): return ureg.Quantity(
                     _variables['_'+val[name]]).to_base_units().magnitude
                 Ljs[junc_name] = _parse('Lj_variable')
-                Cjs[junc_name] = 2E-15 #_parse(
-                    #'Cj_variable') if 'Cj_variable' in val else 0
+                Cjs[junc_name] = 2E-15  # _parse(
+                # 'Cj_variable') if 'Cj_variable' in val else 0
 
         return Ljs, Cjs
 
     def do_EPR_analysis(self,
                         variations: list = None,
                         modes=None,
-                        append_analysis = True):
+                        append_analysis=True):
         """
         Main analysis routine
 
-        Load results with QuantumAnalysis
-
-        ..code-block python
-
-            todo
+        Args:
+            variation (str): A string identifier of the variation,
+            such as '0', '1', ...
 
         Optional Parameters:
         ------------------------
@@ -890,6 +930,21 @@ variation mode
                 recently added Cj_variable as a new feature that is begin tested to handle capacitors.
 
                 See the paper.
+
+
+        Using the results:
+        ------------------------
+            Load results with epr.QuantumAnalysis class
+
+
+        Example use:
+        ----------------
+
+        .. code-block:: python
+            :linenos:
+
+            eprd = epr.DistributedAnalysis(pinfo)
+            eprd.do_EPR_analysis(append_analysis=False)
         """
 
         # Track the total timing
@@ -920,7 +975,7 @@ variation mode
             time.sleep(0.4)
 
             if self.has_fields() == False:
-                logger.error(f" Error: HFSS does not have field solution for mode={ii}.\
+                logger.error(f" Error: HFSS does not have field solution for variation={ii}.\
                                 Skipping this mode in the analysis")
                 continue
 
@@ -959,7 +1014,8 @@ variation mode
                 temp_freq = freqs_bare_GHz[mode]
                 _Om['freq_GHz'] = temp_freq  # freq
                 Om[mode] = _Om
-                print('\n'f'  \033[1mMode {mode} at {"%.2f" % temp_freq} GHz   [{mode+1}/{self.n_modes}]\033[0m')
+                print(
+                    '\n'f'  \033[1mMode {mode} at {"%.2f" % temp_freq} GHz   [{mode+1}/{self.n_modes}]\033[0m')
 
                 # EPR Hamiltonian calculations
                 # Calculation global energies and report
@@ -980,7 +1036,8 @@ variation mode
                 print('ℰ_electric')
                 self.U_E = self.calc_energy_electric(variation)
 
-                sol = pd.Series({'U_H': self.U_H, 'U_E': self.U_E}) # the unnormed
+                # the unnormed
+                sol = pd.Series({'U_H': self.U_H, 'U_E': self.U_E})
 
                 # Fraction - report the peak energy, properly normalized
                 # the 2 is from the calcualtion methods
@@ -990,7 +1047,8 @@ variation mode
                 # Calcualte EPR for each of the junctions
                 print(
                     f'    Calculating junction energy participation ration (EPR)\n\t method={self.pinfo.options.method_calc_P_mj}. First estimates:')
-                print(f"\t{'junction':<15s} EPR p_{mode}j   sign s_{mode}j    (p_capacitive)")
+                print(
+                    f"\t{'junction':<15s} EPR p_{mode}j   sign s_{mode}j    (p_capacitive)")
 
                 Pm[mode], Sm[mode], Pm_cap[mode], I_peak[mode], V_peak[mode], ansys_energies[mode] = self.calc_p_junction(
                     variation, self.U_H/2., self.U_E/2., Ljs, Cjs)
@@ -1149,32 +1207,42 @@ variation mode
 
     def get_mesh_statistics(self, variation='0'):
         '''
-        Input:
-            variation='0' ,'1', ...
+        Args:
+            variation (str): A string identifier of the variation,
+            such as '0', '1', ...
 
-        Returns dataframe:
-        ```
+        Returns:
+        A pandas dataframe, such as
+
+        .. code-block:: text
+            :linenos:
+
                 Name	    Num Tets	Min edge    length	    Max edge length	RMS edge length	Min tet vol	Max tet vol	Mean tet vol	Std Devn (vol)
             0	Region	    909451	    0.000243	0.860488	0.037048	    6.006260e-13	0.037352	0.000029	6.268190e-04
             1	substrate	1490356	    0.000270	0.893770	0.023639	    1.160090e-12	0.031253	0.000007	2.309920e-04
-        ```
+
         '''
         variation = self._list_variations[ureg(variation)]
         return self.setup.get_mesh_stats(variation)
 
     def get_convergence(self, variation='0'):
         '''
-        Input:
-            variation='0' ,'1', ...
+        Args:
+            variation (str): A string identifier of the variation,
+            such as '0', '1', ...
 
-        Returns dataframe:
-        ```
-                Solved Elements	Max Delta Freq. % Pass Number
-            1   	    128955	        NaN
-            2       	167607	        11.745000
-            3       	192746	        3.208600
-            4       	199244	        1.524000
-        ```
+        Returns:
+            A pandas DataFrame object
+
+            .. code-block:: text
+                :linenos:
+
+                    Solved Elements	Max Delta Freq. % Pass Number
+                1   	    128955	        NaN
+                2       	167607	        11.745000
+                3       	192746	        3.208600
+                4       	199244	        1.524000
+
         '''
         variation = self._list_variations[ureg(variation)]
         df, _ = self.setup.get_convergence(variation)
@@ -1182,15 +1250,24 @@ variation mode
 
     def get_convergence_vs_pass(self, variation='0'):
         '''
-        Returns a convergence vs pass number of the eignemode freqs.
-        Makes a plot in HFSS that return a pandas dataframe:
-            ```
-                re(Mode(1)) [g]	re(Mode(2)) [g]	re(Mode(3)) [g]
-            Pass []
-            1	4.643101	4.944204	5.586289
-            2	5.114490	5.505828	6.242423
-            3	5.278594	5.604426	6.296777
-            ```
+        Makes a plot in HFSS that return a pandas dataframe
+
+        Args:
+            variation (str): A string identifier of the variation,
+            such as '0', '1', ...
+
+        Returns:
+            Returns a convergence vs pass number of the eignemode freqs.
+
+            .. code-block:: text
+                :linenos:
+
+                    re(Mode(1)) [g]	re(Mode(2)) [g]	re(Mode(3)) [g]
+                Pass []
+                1	4.643101	4.944204	5.586289
+                2	5.114490	5.505828	6.242423
+                3	5.278594	5.604426	6.296777
+
         '''
         return self.hfss_report_f_convergence(variation)
 
@@ -1207,7 +1284,7 @@ variation mode
         self.solutions.set_mode(mode_num + 1, phase)
 
         if self.has_fields() == False:
-            logger.warning(f" Error: HFSS does not have field solution for mode={mode_num}.\
+            logger.warning(f" Error: HFSS does not have field solution for variation={mode_num}.\
                                     Skipping this mode in the analysis \N{face with medical mask}")
 
         self.fields = self.setup.get_fields()
@@ -1233,7 +1310,13 @@ variation mode
         """
         Use: Get a list of solved variations.
         Return Value: An array of strings corresponding to solved variations.
-        Example: list = oModule.ListVariations("Setup1 : LastAdaptive")
+
+        Example:
+
+        .. code-block:: python
+            :linenos:
+
+            list = oModule.ListVariations("Setup1 : LastAdaptive")
         """
         return self.design._solutions.ListVariations(str(self.setup.solution_name))
 
@@ -1251,7 +1334,10 @@ variation mode
         ''''
         Updates all information about the Ansys solved variations and variables.
 
-        n_modes, _list_variations, nominal_variation, n_variations
+        .. code-block:: python
+            :linenos:
+
+            n_modes, _list_variations, nominal_variation, n_variations
 
         '''
 
@@ -1275,15 +1361,18 @@ variation mode
 
         self._update_ansys_variables()
 
-    def has_fields(self, variation=None):
+    def has_fields(self, variation: str = None):
         '''
         Determine if fields exist for a particular solution.
+        Just calls `self.solutions.has_fields(variaiton_string)`
 
-        variation : str | None
-        If None, gets the nominal variation
+        variation (str | None) : String of variaiton label, such as '0' or '1'
+            If None, gets the nominal variation
         '''
         if self.solutions:
-            return self.solutions.has_fields(variation)
+            print('variation=', variation)
+            variaiton_string = self.get_variation_string(variation)
+            return self.solutions.has_fields(variaiton_string)
         else:
             return False
 
@@ -1295,13 +1384,15 @@ variation mode
 
         Returns a convergence vs pass number of the eignemode freqs.
         Returns a pandas dataframe:
-            ```
+
+        .. code-block:: text
+
                 re(Mode(1)) [g]	re(Mode(2)) [g]	re(Mode(3)) [g]
             Pass []
             1	4.643101	4.944204	5.586289
             2	5.114490	5.505828	6.242423
             3	5.278594	5.604426	6.296777
-            ```
+
         '''
         # TODO: Move to class for reporter ?
         if not self.setup:

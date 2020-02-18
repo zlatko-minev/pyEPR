@@ -42,16 +42,17 @@ extensions = [
 	"sphinx.ext.intersphinx",
 	"sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
-    'sphinx.ext.coverage', 
-    'sphinx.ext.napoleon',
+    'sphinx.ext.coverage',
+    'sphinx.ext.napoleon', #  parse both NumPy and Google style docstrings
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
     "sphinx.ext.mathjax",
     "sphinx_rtd_theme",
+    #'sphinx_automodapi.automodapi',
     "IPython.sphinxext.ipython_directive",
     "IPython.sphinxext.ipython_console_highlighting",
     "matplotlib.sphinxext.plot_directive",
-    #'sphinx_automodapi.automodapi', 
+    #'numpydoc'
 ]
 
 # https://github.com/readthedocs/readthedocs.org/issues/2569
@@ -78,7 +79,7 @@ show_authors = True
 pygments_style = 'sphinx'
 
 
-numpydoc_show_class_members = False
+numpydoc_show_class_members = True
 napoleon_numpy_docstring = True
 napoleon_use_admonition_for_notes = True
 
@@ -155,17 +156,17 @@ autosummary_generate = True
 # -----------------------------------------------------------------------------
 # Autodoc
 # -----------------------------------------------------------------------------
-#The supported options are 
+#The supported options are
 # 'members', 'member-order', 'undoc-members', 'private-members',
-# 'special-members', 'inherited-members', 'show-inheritance', 'ignore-module-all', 
+# 'special-members', 'inherited-members', 'show-inheritance', 'ignore-module-all',
 # 'imported-members' and 'exclude-members'.
 autodoc_default_options = {
     'inherited-members': None,
-    'member-order': 'bysource',
+    #'member-order': 'bysource',
     'member-order': 'alphabetical', #This value selects if automatically documented members are sorted alphabetical (value 'alphabetical'), by member type (value 'groupwise') or by source order (value 'bysource'). The default is alphabetical.
     'undoc-members': True, # Members without docstrings will be left out, unless you give the undoc-members flag option:
     'exclude-members': '__weakref__',
-    'show-inheritance' : True
+    'show-inheritance' : True # , a list of base classes will be inserted just below the class signature (when used with automodule, this will be inserted for every class that is documented in the module).
 }
 
 

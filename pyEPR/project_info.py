@@ -24,81 +24,84 @@ from .toolbox.pythonic import get_instance_vars
 
 class ProjectInfo(object):
     """
-    Class containing options and information about the manipulation and analysis in HFSS.
+    Primary class to store interface information between ``pyEPR`` and ``Ansys``.
 
-    Junction info:
-    -----------------------
-        self.junctions : OrderedDict()
+    * **Ansys:** stores and provides easy access to the ansys interface classes :py:class:`pyEPR.ansys.HfssApp`,
+      :py:class:`pyEPR.ansys.HfssDesktop`, :py:class:`pyEPR.ansys.HfssProject`, :py:class:`pyEPR.ansys.HfssDesign`,
+      :py:class:`pyEPR.ansys.HfssSetup` (which, if present could nbe a subclass, such as a driven modal setup
+      :py:class:`pyEPR.ansys.HfssDMSetup`, eigenmode :py:class:`pyEPR.ansys.HfssEMSetup`, or Q3D  :py:class:`pyEPR.ansys.AnsysQ3DSetup`),
+      the 3D modeler to design geometry :py:class:`pyEPR.ansys.HfssModeler`.
+    * **Junctions:** The class stores params about the design that the user puts will use, such as the names and
+      properties of the junctions, such as whihc rectangle and line is associated with which junction.
+
+
+    Note:
+
+        **Junction parameters.**
+        The junction parameters are stored in the ``self.junctions`` ordered dictionary
 
         A Josephson tunnel junction has to have its parameters specified here for the analysis.
         Each junction is given a name and is specified by a dictionary.
         It has the following properties:
 
-            `Lj_variable`: Name of HFSS variable that specifies junction inductance Lj defined
-                        on the boundary condition in HFSS. DO NOT USE Global names that start
-                        with $.
-            `rect`:     Name of HFSS rectangle on which lumped boundary condition is specified.
-            `line`:     Name of HFSS polyline which spans the length of the recntalge.
-                        Used to define the voltage across the junction.
-                        Used to define the current orientation for each junction.
-                        Used to define sign of ZPF.
-            `length`:   Length in HFSS of the junction rectangle and line
-                        (specified in meters). You can use epr.parse_units('100um')
-            `Cj_variable` : Experimental. Optional.
-                        Name of HFSS variable that specifies junction inductance Cj defined
-                        on the boundary condition in HFSS. DO NOT USE Global names that start
-                        with $.
+        * ``Lj_variable`` (str):
+                Name of HFSS variable that specifies junction inductance Lj defined
+                on the boundary condition in HFSS.
+                WARNING: DO NOT USE Global names that start with $.
+        * ``rect`` (str):
+                String of Ansys name of the rectangle on which the lumped boundary condition is defined.
+        * ``line`` (str):
+                Name of HFSS polyline which spans the length of the recntalge.
+                Used to define the voltage across the junction.
+                Used to define the current orientation for each junction.
+                Used to define sign of ZPF.
+        * ``length`` (str):
+                Length in HFSS of the junction rectangle and line (specified in meters).
+                To create, you can use :code:`epr.parse_units('100um')`.
+        * ``Cj_variable`` (str, optional) [experimental]:
+                Name of HFSS variable that specifies junction inductance Cj defined
+                on the boundary condition in HFSS. DO NOT USE Global names that start with ``$``.
 
-        Example definition:
+    Warning:
 
-        ..code-block python
+        To define junctions, do **NOT** use global names!
+        I.e., do not use names in ansys that start with ``$``.
 
-            # Define a single junction
-            pinfo = ProjectInfo('')
-            pinfo.junctions['j1'] = {'Lj_variable' : 'Lj1',
-                         'rect'        : 'JJrect1',
-                         'line'        : 'JJline1',
-                         'length'      : parse_units('50um')} # Length is in meters
 
-            # Specify multiple junctions in HFSS model
+    Note:
+
+        **Junction parameters example .** To define junction parameters, see the following example
+
+        .. code-block:: python
+            :linenos:
+
+            # Create project infor class
+            pinfo = ProjectInfo()
+
+            # Now, let us add a junction called `j1`, with the following properties
+            pinfo.junctions['j1'] = {
+                        'Lj_variable' : 'Lj_1', # name of Lj variable in Ansys
+                        'rect'        : 'jj_rect_1',
+                        'line'        : 'jj_line_1',
+                        'length'      : parse_units('50um'),  # Length is in meters
+                        #'Cj'          : 'Cj_1' # name of Cj variable in Ansys - optional
+                        }
+
+        To extend to define 5 junctions in bulk, we could use the following script
+
+        .. code-block:: python
+            :linenos:
+
             n_junctions = 5
-            for i in range(1, 1+n_junctions):
-                pinfo.junctions[f'j{i}'] = {'Lj_variable' : f'Lj{i}',
-                                            'rect'        : f'JJrect{i}',
-                                            'line'        : f'JJline{i}',
+            for i in range(1, n_junctions + 1):
+                pinfo.junctions[f'j{i}'] = {'Lj_variable' : f'Lj_{i}',
+                                            'rect'        : f'jj_rect_{i}',
+                                            'line'        : f'jj_line_{i}',
                                             'length'      : parse_units('50um')}
 
-    HFSS app connection settings
-    -----------------------
-        project_path  : str
-            Directory path to the hfss project file. Should be the directory, not the file.
-            default = None: Assumes the project is open, and thus gets the project based
-            on `project_name`
-        project_name  : str,  None
-            Name of the project within the project_path. "None" will get the current active one.
-        design_name   : str,  None
-            Name of the design within the project. "None" will get the current active one.
-        setup_name    : str,  None
-            Name of the setup within the design. "None" will get the current active one.
 
-
-    Additional init setting:
-    -----------------------
-        do_connect : True by default. Connect to HFSS
-
-
-    HFSS desgin settings
-    -----------------------
-    describe junction parameters
-        junc_rects    = None
-            Name of junction rectangles in HFSS
-        junc_lines    = None
-            Name of lines in HFSS used to define the current orientation for each junction
-        junc_LJ_names = None
-            Name of junction inductance variables in HFSS.
-            Note, DO NOT USE Global names that start with $.
-        junc_lens     = None
-            Junciton rect. length, measured in meters.
+    .. _Google Python Style Guide:
+        http://google.github.io/styleguide/pyguide.html
 
     """
 
@@ -111,8 +114,25 @@ class ProjectInfo(object):
             self.resistive_surfaces = None
             self.seams = None
 
-    def __init__(self, project_path=None, project_name=None, design_name=None,
-                 setup_name=None, do_connect=True):
+    def __init__(self, project_path: str = None, project_name: str = None, design_name: str = None,
+                 setup_name: str = None, do_connect: bool = True):
+        """
+        Keyword Arguments:
+
+            project_path (str) : Directory path to the hfss project file.
+                Should be the directory, not the file.
+                Defaults to ``None``; i.e., assumes the project is open, and thus gets the project based
+                on `project_name`.
+            project_name (str) : Name of the project within the project_path.
+                Defaults to ``None``, which will get the current active one.
+            design_name  (str) : Name of the design within the project.
+                Defaults to ``None``, which will get the current active one.
+            setup_name  (str) :  Name of the setup within the design.
+                Defaults to ``None``, which will get the current active one.
+
+            do_connect (bool) [additional]: Do create connection to Ansys or not? Defaults to ``True``.
+
+        """
 
         # Path: format path correctly to system convention
         self.project_path = str(Path(project_path)) \
@@ -145,7 +165,7 @@ class ProjectInfo(object):
 
     def save(self):
         '''
-        Return a dicitonary to save
+        Return all the data in a dectionary form that can be used to be saved
         '''
         return dict(
             pinfo=pd.Series(get_instance_vars(self, self._Forbidden)),
@@ -157,7 +177,7 @@ class ProjectInfo(object):
 
     def connect(self):
         """
-        Connect to Ansys Desktop.
+        Do establihs connection to Ansys desktop.
         """
         logger.info('Connecting to Ansys Desktop API...')
 
@@ -220,11 +240,16 @@ class ProjectInfo(object):
 
         return self
 
-    def get_setup(self, name):
+    def get_setup(self, name: str):
         """
         Connects to a specific setup for the design.
         Sets  self.setup and self.setup_name.
-        If Name is
+
+        Args:
+            name (str): Name of the setup.
+            If the setup does not exist, then throws a loggger error.
+            Defaults to ``None``, in which case returns None
+
         """
         if name is None:
             return None
@@ -240,7 +265,8 @@ class ProjectInfo(object):
             return self.setup
 
     def check_connected(self):
-        """Checks if fully connected including setup
+        """
+        Checks if fully connected including setup.
         """
         return\
             (self.setup is not None) and\
@@ -268,7 +294,9 @@ class ProjectInfo(object):
         Utility shortcut function to get the design and modeler.
 
         .. code-block:: python
-            oDesign, oModeler = projec.get_dm()
+
+            oDesign, oModeler = pinfo.get_dm()
+
         '''
         return self.design, self.design.modeler
 
