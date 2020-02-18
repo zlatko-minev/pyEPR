@@ -9,7 +9,8 @@ Welcome to pyEPR 🍻!
 
 Powerfull analysis and design of quantum microwave devices
 ***********************************************************
-**Version**: |version| | **Date**: |today|
+**Version**: |version|
+.. | **Date**: |today|
 
 
 **pyEPR** is an open source, BSD-licensed library providing high-efficiency,
@@ -25,13 +26,15 @@ pyEPR contains both analytic and numeric solutions.
 Contents
 ==================
 
+.. :caption: Contents:
+
 .. toctree::
-   :maxdepth: 3
-   :caption: Contents:
+   :maxdepth: 2
    :numbered:
 
    about.rst
    installation.rst
+   examples_quick.rst
 
 .. toctree::
    :caption: API Reference:

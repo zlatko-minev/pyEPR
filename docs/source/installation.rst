@@ -71,4 +71,5 @@ Perform the steps in the :ref:`install-main` section.
 Now, you can use
 
 .. code-block:: bash
+
     python -m pip install -e .
