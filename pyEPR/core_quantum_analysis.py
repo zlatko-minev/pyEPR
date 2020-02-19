@@ -35,7 +35,7 @@ from .core_distributed_analysis import DistributedAnalysis
 from .toolbox.plotting import cmap_discrete, legend_translucent
 from .toolbox.pythonic import (DataFrame_col_diff, divide_diagonal_by_2,
                                print_color, print_matrix, sort_df_col,
-                               sort_Series_idx, df_find_index)
+                               sort_Series_idx, df_find_index, series_of_1D_dict_to_multi_df)
 
 
 class HamiltonianResultsContainer(OrderedDict):
@@ -472,7 +472,8 @@ class QuantumAnalysis(object):
         # EPR matrix for capacitor DataFrame
         Pm_cap = self.PM_cap[variation].copy()
 
-        if self._renorm_pj:
+        if self._renorm_pj: # just non False
+
             # Renormalize
             # Should we still do this when Pm_glb_sum is very small
             #s = self.sols[variation]

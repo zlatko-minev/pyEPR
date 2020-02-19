@@ -139,6 +139,11 @@ def df_regress_value(s:pd.Series, index, degree=2,ax=False,method='index'):
     return value
 
 
+def series_of_1D_dict_to_multi_df(Uj_ind:pd.Series):
+    df= pd.DataFrame(dict([(k, v) for k, v in Uj_ind.items()])).transpose()
+    df.index.set_names(Uj_ind.index.names, inplace=True)
+    return df
+
 def sort_df_col(df):
     '''         sort by numerical int order    '''
     return df.sort_index(axis=1)
