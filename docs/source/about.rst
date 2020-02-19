@@ -1,7 +1,9 @@
-Welcome to pyEPR: about :beers:!
+About
 =================================
 
 |Open Source Love| |Awesome| |star this repo| |fork this repo|
+
+Welcome to pyEPR: about :beers:!
 
 Automated Python module for the design and quantization of Josephson quantum circuits
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

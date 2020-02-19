@@ -13,6 +13,11 @@ Powerfull analysis and design of quantum microwave devices
 .. | **Date**: |today|
 
 
+.. image:: _static/read_me_0.png
+   :width: 100%
+   :alt: pyEPR
+   :align: center
+
 **pyEPR** is an open source, BSD-licensed library providing high-efficiency,
 easy-to-use analysis functions and automation for the design of quantum chips based on superconducting quantum  circuits, both distributed and lumped.
 pyEPR interfaces the classical distributed microwave analysis with that of quantum structures and Hamiltonians.
@@ -21,6 +26,13 @@ design approaches. pyEPR stradels the analysis from Maxwell's to Schrodinger's e
 to a fully diagonalized spectrum of the energy levels, couplings, and key parameters of a many-body quantum Hamiltonian.
 
 pyEPR contains both analytic and numeric solutions.
+
+
+.. image:: _static/xmon-example.gif
+   :width: 75%
+   :alt: pyEPR
+   :align: center
+
 
 
 Contents
@@ -35,6 +47,7 @@ Contents
    about.rst
    installation.rst
    examples_quick.rst
+   key_classes_reference.rst
 
 .. toctree::
    :caption: API Reference:
