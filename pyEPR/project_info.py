@@ -83,7 +83,6 @@ class ProjectInfo(object):
                         'Lj_variable' : 'Lj_1', # name of Lj variable in Ansys
                         'rect'        : 'jj_rect_1',
                         'line'        : 'jj_line_1',
-                        'length'      : parse_units('50um'),  # Length is in meters
                         #'Cj'          : 'Cj_1' # name of Cj variable in Ansys - optional
                         }
 
@@ -96,8 +95,7 @@ class ProjectInfo(object):
             for i in range(1, n_junctions + 1):
                 pinfo.junctions[f'j{i}'] = {'Lj_variable' : f'Lj_{i}',
                                             'rect'        : f'jj_rect_{i}',
-                                            'line'        : f'jj_line_{i}',
-                                            'length'      : parse_units('50um')}
+                                            'line'        : f'jj_line_{i}'}
 
 
     .. _Google Python Style Guide:
@@ -312,8 +310,8 @@ class ProjectInfo(object):
         return o_objects
 
     def validate_junction_info(self):
-        """ Validate that the user has put in the junction info correctly.
-        Do no also forget to check the length of the rectangles/line of
+        """Validate that the user has put in the junction info correctly.
+        Do not also forget to check the length of the rectangles/line of
         the junction if you change it.
         """
 
@@ -335,4 +333,3 @@ class ProjectInfo(object):
                     Seems like for junction `%s` you specified a %s that does not exist
                     in HFSS by the name: `%s` """ % (jjnm, name, jj[name])
 
-        # TODO: Check the length of the rectangle

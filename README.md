@@ -51,12 +51,13 @@ import pyEPR as epr
 
 # 1. Connect to your Ansys, and load your design
 pinfo = epr.ProjectInfo(project_path = r'C:\sim_folder',
-                         project_name = r'cavity_with_two_qubits',
-                         design_name  = r'Alice_Bob')
+                        project_name = r'cavity_with_two_qubits',
+                        design_name  = r'Alice_Bob')
 
-# 2. Non-linear (Josephson) junctions: specify
-pinfo.junctions['jAlice'] = {'Lj_variable':'LJAlice', 'rect':'qubitAlice', 'line': 'alice_line', 'length':parse_units('50um')}
-pinfo.junctions['jBob']   = {'Lj_variable':'LJBob',   'rect':'qubitBob',   'line': 'bob_line',   'length':parse_units('50um')}
+
+# 2a. Non-linear (Josephson) junctions
+pinfo.junctions['jAlice'] = {'Lj_variable':'Lj_alice', 'rect':'rect_alice', 'line': 'line_alice', 'Cj_variable':'Cj_alice'}
+pinfo.junctions['jBob']   = {'Lj_variable':'Lj_bob',   'rect':'rect_bob',   'line': 'line_bob', 'Cj_variable':'Cj_bob'}
 pinfo.validate_junction_info() # Check that valid names of variables and objects have been supplied.
 
 # 2b. Dissipative elements: specify
@@ -64,13 +65,21 @@ pinfo.dissipative.dielectrics_bulk    = ['si_substrate', 'dielectic_object2'] # 
 pinfo.dissipative.dielectric_surfaces = ['interface1', 'interface2']
 
 # 3.  Perform microwave analysis on eigenmode solutions
-eprh = epr.DistributedAnalysis(pinfo)
-eprh.do_EPR_analysis()
+eprd = epr.DistributedAnalysis(pinfo)
+if 1: # automatic reports
+  eprd.quick_plot_frequencies(swp_var) # plot the solved frequencies before the analysis
+  eprd.hfss_report_full_convergence() # report convergen
+eprd.do_EPR_analysis()
 
-# 4.  Perform Hamiltonian spectrum post-analysis, building on mw solutions using EPR
-epra = epr.QuantumAnalysis(eprh.data_filename)
+# 4a.  Perform Hamiltonian spectrum post-analysis, building on mw solutions using EPR
+epra = epr.QuantumAnalysis(eprd.data_filename)
 epra.analyze_all_variations(cos_trunc = 8, fock_trunc = 7)
-epra.plot_hamiltonian_results()
+
+# 4b. Report solved results
+swp_variable = 'Lj_alice' # suppose we swept an optimetric analysis vs. inductance Lj_alice
+epra.plot_hamiltonian_results(swp_variable=swp_variable)
+epra.report_results(swp_variable=swp_variable, numeric=True)
+epra.quick_plot_mode(0,0,1,numeric=True, swp_variable=swp_variable)
 ```
 
 # `pyEPR` Video Tutorials <img src="https://developers.google.com/site-assets/logo-youtube.svg" height=30>
