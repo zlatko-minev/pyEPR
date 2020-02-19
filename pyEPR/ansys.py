@@ -15,6 +15,8 @@ Purpose:
 # Python 2.7 and 3 compatibility
 from __future__ import (division, print_function)
 
+from typing import List
+
 import atexit
 import os
 import re
@@ -709,6 +711,71 @@ class HfssDesign(COMWrapper):
                 "UserDef:=", True,
                 "Value:=", value]]]])
 
+    def _variation_string_to_variable_list(self, variation_string: str, for_prop_server=True):
+        """Example:
+            Takes
+                "Cj='2fF' Lj='13.5nH'"
+            for for_prop_server=True into
+                [['NAME:Cj', 'Value:=', '2fF'], ['NAME:Lj', 'Value:=', '13.5nH']]
+            or for for_prop_server=False into
+                [['Cj', '2fF'], ['Lj', '13.5nH']]
+        """
+        s = variation_string
+        s = s.split(' ')
+        s = [s1.strip().strip("''").split("='") for s1 in s]
+
+        if for_prop_server:
+            local, project = [], []
+
+            for arr in s:
+                to_add = [f'NAME:{arr[0]}', "Value:=",  arr[1]]
+                if arr[0][0] is '$':
+                    project += [to_add]  # global variable
+                else:
+                    local += [to_add]  # local variable
+
+            return local, project
+
+        else:
+            return s
+
+    def set_variables(self, variation_string: str):
+        """
+        Set all variables to match a solved variaiton string.
+
+        Args:
+            variation_string (str) :  Variaiton string such as
+                "Cj='2fF' Lj='13.5nH'"
+        """
+        assert isinstance(variation_string, str)
+
+        content = ["NAME:ChangedProps"]
+        local, project = self._variation_string_to_variable_list(
+            variation_string)
+        #print('\nlocal=', local, '\nproject=', project)
+
+        if len(project) > 0:
+            self._design.ChangeProperty(
+                ["NAME:AllTabs",
+                    ["NAME:ProjectVariableTab",
+                        ["NAME:PropServers",
+                         "ProjectVariables"
+                         ],
+                        content + project
+                     ]
+                 ])
+
+        if len(local) > 0:
+            self._design.ChangeProperty(
+                ["NAME:AllTabs",
+                    ["NAME:LocalVariableTab",
+                        ["NAME:PropServers",
+                         "LocalVariables"
+                         ],
+                        content + local
+                     ]
+                 ])
+
     def set_variable(self, name: str, value: str, postprocessing=False):
         """Warning: THis is case sensitive,
 
@@ -1284,6 +1351,28 @@ class HfssDesignSolutions(COMWrapper):
         '''
         return self._solutions.GetValidISolutionList()
 
+    def list_variations(self, setup_name: str = None):
+        """
+        Get a list of solved variations.
+
+        Args:
+            setup_name(str) : Example name ("Setup1 : LastAdaptive") Defaults to None.
+
+        Returns:
+             An array of strings corresponding to solved variations.
+
+             .. code-block:: python
+
+                ("Cj='2fF' Lj='12nH'",
+                "Cj='2fF' Lj='12.5nH'",
+                "Cj='2fF' Lj='13nH'",
+                "Cj='2fF' Lj='13.5nH'",
+                "Cj='2fF' Lj='14nH'")
+        """
+        if setup_name is None:
+            setup_name = str(self.parent.solution_name)
+        return self._solutions.ListVariations(setup_name)
+
 
 class HfssEMDesignSolutions(HfssDesignSolutions):
 
@@ -1292,6 +1381,7 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
         Returns the eigenmode data of freq and kappa/2p
         '''
         fn = tempfile.mktemp()
+        #print(self.parent.solution_name, lv, fn)
         self._solutions.ExportEigenmodes(self.parent.solution_name, lv, fn)
         data = np.genfromtxt(fn, dtype='str')
         # Update to Py 3:
@@ -1593,7 +1683,8 @@ class Optimetrics(COMWrapper):
             and then click Add> Parametric on the shortcut menu.
         """
         setup_name = setup_name or self.design.get_setup_names()[0]
-        print(f"Inserting optimetrics setup `{name}` for simulation setup: `{setup_name}`")
+        print(
+            f"Inserting optimetrics setup `{name}` for simulation setup: `{setup_name}`")
 
         if not setup_type is 'parametric':
             raise NotImplementedError()
@@ -2694,13 +2785,13 @@ def get_active_design():
     return project.get_active_design()
 
 
-def get_report_arrays(name:str):
+def get_report_arrays(name: str):
     d = get_active_design()
     r = HfssReport(d, name)
     return r.get_arrays()
 
 
-def load_ansys_project(proj_name:str, project_path:str=None, extension:str='.aedt'):
+def load_ansys_project(proj_name: str, project_path: str = None, extension: str = '.aedt'):
     '''
     Utility function to load an Ansys project.
 

@@ -15,6 +15,8 @@ Copyright Zlatko Minev, Zaki Leghtas, and the pyEPR team
 
 from __future__ import print_function  # Python 2.7 and 3 compatibility
 
+from typing import List
+
 import pickle
 import sys
 import time
@@ -36,7 +38,7 @@ from .reports import (plot_convergence_f_vspass, plot_convergence_max_df,
 from .toolbox.pythonic import print_NoNewLine
 
 
-# class EmAnalysisBase():
+# class AnsysAnalysisBase():
 #
 #    def __init__():
 #        """
@@ -106,13 +108,16 @@ class DistributedAnalysis(object):
         Key internal paramters:
         -------------------
             n_modes (int) : Number of eignemodes; e.g., 2
-            variations (List[str]) : ['0', '1']
-            _list_variations : List of identifier strings for the HFSS variation. Example  block
+            variations (List[str]) :  A list of string identifier of **solved** variation
+                for the selected setup. Example: '['0', '1']
+            _list_variations :  An array of strings corresponding to **solved** variations.
+                List of identifier strings for the SOLVED ansys variation for the selected setup.
+                These do not include unsolved variables added after the solution!
+
                 .. code-block:: python
 
                              ("Height='0.06mm' Lj='13.5nH'",   "Height='0.06mm' Lj='15.3nH'")
 
-                A list of solved variations.  An array of strings corresponding to solved variations.
         '''
 
         # Get the project info
@@ -149,8 +154,7 @@ class DistributedAnalysis(object):
         self.variations = []
         self.variations_analyzed = []  # : List of analyzed variations. List of indecies
 
-        self._nominal_variation = ''  # String identifier
-        self.variation_nominal_index = '0'  #: index label
+        self._nominal_variation = ''  # String identifier of variables, such as  "Cj='2fF' Lj='12.5nH'"
         self._list_variations = ("",)  # tuple set of variables
         # container for eBBQ list of varibles; basically the same as _list_variations
         self._hfss_variables = Dict()
@@ -170,40 +174,42 @@ class DistributedAnalysis(object):
 
     @property
     def setup(self):
+        """Ansys setup class handle. Could be None."""
         return self.pinfo.setup
 
     @property
     def design(self):
+        """Ansys design class handle"""
         return self.pinfo.design
 
     @property
     def project(self):
+        """Ansys project class handle"""
         return self.pinfo.project
 
-    @property
-    def desktop(self):
-        return self.pinfo.desktop
+    #@property
+    #def desktop(self):
+    #    """Ansys desktop class handle"""
+    #    return self.pinfo.desktop
 
-    @property
-    def app(self):
-        return self.pinfo.app
+    #@property
+    #def app(self):
+    #    """Ansys App class handle"""
+    #    return self.pinfo.app
 
-    @property
-    def junctions(self):
-        return self.pinfo.junctions
+    #@property
+    #def junctions(self):
+    #    """Project info junctions"""
+    #    return self.pinfo.junctions
 
-    @property
-    def ports(self):
-        return self.pinfo.ports
+    #@property
+    #def ports(self):
+    #    return self.pinfo.ports
 
     @property
     def options(self):
+        """ Project info options"""
         return self.pinfo.options
-
-    @property
-    def n_variations(self):
-        """ Number of variaitons"""
-        return len(self._list_variations)
 
     def setup_data(self):
         '''
@@ -225,6 +231,7 @@ class DistributedAnalysis(object):
         if not self.data_dir.is_dir():
             self.data_dir.mkdir(parents=True, exist_ok=True)
 
+
     def calc_p_junction_single(self, mode):
         '''
         This function is used in the case of a single junction only.
@@ -239,11 +246,14 @@ class DistributedAnalysis(object):
         return pj
 
     # TODO: replace this method with the one below, here because osme funcs use it still
-    def get_freqs_bare(self, variation):
-        """Outdated. Do not use. To be depreicated
+    def get_freqs_bare(self, variation:str):
+        """
+        Warning:
+            Outdated. Do not use. To be depreicated
 
-        Arguments:
-            variation {[str]} -- [description]
+        Args:
+            variation (str): A string identifier of the variation,
+                such as '0', '1', ...
 
         Returns:
             [type] -- [description]
@@ -252,7 +262,7 @@ class DistributedAnalysis(object):
         freqs_bare_vals = []
         freqs_bare_dict = OrderedDict()
         freqs, kappa_over_2pis = self.solutions.eigenmodes(
-            self._get_lv_EM(variation))
+            self.get_variation_string(variation))
         for m in range(self.n_modes):
             freqs_bare_dict['freq_bare_'+str(m)] = 1e9*freqs[m]
             freqs_bare_vals.append(1e9*freqs[m])
@@ -270,8 +280,9 @@ class DistributedAnalysis(object):
 
 
 
-        Arguments:
-            variation {[str]} -- Index of variation
+        Args:
+            variation (str): A string identifier of the variation,
+                such as '0', '1', ...
             frame {bool} -- if True returns dataframe, else tuple of series.
 
         Returns:
@@ -289,10 +300,12 @@ class DistributedAnalysis(object):
            If frame = False, then a tuple of  two Series, such as
            (Fs, Qs) -- Tuple of pandas.Series objects; the row index is the mode number
         """
-        freqs, kappa_over_2pis = self.solutions.eigenmodes(
-            self._get_lv_EM(variation))
+        variation_str = self.get_variation_string(variation)
+
+        freqs, kappa_over_2pis = self.solutions.eigenmodes(variation_str)
         if kappa_over_2pis is None:
             kappa_over_2pis = np.zeros(len(freqs))
+
         freqs = pd.Series(freqs, index=range(len(freqs)))  # GHz
         Qs = freqs / pd.Series(kappa_over_2pis, index=range(len(freqs)))
 
@@ -325,13 +338,17 @@ class DistributedAnalysis(object):
         '''
         List of variation variables in a format that is used when feeding back to ansys.
 
-        Returns list of var names and var values.
+        Args:
+            variation (str): A string identifier of the variation,
+                such as '0', '1', ...
 
-        Such as ['Lj1:=','13nH', 'QubitGap:=','100um']
+        Returns:
+            list of var names and var values.
+            Such as
 
-        Parameters
-        -----------
-            variation :  string number such as '0' or '1' or ...
+            .. code-block:: python
+
+                ['Lj1:=','13nH', 'QubitGap:=','100um']
         '''
 
         if variation is None:
@@ -342,46 +359,152 @@ class DistributedAnalysis(object):
             lv = self._parse_listvariations(lv)
         return lv
 
+    ### Functions that deal with variations exclusively
+
+    @property
+    def n_variations(self):
+        """ Number of **solved** variaitons, corresponding to the
+        selected Setup. """
+        return len(self._list_variations)
+
+    def set_variation(self, variation:str):
+        """
+        Set the ansys design to a solved variation.
+        This will change all local variables!
+
+        Warning: not tested with global variables.
+        """
+        variation_string = self.get_variation_string(variation)
+        self.design.set_variables(variation_string)
+
+    def get_variations(self):
+        """
+        An array of strings corresponding to **solved** variations corresponding to the
+        selected Setup.
+
+        Returns:
+            Returns a list of strings that give the variation labels for HFSS.
+            .. code-block:: python
+
+                OrderedDict([
+                    ('0', "Cj='2fF' Lj='12nH'"),
+                    ('1', "Cj='2fF' Lj='12.5nH'"),
+                    ('2', "Cj='2fF' Lj='13nH'"),
+                    ('3', "Cj='2fF' Lj='13.5nH'"),
+                    ('4', "Cj='2fF' Lj='14nH'")])
+        """
+        return OrderedDict(zip(self.variations, self._list_variations))
+
     def get_variation_string(self, variation=None):
         """
-        Return the list variation string of parameters in ansys used to identify the variation.
-            "Cj='2fF' Lj='12.5nH'"
+        **Solved** variation string identifier.
+
+        Args:
+            variation (str): A string identifier of the variation,
+                such as '0', '1', ...
+
+        Returns:
+            Return the list variation string of parameters in ansys used to identify the variation.
+
+            .. code-block:: python
+
+                "$test='0.25mm' Cj='2fF' Lj='12.5nH'"
         """
         if variation is None:
-            return self._nominal_variation  # "Cj='2fF' Lj='12.5nH'"
+            return self._nominal_variation
 
         return self._list_variations[ureg(variation)]
 
-    def _get_lv_EM(self, variation):
-        if variation is None:
-            lv = self._nominal_variation
-            #lv = self.parse_listvariations_EM(lv)
-        else:
-            lv = self._list_variations[ureg(variation)]
-            #lv = self.parse_listvariations_EM(lv)
-        return str(lv)
-
-    def _parse_listvariations_EM(self, lv):
-        lv = str(lv)
-        lv = lv.replace("=", ":=,")
-        lv = lv.replace(' ', ',')
-        lv = lv.replace("'", "")
-        lv = lv.split(",")
-        return lv
-
     def _parse_listvariations(self, lv):
+        """
+        Turns
+            "Cj='2fF' Lj='13.5nH'"
+        into
+            ['Cj:=', '2fF', 'Lj:=', '13.5nH']
+        """
         lv = str(lv)
         lv = lv.replace("=", ":=,")
         lv = lv.replace(' ', ',')
         lv = lv.replace("'", "")
         lv = lv.split(",")
         return lv
+
+    def get_nominal_variation_index(self):
+        """
+        Returns:
+            A string identifies, such as '0' or '1', that labels the
+            nominal variation index number.
+
+        This may not be in the solved list!s
+        """
+        try:
+            return str(self._list_variations.index(self._nominal_variation))
+        except:
+            print('WARNING: Unsure of the index, returning 0')
+            return '0'
+
+    def get_ansys_variations(self):
+        """
+        Will update ansys inofrmation and result the list of variations.
+
+        Returns:
+            For example:
+
+            .. code-block:: python
+
+                ("Cj='2fF' Lj='12nH'",
+                "Cj='2fF' Lj='12.5nH'",
+                "Cj='2fF' Lj='13nH'",
+                "Cj='2fF' Lj='13.5nH'",
+                "Cj='2fF' Lj='14nH'")
+        """
+        self.update_ansys_info()
+        return self._list_variations
+
+    def update_ansys_info(self):
+        ''''
+        Updates all information about the Ansys solved variations and variables.
+
+        .. code-block:: python
+            :linenos:
+
+            n_modes, _list_variations, nominal_variation, n_variations
+
+        '''
+
+        # from oDesign
+        self._nominal_variation = self.design.get_nominal_variation()
+
+        if self.setup:
+            # from oSetup -- only for the solved variations!
+            self._list_variations = self.solutions.list_variations()
+
+            self.variations = [str(i) for i in range(self.n_variations)] # TODO: change to integer?
+
+            # eigenmodes
+            if self.design.solution_type == 'Eigenmode':
+                self.n_modes = int(self.setup.n_modes)
+            else:
+                self.n_modes = 0
+
+        self._update_ansys_variables()
+
+    def _update_ansys_variables(self, variations=None):
+        """
+        Updates the list of ansys hfss variables for the set of sweeps.
+        """
+        variations = variations or self.variations
+        for variation in variations:
+            self._hfss_variables[variation] = pd.Series(
+                self.get_variables(variation=variation))
+        return self._hfss_variables
 
     def get_ansys_variables(self):
         """
         Get ansys variables for all variaitons
 
-        Return a dataframe of variables as index and columns as the variations
+        Returns:
+            Return a dataframe of variables as index and columns as the variations
         """
         vs = 'variation'
         df = pd.DataFrame(self._hfss_variables, columns=self.variations)
@@ -392,7 +515,11 @@ class DistributedAnalysis(object):
 
     def get_variables(self, variation=None):
         """
-        Get ansys variables
+        Get ansys variables.
+
+        Args:
+            variation (str): A string identifier of the variation,
+                such as '0', '1', ...
         """
         lv = self._get_lv(variation)
         variables = OrderedDict()
@@ -408,7 +535,8 @@ class DistributedAnalysis(object):
         Return HFSS variable from self.get_ansys_variables() as a
         pandas series vs variations.
 
-            convert : Convert to a numeric quantity if possible using the
+        Args:
+            convert (bool) : Convert to a numeric quantity if possible using the
                         ureg
         """
         # TODO: These should be common function to the analysis and here!
@@ -431,17 +559,20 @@ class DistributedAnalysis(object):
             \mathcal{E}_{\mathrm{elec}}=\frac{1}{4}\mathrm{Re}\int_{V}\mathrm{d}v\vec{E}_{\text{max}}^{*}\overleftrightarrow{\epsilon}\vec{E}_{\text{max}}
 
         Args:
+            variation (str): A string identifier of the variation,
+                such as '0', '1', ...
             volume (string | 'AllObjects'): Name of the volume to integrate over
             smooth (bool | False) : Smooth the electric field or not when performing calculation
 
-        Example use to calcualte the energy participation of a substrate
+        Example:
+            Example use to calcualte the energy participation ratio (EPR) of a substrate
 
-        .. code-block:: python
-            :linenos:
+            .. code-block:: python
+                :linenos:
 
-            ℰ_total  = epr_hfss.calc_energy_electric(volume='AllObjects')
-            ℰ_substr = epr_hfss.calc_energy_electric(volume='Box1')
-            print(f'Energy in substrate = {100*ℰ_substr/ℰ_total:.1f}%')
+                ℰ_total  = epr_hfss.calc_energy_electric(volume='AllObjects')
+                ℰ_substr = epr_hfss.calc_energy_electric(volume='Box1')
+                print(f'Energy in substrate = {100*ℰ_substr/ℰ_total:.1f}%')
 
         '''
 
@@ -464,7 +595,13 @@ class DistributedAnalysis(object):
                              volume='AllObjects',
                              smooth=True):
         '''
-        See calc_energy_electric
+        See calc_energy_electric.
+
+        Args:
+            variation (str): A string identifier of the variation,
+                such as '0', '1', ...
+            volume (string | 'AllObjects'): Name of the volume to integrate over
+            smooth (bool | False) : Smooth the electric field or not when performing calculation
         '''
 
         calcobject = CalcObject([], self.setup)
@@ -512,10 +649,12 @@ class DistributedAnalysis(object):
 
         return ℰ_object/ℰ_total, (ℰ_object, ℰ_total)
 
-    def calc_current(self, fields, line):
+    def calc_current(self, fields, line:str):
         '''
-        Function to calculate Current based on line. Not in use
-        line : integration line between plates - name
+        Function to calculate Current based on line. Not in use.
+
+        Args:
+            line (str) : integration line between plates - name
         '''
         self.design.Clear_Field_Clac_Stack()
         comp = fields.Vector_H
@@ -524,9 +663,17 @@ class DistributedAnalysis(object):
         self.design.Clear_Field_Clac_Stack()
         return I
 
-    def calc_avg_current_J_surf_mag(self, variation, junc_rect, junc_line):
+    def calc_avg_current_J_surf_mag(self, variation:str, junc_rect:str, junc_line):
         ''' Peak current I_max for mdoe J in junction J
-            The avg. is over the surface of the junction. I.e., spatial. '''
+            The avg. is over the surface of the junction. I.e., spatial.
+        Args:
+            variation (str): A string identifier of the variation,
+                such as '0', '1', ...
+            junc_rect (str) : name of rectangle to integrate over
+            junc_line (str) : name of junction line to integrate over
+        Returns:
+            Value of peak current
+        '''
         lv = self._get_lv(variation)
 
         jl, uj = self.get_junc_len_dir(variation, junc_line)
@@ -587,15 +734,17 @@ class DistributedAnalysis(object):
         # self.design.Clear_Field_Clac_Stack()
         return calc.evaluate(lv=lv)
 
-    def get_junc_len_dir(self, variation, junc_line):
+    def get_junc_len_dir(self, variation:str, junc_line):
         '''
         Return the length and direction of a junction defined by a line
 
-        Inputs: variation: simulation variation
-                junc_line: polyline object
+        Args:
+            variation (str): simulation variation
+            junc_line (str): polyline object
 
-        Outputs: jl (float) junction length
-                 uj (list of 3 floats) x,y,z coordinates of the unit vector
+        Returns:
+            jl (float) : junction length
+            uj (list of 3 floats): x,y,z coordinates of the unit vector
                  tangent to the junction line
         '''
         #
@@ -888,7 +1037,7 @@ class DistributedAnalysis(object):
             Ljs = pd.Series({})
             Cjs = pd.Series({})
 
-            for junc_name, val in self.junctions.items():  # junction nickname
+            for junc_name, val in self.pinfo.junctions.items():  # junction nickname
                 _variables = self._hfss_variables[variation]
                 def _parse(name): return ureg.Quantity(
                     _variables['_'+val[name]]).to_base_units().magnitude
@@ -979,6 +1128,16 @@ class DistributedAnalysis(object):
                                 Skipping this mode in the analysis")
                 continue
 
+            try:
+                # This should allow us to load the fields only once, and then do the calcualtions
+                # faster. The loading of the fields does not happen here, but a tthe firc ClcEval call.
+                # This could fail if more varialbes are added after the simulation is compelted.
+                self.set_variation(variation)
+            except Exception as e:
+                print('\tERROR: Could not set the variaiton string.'\
+                '\nPossible causes: Did you add a variable after the simulation was already solved? '\
+                '\nAttempting to proceed nonetheless, should be just slower ...')
+
             # use nonframe because old style
             freqs_bare_GHz, Qs_bare = self.get_freqs_bare_pd(
                 variation, frame=False)
@@ -1046,7 +1205,7 @@ class DistributedAnalysis(object):
 
                 # Calcualte EPR for each of the junctions
                 print(
-                    f'    Calculating junction energy participation ration (EPR)\n\t method={self.pinfo.options.method_calc_P_mj}. First estimates:')
+                    f'    Calculating junction energy participation ration (EPR)\n\tmethod=`{self.pinfo.options.method_calc_P_mj}`. First estimates:')
                 print(
                     f"\t{'junction':<15s} EPR p_{mode}j   sign s_{mode}j    (p_capacitive)")
 
@@ -1289,77 +1448,6 @@ class DistributedAnalysis(object):
 
         self.fields = self.setup.get_fields()
 
-    def _get_nominal_variation_index(self):
-        """
-        Get the nominal variation index number.
-        Returns number as str e.g., '0'
-        """
-        try:
-            return str(self._list_variations.index(self._nominal_variation))
-        except:
-            return '0'
-
-    def get_ansys_variations(self):
-        """
-        Will update ansys inofrmation and result the list of variations
-        """
-        self.update_ansys_info()
-        return self._list_variations
-
-    def _get_list_variations(self):
-        """
-        Use: Get a list of solved variations.
-        Return Value: An array of strings corresponding to solved variations.
-
-        Example:
-
-        .. code-block:: python
-            :linenos:
-
-            list = oModule.ListVariations("Setup1 : LastAdaptive")
-        """
-        return self.design._solutions.ListVariations(str(self.setup.solution_name))
-
-    def _update_ansys_variables(self, variations=None):
-        """
-        Updates the list of ansys hfss variables for the set of sweeps.
-        """
-        variations = variations or self.variations
-        for variation in variations:
-            self._hfss_variables[variation] = pd.Series(
-                self.get_variables(variation=variation))
-        return self._hfss_variables
-
-    def update_ansys_info(self):
-        ''''
-        Updates all information about the Ansys solved variations and variables.
-
-        .. code-block:: python
-            :linenos:
-
-            n_modes, _list_variations, nominal_variation, n_variations
-
-        '''
-
-        # from oDesign
-        self._nominal_variation = self.design.get_nominal_variation()
-
-        if self.setup:
-            # from oSetup
-            self._list_variations = self._get_list_variations()
-
-            self.variations = [str(i) for i in range(self.n_variations)]
-
-            # get the nominal index
-            self.variation_nominal_index = self._get_nominal_variation_index()
-
-            # eigenmodes
-            if self.design.solution_type == 'Eigenmode':
-                self.n_modes = int(self.setup.n_modes)
-            else:
-                self.n_modes = 0
-
-        self._update_ansys_variables()
 
     def has_fields(self, variation: str = None):
         '''
@@ -1370,7 +1458,7 @@ class DistributedAnalysis(object):
             If None, gets the nominal variation
         '''
         if self.solutions:
-            print('variation=', variation)
+            #print('variation=', variation)
             variaiton_string = self.get_variation_string(variation)
             return self.solutions.has_fields(variaiton_string)
         else:
