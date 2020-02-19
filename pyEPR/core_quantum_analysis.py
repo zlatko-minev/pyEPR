@@ -249,19 +249,19 @@ class QuantumAnalysis(object):
         self.Ljs = results['Ljs']  # DataFrame
         self.Cjs = results['Cjs']  # DataFrame
         self.OM = results['Om']  # dict of dataframes
-        self.PM = results['Pm']  # participation matrices
-        self.PM_cap = results['Pm_cap'] # participation matrices for capactive elements
+        self.PM = results['Pm']  # participation matrices - raw, unnormed here
+        # participation matrices for capactive elements
+        self.PM_cap = results['Pm_cap']
         self.SM = results['Sm']  # sign matrices
         self.I_peak = results['I_peak']
         self.V_peak = results['V_peak']
 
         self.sols = results['sols']
-        self.ansys_energies = results.get('ansys_energies',{})
+        self.ansys_energies = results.get('ansys_energies', {})
 
         self.mesh_stats = results['mesh']
         self.convergence = results['convergence']
         self.convergence_f_pass = results['convergence_f_pass']
-
 
         self.n_modes = self.sols[self.variations[0]].shape[0]
         self._renorm_pj = config.epr.renorm_pj
@@ -289,6 +289,20 @@ class QuantumAnalysis(object):
         if len(self.hfss_vars_diff_idx) > 0:
             display(self._hfss_variables[self.hfss_vars_diff_idx])
         print('\n')
+
+    def get_vs_variable(self, swp_var, attr:str):
+        """
+        Convert the index of a dicitoanry that is stored here from
+        variation number to variable value.
+
+        Args:
+            swp_var (str) :name of sweep variable in ansys
+            attr: name of local attribute, eg.., 'ansys_energies'
+        """
+        #from collections import OrderedDict
+        variable = self.get_variable_vs(swp_var)
+        return OrderedDict([(variable[variation], val) \
+            for variation, val in getattr(self, attr).items()])
 
     def get_variable_vs(self, swpvar, lv=None):
         """ lv is list of variations (example ['0', '1']), if None it takes all variations
@@ -404,7 +418,7 @@ class QuantumAnalysis(object):
         Returns as padnas series
         '''
         Cs = self.Cjs[variation]
-        return  Convert.Ec_from_Cs(Cs,  units_in='F', units_out='GHz')
+        return Convert.Ec_from_Cs(Cs,  units_in='F', units_out='GHz')
 
     def analyze_all_variations(self,
                                variations: List[str] = None,
@@ -435,14 +449,14 @@ class QuantumAnalysis(object):
 
         return result
 
-    def _get_ansys_total_energies(self,variation ):
+    def _get_ansys_total_energies(self, variation):
         res = {}
-        for getkey in ['U_tot_cap','U_tot_ind', 'U_H','U_E', 'U_norm']:
-            res[getkey] = pd.Series({mode:self.ansys_energies[variation][mode][getkey] for mode in self.ansys_energies[variation]})
+        for getkey in ['U_tot_cap', 'U_tot_ind', 'U_H', 'U_E', 'U_norm']:
+            res[getkey] = pd.Series({mode: self.ansys_energies[variation][mode][getkey]
+                                     for mode in self.ansys_energies[variation]})
         df = pd.DataFrame(res)
-        df.index.name='modes'
+        df.index.name = 'modes'
         return df
-
 
     def _get_participation_normalized(self, variation, _renorm_pj=None, print_=False):
         '''
@@ -455,19 +469,24 @@ class QuantumAnalysis(object):
 
         # Columns are junctions; rows are modes
         Pm = self.PM[variation].copy()   # EPR matrix DataFrame
-        Pm_cap = self.PM_cap[variation].copy()   # EPR matrix for capacitor DataFrame
+        # EPR matrix for capacitor DataFrame
+        Pm_cap = self.PM_cap[variation].copy()
 
         if self._renorm_pj:
-            ### Renormalize
+            # Renormalize
             # Should we still do this when Pm_glb_sum is very small
             #s = self.sols[variation]
             # sum of participation energies as calculated by global UH and UE
-            #U_mode = s['U_E'] # peak mode energy; or U bar as i denote it sometimes
+            # U_mode = s['U_E'] # peak mode energy; or U bar as i denote it sometimes
             # We need to add the capactiro here, and maybe take the mean of that
 
             energies = self._get_ansys_total_energies(variation)
 
             U_mode = (energies['U_tot_cap'] + energies['U_tot_ind'])/2.
+            U_diff = abs(energies['U_tot_cap'] - energies['U_tot_ind'])/U_mode
+            if np.any(U_diff > 0.15):
+                logger.error(f"WARNING: U_tot_cap-U_tot_ind / mean = {U_diff*100:.1f}% is > 15%.'\
+                    ' Is the simulation converged? Proceed with caution")
 
             # global sums of participations
             Pm_glb_sum = abs((U_mode-energies['U_H'])/U_mode)
@@ -480,7 +499,8 @@ class QuantumAnalysis(object):
             # these numbers are a bit all over the place for now. very small
 
             if print_:
-                print(f"Pm_norm=\n{Pm_norm}\nPm_cap_norm=\n{Pm_cap_norm}")
+                # \nPm_cap_norm=\n{Pm_cap_norm}")
+                print(f"Pm_norm=\n{Pm_norm}")
 
             Pm = Pm.mul(Pm_norm, axis=0)
             Pm_cap = Pm_cap.mul(Pm_cap_norm, axis=0)
@@ -517,7 +537,8 @@ class QuantumAnalysis(object):
         '''
         # TODO: superseed by Convert.ZPF_from_EPR
 
-        res = self._get_participation_normalized(variation, _renorm_pj=_renorm_pj, print_=print_)
+        res = self._get_participation_normalized(
+            variation, _renorm_pj=_renorm_pj, print_=print_)
 
         PJ = np.array(res['PJ'])
         PJ_cap = np.array(res['PJ_cap'])
@@ -589,7 +610,8 @@ class QuantumAnalysis(object):
             print('%s, ' % variation, end='')
 
         # Get matrices
-        PJ, SJ, Om, EJ, PHI_zpf, PJ_cap, n_zpf = self.get_epr_base_matrices(variation)
+        PJ, SJ, Om, EJ, PHI_zpf, PJ_cap, n_zpf = self.get_epr_base_matrices(
+            variation)
         freqs_hfss = self.freqs_hfss[variation].values
         Ljs = self.Ljs[variation].values
 
@@ -635,8 +657,10 @@ class QuantumAnalysis(object):
         result['chi_ND'] = pd.DataFrame(CHI_ND)   # why dataframe?
         result['ZPF'] = PHI_zpf
         result['Pm_normed'] = PJ
-        result['Pm_cap'] = PJ_cap # normed
-        _temp = self._get_participation_normalized(variation, _renorm_pj=self._renorm_pj, print_=print_result)
+        result['Pm_raw'] = self.PM[variation]
+        result['Pm_cap'] = PJ_cap  # normed
+        _temp = self._get_participation_normalized(
+            variation, _renorm_pj=self._renorm_pj, print_=print_result)
         result['_Pm_norm'] = _temp['Pm_norm']
         result['_Pm_cap_norm'] = _temp['Pm_cap_norm']
 
@@ -713,8 +737,8 @@ class QuantumAnalysis(object):
 
         return lv, dic
 
-    #Does not seem used. What is Var_dic and var_name going to?
-    #def plotting_dic_data(self, Var_dic, var_name, data_name):
+    # Does not seem used. What is Var_dic and var_name going to?
+    # def plotting_dic_data(self, Var_dic, var_name, data_name):
     #   lv, dic = self.plotting_dic_x()
     #    dic['y_label'] = data_name
 
@@ -859,7 +883,6 @@ class QuantumAnalysis(object):
 
         return fig, axs
 
-
     # Below are functions introduced in v0.8 and newer
 
     def report_results(self, swp_variable='variation', numeric=True):
@@ -889,6 +912,7 @@ class QuantumAnalysis(object):
         df = pd.concat(self.results.vs_variations(
             label, vs=swp_variable, variations=variations),
             names=[swp_variable])
+
         if m is None and n is None:
             return df
         else:
@@ -910,7 +934,10 @@ class QuantumAnalysis(object):
         """
         return self.results.vs_variations('Qs', vs=swp_variable, to_dataframe=True, variations=variations)
 
-    def get_participations(self, swp_variable='variation', variations: list = None, inductive=True):
+    def get_participations(self, swp_variable='variation',
+                           variations: list = None,
+                           inductive=True,
+                           _normed=True):
         """
 
             inductive (bool): EPR forjunciton inductance when True, else for capactiors
@@ -932,8 +959,19 @@ class QuantumAnalysis(object):
             df.loc[pd.IndexSlice[:,0],0].unstack(1).plot(marker='o')
         """
 
-        participations = self.results.vs_variations(
-            'Pm_normed' if inductive else 'Pm_cap', vs=swp_variable)
+        if inductive:
+            if _normed:
+                getme = 'Pm_normed'
+            else:
+                getme = 'Pm_raw'
+        else:
+            if _normed:
+                getme = 'Pm_cap'
+            else:
+                raise NotImplementedError(
+                    'not inductive and not _normed not implemented')
+
+        participations = self.results.vs_variations(getme, vs=swp_variable)
 
         p2 = OrderedDict()
         for key, val in participations.items():
@@ -945,6 +983,33 @@ class QuantumAnalysis(object):
         participations = pd.concat(p2, names=[swp_variable])
 
         return participations
+
+    def _get_PM_as_DataFrame(self):
+        """
+        Pm = epra._get_PM_as_DataFrame()
+        Pm.unstack(1).groupby(axis=1,level=1).plot()
+        """
+        Pm = pd.concat(self.PM)
+        Pm.index.set_names(['variation', 'mode'], inplace=True)
+        Pm.columns.set_names(['junction'], inplace=True)
+        return Pm
+
+    def get_ansys_energies(self, swp_var='variation'):
+        """
+        Return a multi-index dataframe of ansys energies vs swep_variable
+
+        Args:
+            swp_var (str) :
+        """
+        if swp_var is 'variation':
+            energies = self.ansys_energies
+        else:
+            energies = self.get_vs_variable(swp_var, 'ansys_energies')
+
+        df = pd.concat({k:pd.DataFrame(v).transpose() for k, v in energies.items()})
+        df.index.set_names([swp_var, 'mode'], inplace=True)
+
+        return df
 
     def quick_plot_participation(self, mode, junction, swp_variable='variation', ax=None, kw=None):
         """Quick plot participation for one mode

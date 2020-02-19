@@ -154,7 +154,8 @@ class DistributedAnalysis(object):
         self.variations = []
         self.variations_analyzed = []  # : List of analyzed variations. List of indecies
 
-        self._nominal_variation = ''  # String identifier of variables, such as  "Cj='2fF' Lj='12.5nH'"
+        # String identifier of variables, such as  "Cj='2fF' Lj='12.5nH'"
+        self._nominal_variation = ''
         self._list_variations = ("",)  # tuple set of variables
         # container for eBBQ list of varibles; basically the same as _list_variations
         self._hfss_variables = Dict()
@@ -187,23 +188,23 @@ class DistributedAnalysis(object):
         """Ansys project class handle"""
         return self.pinfo.project
 
-    #@property
-    #def desktop(self):
+    # @property
+    # def desktop(self):
     #    """Ansys desktop class handle"""
     #    return self.pinfo.desktop
 
-    #@property
-    #def app(self):
+    # @property
+    # def app(self):
     #    """Ansys App class handle"""
     #    return self.pinfo.app
 
-    #@property
-    #def junctions(self):
+    # @property
+    # def junctions(self):
     #    """Project info junctions"""
     #    return self.pinfo.junctions
 
-    #@property
-    #def ports(self):
+    # @property
+    # def ports(self):
     #    return self.pinfo.ports
 
     @property
@@ -231,7 +232,6 @@ class DistributedAnalysis(object):
         if not self.data_dir.is_dir():
             self.data_dir.mkdir(parents=True, exist_ok=True)
 
-
     def calc_p_junction_single(self, mode):
         '''
         This function is used in the case of a single junction only.
@@ -246,7 +246,7 @@ class DistributedAnalysis(object):
         return pj
 
     # TODO: replace this method with the one below, here because osme funcs use it still
-    def get_freqs_bare(self, variation:str):
+    def get_freqs_bare(self, variation: str):
         """
         Warning:
             Outdated. Do not use. To be depreicated
@@ -359,7 +359,7 @@ class DistributedAnalysis(object):
             lv = self._parse_listvariations(lv)
         return lv
 
-    ### Functions that deal with variations exclusively
+    # Functions that deal with variations exclusively
 
     @property
     def n_variations(self):
@@ -367,7 +367,7 @@ class DistributedAnalysis(object):
         selected Setup. """
         return len(self._list_variations)
 
-    def set_variation(self, variation:str):
+    def set_variation(self, variation: str):
         """
         Set the ansys design to a solved variation.
         This will change all local variables!
@@ -479,7 +479,8 @@ class DistributedAnalysis(object):
             # from oSetup -- only for the solved variations!
             self._list_variations = self.solutions.list_variations()
 
-            self.variations = [str(i) for i in range(self.n_variations)] # TODO: change to integer?
+            self.variations = [str(i) for i in range(
+                self.n_variations)]  # TODO: change to integer?
 
             # eigenmodes
             if self.design.solution_type == 'Eigenmode':
@@ -649,7 +650,7 @@ class DistributedAnalysis(object):
 
         return ℰ_object/ℰ_total, (ℰ_object, ℰ_total)
 
-    def calc_current(self, fields, line:str):
+    def calc_current(self, fields, line: str):
         '''
         Function to calculate Current based on line. Not in use.
 
@@ -663,7 +664,7 @@ class DistributedAnalysis(object):
         self.design.Clear_Field_Clac_Stack()
         return I
 
-    def calc_avg_current_J_surf_mag(self, variation:str, junc_rect:str, junc_line):
+    def calc_avg_current_J_surf_mag(self, variation: str, junc_rect: str, junc_line):
         ''' Peak current I_max for mdoe J in junction J
             The avg. is over the surface of the junction. I.e., spatial.
         Args:
@@ -734,7 +735,7 @@ class DistributedAnalysis(object):
         # self.design.Clear_Field_Clac_Stack()
         return calc.evaluate(lv=lv)
 
-    def get_junc_len_dir(self, variation:str, junc_line):
+    def get_junc_len_dir(self, variation: str, junc_line):
         '''
         Return the length and direction of a junction defined by a line
 
@@ -924,6 +925,7 @@ class DistributedAnalysis(object):
         # ------------------------------------------------------------
         # Calcualte all peak voltage and currents for all junctions in a given mode
         method = self.pinfo.options.method_calc_P_mj
+
         I_peak_ = {}
         V_peak_ = {}
         Sj = pd.Series({})
@@ -933,7 +935,7 @@ class DistributedAnalysis(object):
             Cj = Cjs[j_name]
             line_name = j_props['line']
 
-            if method is 'J_surf_mag':
+            if method is 'J_surf_mag':  # old method
 
                 _I_peak_1 = self.calc_avg_current_J_surf_mag(
                     variation, j_props['rect'], line_name)
@@ -949,7 +951,7 @@ class DistributedAnalysis(object):
                 V_peak = _V_peak_2  # make sure this is signed
                 I_peak = _I_peak_1
 
-            elif method is 'line_voltage':
+            elif method is 'line_voltage':  # new preffered method
 
                 I_peak, V_peak, _ = self.calc_current_using_line_voltage(
                     variation, line_name, Lj, Cj)
@@ -992,8 +994,12 @@ class DistributedAnalysis(object):
         # what to use for the norm?  U_tot_cap or the mean of  U_tot_ind and  U_tot_cap?
         # i.e., (U_tot_ind + U_tot_cap)/2
         U_norm = U_tot_cap
-        print("\t\t(U_tot_cap-U_tot_ind)/mean=",
-              f'{(U_tot_cap-U_tot_ind)/(U_tot_cap+U_tot_ind)*100:.2f}%')
+        U_diff = (U_tot_cap-U_tot_ind)/(U_tot_cap+U_tot_ind)
+        print("\t\t"f"(U_tot_cap-U_tot_ind)/mean={U_diff*100:.2f}%")
+        if abs(U_diff) > 0.15:
+            print('WARNING: This simulation must not have converged well!!!\
+                The difference in the total cap and ind energies is larger than 10%.\
+                Proceed with caution.')
 
         Pj = pd.Series(OrderedDict([(j_name, Uj_ind/U_norm)
                                     for j_name, Uj_ind in U_J_inds.items()]))
@@ -1006,7 +1012,15 @@ class DistributedAnalysis(object):
         #    Pj['p_' + j_name],
         #    '+' if Sj['s_' + j_name] > 0 else '-'))
 
-        return Pj, Sj, PCj, pd.Series(I_peak), pd.Series(V_peak), {'U_J_inds': U_J_inds, 'U_J_caps': U_J_caps, 'U_H': U_H, 'U_E': U_E, 'U_tot_ind': U_tot_ind, 'U_tot_cap': U_tot_cap, 'U_norm': U_norm}
+        return Pj, Sj, PCj, pd.Series(I_peak), pd.Series(V_peak), \
+            {'U_J_inds': U_J_inds,
+             'U_J_caps': U_J_caps,
+             'U_H': U_H,
+             'U_E': U_E,
+             'U_tot_ind': U_tot_ind,
+             'U_tot_cap': U_tot_cap,
+             'U_norm': U_norm,
+             'U_diff': U_diff}
 
     def get_previously_analyzed(self):
         """
@@ -1134,9 +1148,9 @@ class DistributedAnalysis(object):
                 # This could fail if more varialbes are added after the simulation is compelted.
                 self.set_variation(variation)
             except Exception as e:
-                print('\tERROR: Could not set the variaiton string.'\
-                '\nPossible causes: Did you add a variable after the simulation was already solved? '\
-                '\nAttempting to proceed nonetheless, should be just slower ...')
+                print('\tERROR: Could not set the variaiton string.'
+                      '\nPossible causes: Did you add a variable after the simulation was already solved? '
+                      '\nAttempting to proceed nonetheless, should be just slower ...')
 
             # use nonframe because old style
             freqs_bare_GHz, Qs_bare = self.get_freqs_bare_pd(
@@ -1447,7 +1461,6 @@ class DistributedAnalysis(object):
                                     Skipping this mode in the analysis \N{face with medical mask}")
 
         self.fields = self.setup.get_fields()
-
 
     def has_fields(self, variation: str = None):
         '''
