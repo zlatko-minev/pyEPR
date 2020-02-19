@@ -88,14 +88,14 @@ def df_find_index(s: pd.Series, find, degree=2, ax=False):
         return value, p
 
 
-def df_interpolate_value(s: pd.Series, find):
+def df_interpolate_value(s: pd.Series, find, ax=False, method='index'):
     """
     Given a Pandas Series such as of freq with index Lj,
     find the freq that would correspnd to Lj given a value not in the index
     """
     z = pd.Series(list(s) + [np.NaN], index=list(s.index.values)+[find])
     z = z.sort_index()
-    z = z.interpolate()
+    z = z.interpolate(method=method)
     return z[find], z
 
 
@@ -119,11 +119,11 @@ def df_extrapolate(s, degree = 2, ax=False):
         xp = np.linspace(min_-2*rng, max_+2*rng, 100)
         ys = p(xp)
         ax.plot(xp,ys)
-        s.plot(marker='o')
+        s.plot(marker='o',ax=ax)
 
     return p
 
-def df_regress_value(s:pd.Series, index, degree=2):
+def df_regress_value(s:pd.Series, index, degree=2,ax=False,method='index'):
     """
     for pandas series.
     calls either  df_interpolate_value or df_extrapolate
@@ -132,10 +132,10 @@ def df_regress_value(s:pd.Series, index, degree=2):
     min_ = min(s.index.values)
     if index > max_ or index < min_:
         #print('extrapolate')
-        p = df_extrapolate(s, degree = degree, ax=False)
-        value  = p(index)
+        p = df_extrapolate(s, degree = degree, ax=ax)
+        value = p(index)
     else:
-        value = df_interpolate_value(s, index)[0]
+        value = df_interpolate_value(s, index,method=method)[0]
     return value
 
 
