@@ -1461,7 +1461,24 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
             err = f'ERROR: You tried to set a mode > number of modes {n}/{n_modes}'
             logger.error(err)
             raise Exception(err)
-
+        
+        # THIS WORKS FOR v2019R2
+        
+        self._solutions.EditSources(
+        [
+            [
+                "FieldType:="   , "EigenPeakElectricField"
+            ],       
+            [
+                "Name:=", "Modes",
+                "Magnitudes:=", ["1" if i + 1 ==
+                            n else "0" for i in range(n_modes)],
+                "Phases:=", [str(phase) if i + 1 ==
+                               n else "0" for i in range(n_modes)]
+            ]
+        ])
+        
+        """
         # TODO: WARNING: Note that the syntax has changed for AEDT 18.2.
         # see https://ansyshelp.ansys.com/account/secured?returnurl=/Views/Secured/Electronics/v195//Subsystems/HFSS/Subsystems/HFSS%20Scripting/HFSS%20Scripting.htm
 
@@ -1476,6 +1493,7 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
             ["NAME:Terminated"],
             ["NAME:Impedances"]
         )
+        """
 
     def has_fields(self, variation_string=None):
         '''
