@@ -37,6 +37,7 @@ from .toolbox.pythonic import (DataFrame_col_diff, divide_diagonal_by_2,
                                print_color, print_matrix, sort_df_col,
                                sort_Series_idx, df_find_index, series_of_1D_dict_to_multi_df)
 
+from .reports import (plot_convergence_max_df, plot_convergence_solved_elem)
 
 class HamiltonianResultsContainer(OrderedDict):
     """
@@ -290,7 +291,7 @@ class QuantumAnalysis(object):
             display(self._hfss_variables[self.hfss_vars_diff_idx])
         print('\n')
 
-    def get_vs_variable(self, swp_var, attr:str):
+    def get_vs_variable(self, swp_var, attr: str):
         """
         Convert the index of a dicitoanry that is stored here from
         variation number to variable value.
@@ -301,8 +302,8 @@ class QuantumAnalysis(object):
         """
         #from collections import OrderedDict
         variable = self.get_variable_vs(swp_var)
-        return OrderedDict([(variable[variation], val) \
-            for variation, val in getattr(self, attr).items()])
+        return OrderedDict([(variable[variation], val)
+                            for variation, val in getattr(self, attr).items()])
 
     def get_variable_vs(self, swpvar, lv=None):
         """ lv is list of variations (example ['0', '1']), if None it takes all variations
@@ -381,22 +382,36 @@ class QuantumAnalysis(object):
             ret[key] = df['Solved Elements'].iloc[-1]
         return ret
 
-    def get_convergences_tets_vs_pass(self):
+    def get_convergences_tets_vs_pass(self, as_dataframe=True):
         ''' Index([u'Pass Number', u'Solved Elements', u'Max Delta Freq. %' ])  '''
         ret = OrderedDict()
         for key, df in self.convergence.items():
             s = df['Solved Elements']
+            s = s.reset_index().dropna().set_index('Pass Number')
             #s.index = df['Pass Number']
             ret[key] = s
+
+        if as_dataframe:
+            ret = pd.concat(ret)
+            ret = ret.unstack(0)['Solved Elements']
+
         return ret
 
-    def get_convergences_max_delta_freq_vs_pass(self):
+    def get_convergences_max_delta_freq_vs_pass(self, as_dataframe=True):
         ''' Index([u'Pass Number', u'Solved Elements', u'Max Delta Freq. %' ])  '''
+        KEY = 'Max Delta Freq. %'
+
         ret = OrderedDict()
         for key, df in self.convergence.items():
-            s = df['Max Delta Freq. %']
+            s = df[KEY]
+            s = s.reset_index().dropna().set_index('Pass Number')
             #s.index = df['Pass Number']
             ret[key] = s
+
+        if as_dataframe:
+            ret = pd.concat(ret)
+            ret = ret.unstack(0)[KEY]
+
         return ret
 
     def get_mesh_tot(self):
@@ -469,10 +484,11 @@ class QuantumAnalysis(object):
 
         # Columns are junctions; rows are modes
         Pm = self.PM[variation].copy()   # EPR matrix DataFrame
+
         # EPR matrix for capacitor DataFrame
         Pm_cap = self.PM_cap[variation].copy()
 
-        if self._renorm_pj: # just non False
+        if _renorm_pj:  # just non False
 
             # Renormalize
             # Should we still do this when Pm_glb_sum is very small
@@ -499,16 +515,32 @@ class QuantumAnalysis(object):
             # this is not the correct scaling yet! WARNING. Factors of 2 laying around too
             # these numbers are a bit all over the place for now. very small
 
+            if _renorm_pj is True or _renorm_pj is 1:
+                idx = Pm > -1E6  # everywhere scale
+                idx_cap = Pm_cap > -1E6
+            elif _renorm_pj is 2:
+                idx = Pm > 0.15  # Mask for where to scale
+                idx_cap = Pm_cap > 0.15
+            else:
+                raise NotImplementedError(
+                    "Unkown _renorm_pj argument or config values!")
+
             if print_:
                 # \nPm_cap_norm=\n{Pm_cap_norm}")
-                print(f"Pm_norm=\n{Pm_norm}")
+                print(f"Pm_norm=\n{Pm_norm}\n")
+                print(f"Pm_norm idx =\n{idx}")
 
-            Pm = Pm.mul(Pm_norm, axis=0)
-            Pm_cap = Pm_cap.mul(Pm_cap_norm, axis=0)
+
+            Pm[idx] = Pm[idx].mul(Pm_norm, axis=0)
+            Pm_cap[idx_cap] = Pm_cap[idx_cap].mul(Pm_cap_norm, axis=0)
+            #Pm = Pm.mul(Pm_norm, axis=0)
+            #Pm_cap = Pm_cap.mul(Pm_cap_norm, axis=0)
 
         else:
             Pm_norm = 1
             Pm_cap_norm = 1
+            idx = None
+            idx_cap = None
             if print_:
                 print('NO renorm!')
 
@@ -519,7 +551,10 @@ class QuantumAnalysis(object):
             print(Pm, '\n')
             Pm = np.abs(Pm)
 
-        return {'PJ': Pm, 'Pm_norm': Pm_norm, 'PJ_cap': Pm_cap, 'Pm_cap_norm': Pm_cap_norm}
+        return {'PJ': Pm, 'Pm_norm': Pm_norm, 'PJ_cap': Pm_cap,
+                'Pm_cap_norm': Pm_cap_norm,
+                'idx': idx,
+                'idx_cap': idx_cap}
 
     def get_epr_base_matrices(self, variation, _renorm_pj=None, print_=False):
         r'''
@@ -1007,7 +1042,8 @@ class QuantumAnalysis(object):
         else:
             energies = self.get_vs_variable(swp_var, 'ansys_energies')
 
-        df = pd.concat({k:pd.DataFrame(v).transpose() for k, v in energies.items()})
+        df = pd.concat({k: pd.DataFrame(v).transpose()
+                        for k, v in energies.items()})
         df.index.set_names([swp_var, 'mode'], inplace=True)
 
         return df
@@ -1091,6 +1127,22 @@ class QuantumAnalysis(object):
 
         fig.suptitle(f'Mode {mode}', y=1.025)
         fig.tight_layout()
+
+    def quick_plot_convergence(self, ax = None):
+        """
+        Plot a report of the Ansys converngece vs pass number ona twin axis
+        for the number of tets and the max delta frequency of the eignemode.
+        """
+        ax = ax or plt.gca()
+        ax_t = ax.twinx()
+
+        convergence_tets = self.get_convergences_tets_vs_pass()
+        convergence_freq = self.get_convergences_max_delta_freq_vs_pass()
+
+        convergence_freq.name = 'Δf'
+
+        plot_convergence_max_df(ax, convergence_freq)
+        plot_convergence_solved_elem(ax_t, convergence_tets)
 
 
 def extract_dic(name=None, file_name=None):

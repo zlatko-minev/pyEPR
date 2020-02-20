@@ -74,7 +74,7 @@ def df_find_index(s: pd.Series, find, degree=2, ax=False):
     """
     max_ = max(s.index.values)
     min_ = min(s.index.values)
-    if find <= max_ and  find >= min_:
+    if find <= max_ and find >= min_:
         # interpolate
         z = pd.Series(list(s.index.values)+[np.NaN], index=list(s) + [find])
         z = z.sort_index()
@@ -83,7 +83,7 @@ def df_find_index(s: pd.Series, find, degree=2, ax=False):
     else:
         print('extrapolating')
         z = pd.Series(list(s.index.values), index=list(s))
-        p = df_extrapolate(z, degree = degree, ax=False)
+        p = df_extrapolate(z, degree=degree, ax=False)
         value = p(find)
         return value, p
 
@@ -99,31 +99,32 @@ def df_interpolate_value(s: pd.Series, find, ax=False, method='index'):
     return z[find], z
 
 
-
-def df_extrapolate(s, degree = 2, ax=False):
+def df_extrapolate(s, degree=2, ax=False, rng_scale=2.):
     """
     For a pandas series
 
     Returns np.poly1d
     """
-    z=np.polyfit(s.index.values, s.values, degree)
+    z = np.polyfit(s.index.values, s.values, degree)
     p = np.poly1d(z)
 
     if ax:
         if ax is True:
-            ax=plt.gca()
+            ax = plt.gca()
 
         max_ = max(s.index.values)
         min_ = min(s.index.values)
         rng = max_ - min_
-        xp = np.linspace(min_-2*rng, max_+2*rng, 100)
+        xp = np.linspace(min_-rng_scale*rng, max_+rng_scale*rng, 100)
         ys = p(xp)
-        ax.plot(xp,ys)
-        s.plot(marker='o',ax=ax)
+        ax.plot(xp, ys)
+        s.plot(marker='o', ax=ax)
 
     return p
 
-def df_regress_value(s:pd.Series, index, degree=2,ax=False,method='index'):
+
+def df_regress_value(s: pd.Series, index, degree=2, ax=False, method='index',
+                     rng_scale=2.):
     """
     for pandas series.
     calls either  df_interpolate_value or df_extrapolate
@@ -131,18 +132,19 @@ def df_regress_value(s:pd.Series, index, degree=2,ax=False,method='index'):
     max_ = max(s.index.values)
     min_ = min(s.index.values)
     if index > max_ or index < min_:
-        #print('extrapolate')
-        p = df_extrapolate(s, degree = degree, ax=ax)
+        # print('extrapolate')
+        p = df_extrapolate(s, degree=degree, ax=ax, rng_scale=rng_scale)
         value = p(index)
     else:
-        value = df_interpolate_value(s, index,method=method)[0]
+        value = df_interpolate_value(s, index, method=method)[0]
     return value
 
 
-def series_of_1D_dict_to_multi_df(Uj_ind:pd.Series):
-    df= pd.DataFrame(dict([(k, v) for k, v in Uj_ind.items()])).transpose()
+def series_of_1D_dict_to_multi_df(Uj_ind: pd.Series):
+    df = pd.DataFrame(dict([(k, v) for k, v in Uj_ind.items()])).transpose()
     df.index.set_names(Uj_ind.index.names, inplace=True)
     return df
+
 
 def sort_df_col(df):
     '''         sort by numerical int order    '''
