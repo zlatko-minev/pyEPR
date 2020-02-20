@@ -7,8 +7,8 @@
 Welcome to pyEPR 🍻!
 *********************************************
 
-Powerfull analysis and design of quantum microwave devices
-***********************************************************
+Powerful, automated analysis and design of quantum microwave devices
+***************************************************************************
 **Version**: |version|
 
 
