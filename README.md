@@ -19,6 +19,9 @@ Welcome to pyEPR :beers:!
 
 [Read the docs here.](https://pyepr-docs.readthedocs.io)
 
+#### Legacy users
+Warning: pyEPR organization was significnatly improved in v0.8-dev (starting 2020; current branch: master \[to be made stable soon\]). If you used a previous version, you will find that all key classes have been renamed. Please, see the tutorials and docs.  In the meantime, if you cannot switch yet, revert to use the stable v0.7.
+
 # Contents:
 * [Start here: Using `pyEPR`](#start-here-using-pyepr)
 * [Video Tutorials](#pyepr-video-tutorials)
