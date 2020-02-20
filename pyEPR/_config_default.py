@@ -42,8 +42,15 @@ config = Dict( # pylint: disable=invalid-name
 
     epr = Dict(
 
-        # Use participation enomalizaiton or now
-        renorm_pj = True,
+        # Define the participation renomalizaiton method
+        # False : no extra renormalization to enforce
+        #         can be more problematic for large pj, when sim isn't well converged
+        # True or 1 : use enforcement of U_J_total to be U_mode-U_H
+        #         can be more problematic for small pj, when sim isn't well converged
+        # 2     : use enforcement of U_J_total to be U_mode-U_H (i.e., 1)
+        #         only when the total particiaption is above a certain threshold
+        #         preffered method.
+        renorm_pj = 2,
     ),
 
     # Loss properties of various materials and surfaces
