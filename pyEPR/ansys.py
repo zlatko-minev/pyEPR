@@ -1287,6 +1287,7 @@ class AnsysQ3DSetup(HfssSetup):
 
         text = Path(path).read_text()
 
+
         s1 = text.split('Capacitance Matrix')
         assert len(s1) == 2, "Copuld not split text to `Capacitance Matrix`"
 
@@ -1303,7 +1304,14 @@ class AnsysQ3DSetup(HfssSetup):
         else:
             df_cond = None
 
-        design_variation = re.findall(r'DesignVariation:(.*?)\n', text)[0]
+        var = re.findall(r'DesignVariation:(.*?)\n', text) # this changed circe v2020
+        if len(var) <1: # didnt find
+            var = re.findall(r'Design Variation:(.*?)\n', text)
+            if len(var) <1: # didnt find
+                logger.error(f'Failed to parse Q3D matrix Design Variation:\nFile:{path}\nText:{text}')
+
+                var = ['']
+        design_variation = var[0]
 
         return df_cmat, units, design_variation, df_cond, units_cond
 
