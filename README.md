@@ -12,7 +12,7 @@ Welcome to pyEPR :beers:!
 
 
 ## How do I cite `pyEPR` when I publish?
-Cite 
+Cite and/or e-mail `zlatko.minev@aya.yale.edu`
 * Z.K. Minev, Ph.D. Dissertation, Yale University (2018), Chapter 4. [arXiv:1902.10355](https://arxiv.org/abs/1902.10355)
 * Z.K. Minev, Z. Leghtas, _et al._ (to appear soon on arXiv) (2020)
 
