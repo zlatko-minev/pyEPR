@@ -16,7 +16,7 @@ Cite
 * Z.K. Minev, Ph.D. Dissertation, Yale University (2018), Chapter 4. [arXiv:1902.10355](https://arxiv.org/abs/1902.10355)
 * Z.K. Minev, Z. Leghtas, _et al._ (to appear soon on arXiv) (2020)
 
-### Documentation
+## Documentation
 
 [Read the docs here.](https://pyepr-docs.readthedocs.io)
 
