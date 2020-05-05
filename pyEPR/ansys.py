@@ -2687,6 +2687,10 @@ class CalcObject(COMWrapper):
         stack = self.stack + [(type, name), ("CalcOp", "Integrate")]
         return CalcObject(stack, self.setup)
 
+    def _maximum(self, name, type):
+        stack = self.stack + [(type, name), ("CalcOp", "Maximum")]
+        return CalcObject(stack, self.setup)
+
     def getQty(self, name):
         stack = self.stack + [("EnterQty", name)]
         return CalcObject(stack, self.setup)
@@ -2717,6 +2721,9 @@ class CalcObject(COMWrapper):
 
     def integrate_vol(self, name="AllObjects"):
         return self._integrate(name, "EnterVol")
+
+    def maximum_vol(self, name='AllObjects'):
+        return self._maximum(name, 'EnterVol')
 
     def times_eps(self):
         stack = self.stack + [("ClcMaterial", ("Permittivity (epsi)", "mult"))]
