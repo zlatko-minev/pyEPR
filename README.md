@@ -22,6 +22,17 @@ Welcome to pyEPR :beers:!
 #### Legacy users
 Warning: pyEPR organization was significnatly improved in v0.8-dev (starting 2020; current branch: master \[to be made stable soon\]). If you used a previous version, you will find that all key classes have been renamed. Please, see the tutorials and docs.  In the meantime, if you cannot switch yet, revert to use the stable v0.7.
 
+## Who uses pyEPR?
+* Yale University, Michel Devoret lab [QLab](https://qulab.eng.yale.edu/), CT, USA
+* Yale University, Rob Schoelkopf lab [RSL](https://rsl.yale.edu/), CT, USA
+* [IBM Quantum](https://www.ibm.com/quantum-computing/)
+* [QUANTIC](https://team.inria.fr/quantic/people.html#) (QUANTUM INFORMATION CIRCUITS), PARISINRIA, ENS, MINES PARISTECH, UPMC, CNRS. Groups of Zaki Leghtas and team. France
+* UC Berkeley, [Quantum Nanoelectronics Laboratory](https://physics.berkeley.edu/quantum-nanoelectronics-laboratory), Irfan Siddiqi, CA, USA 
+* [Quantum Circuits, Inc.](https://quantumcircuits.com/), CT, USA
+* Serge [Rosenblum Lab](https://www.weizmann.ac.il/condmat/rosenblum/) in the Weizmann Instatue, Israel
+* Peter [Leek Lab](https://leeklab.org/), UK
+* ... and many more! (Please e-mail `zlatko.minev@aya.yale.edu` with updates.)
+
 # Contents:
 * [Start here: Using `pyEPR`](#start-here-using-pyepr)
 * [Video Tutorials](#pyepr-video-tutorials)
