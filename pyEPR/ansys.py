@@ -32,6 +32,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from sympy.parsing import sympy_parser
+import io
 
 from . import logger
 
@@ -1057,6 +1058,7 @@ class HfssSetup(HfssPropertyObject):
             Variation should be in the form
             variation = "scale_factor='1.2001'" ...
         '''
+        # TODO: (Daniel) I think this data should be store in a more comfortable datatype (dictionary maybe?)
         # Write file
         temp = tempfile.NamedTemporaryFile()
         temp.close()
@@ -1078,9 +1080,8 @@ class HfssSetup(HfssPropertyObject):
         # Parse file
         text2 = text.split(r'==================')
         if len(text) >= 3:
-            df = pd.read_csv(pd.compat.StringIO(
-                text2[3].strip()), sep='|', skipinitialspace=True, index_col=0)
-            df = df.drop('Unnamed: 3', 1)
+            df = pd.read_csv(io.StringIO(
+                text2[3].strip()), sep='|', skipinitialspace=True, index_col=0).drop('Unnamed: 3', 1)
         else:
             logger.error(f'ERROR IN reading in {temp}:\n{text}')
             df = None
@@ -1293,12 +1294,12 @@ class AnsysQ3DSetup(HfssSetup):
 
         s2 = s1[1].split('Conductance Matrix')
 
-        df_cmat = pd.read_csv(pd.compat.StringIO(
+        df_cmat = pd.read_csv(io.StringIO(
             s2[0].strip()), delim_whitespace=True, skipinitialspace=True, index_col=0)
         units = re.findall(r'C Units:(.*?),', text)[0]
 
         if len(s2) > 1:
-            df_cond = pd.read_csv(pd.compat.StringIO(
+            df_cond = pd.read_csv(io.StringIO(
                 s2[1].strip()), delim_whitespace=True, skipinitialspace=True, index_col=0)
             units_cond = re.findall(r'G Units:(.*?)\n', text)[0]
         else:
