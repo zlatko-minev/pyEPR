@@ -232,15 +232,20 @@ class DistributedAnalysis(object):
         if not self.data_dir.is_dir():
             self.data_dir.mkdir(parents=True, exist_ok=True)
 
-    def calc_p_junction_single(self, mode):
+    def calc_p_junction_single(self, mode, variation, U_E = None, U_H = None):
         '''
         This function is used in the case of a single junction only.
         For multiple junctions, see `calc_p_junction`.
 
         Assumes no lumped capacitive elements.
         '''
+        if U_E == None:
+            U_E = self.calc_energy_electric(variation)
+        if U_H == None:
+            U_H = self.calc_energy_magnetic(variation)
+        
         pj = OrderedDict()
-        pj_val = (self.U_E-self.U_H)/self.U_E
+        pj_val = (U_E-U_H)/U_E
         pj['pj_'+str(mode)] = np.abs(pj_val)
         print('    p_j_' + str(mode) + ' = ' + str(pj_val))
         return pj
@@ -760,13 +765,16 @@ class DistributedAnalysis(object):
         uj = [float(u[0]/jl), float(u[1]/jl), float(u[2]/jl)]
         return jl, uj
 
-    def get_Qseam(self, seam, mode, variation):
+    def get_Qseam(self, seam, mode, variation, U_H = None):
         r'''
         Caculate the contribution to Q of a seam, by integrating the current in
         the seam with finite conductance: set in the config file
         ref: http://arxiv.org/pdf/1509.01119.pdf
         '''
-
+        
+        if U_H == None:
+            U_H = self.calc_energy_magnetic(variation)
+        
         lv = self._get_lv(variation)
         Qseam = OrderedDict()
         print('Calculating Qseam_' + seam + ' for mode ' + str(mode) +
@@ -775,7 +783,7 @@ class DistributedAnalysis(object):
         j_2_norm = self.fields.Vector_Jsurf.norm_2()
         int_j_2 = j_2_norm.integrate_line(seam)
         int_j_2_val = int_j_2.evaluate(lv=lv, phase=90)
-        yseam = int_j_2_val/self.U_H/self.omega
+        yseam = int_j_2_val/U_H/self.omega
 
         Qseam['Qseam_'+seam+'_' +
               str(mode)] = config.dissipation.gseam/yseam
@@ -785,7 +793,7 @@ class DistributedAnalysis(object):
 
         return pd.Series(Qseam)
 
-    def get_Qseam_sweep(self, seam, mode, variation, variable, values, unit, pltresult=True):
+    def get_Qseam_sweep(self, seam, mode, variation, variable, values, unit, U_H = None, pltresult=True):
         """
         Q due to seam loss.
 
@@ -793,6 +801,9 @@ class DistributedAnalysis(object):
         ref: http://arxiv.org/pdf/1509.01119.pdf
         """
 
+        if U_H == None:
+            U_H = self.calc_energy_(variation)
+        
         self.solutions.set_mode(mode+1, 0)
         self.fields = self.setup.get_fields()
         freqs_bare_dict, freqs_bare_vals = self.get_freqs_bare(variation)
@@ -800,7 +811,6 @@ class DistributedAnalysis(object):
         print(variation)
         print(type(variation))
         print(ureg(variation))
-        self.U_H = self.calc_energy_magnetic(variation)
 
         lv = self._get_lv(variation)
         Qseamsweep = []
@@ -813,7 +823,7 @@ class DistributedAnalysis(object):
             j_2_norm = self.fields.Vector_Jsurf.norm_2()
             int_j_2 = j_2_norm.integrate_line(seam)
             int_j_2_val = int_j_2.evaluate(lv=lv, phase=90)
-            yseam = int_j_2_val/self.U_H/self.omega
+            yseam = int_j_2_val/U_H/self.omega
             Qseamsweep.append(config.dissipation.gseam/yseam)
 #        Qseamsweep['Qseam_sweep_'+seam+'_'+str(mode)] = gseam/yseam
             # Cprint 'Qseam_' + seam + '_' + str(mode) + str(' = ') + str(gseam/yseam)
@@ -827,13 +837,15 @@ class DistributedAnalysis(object):
 
         return Qseamsweep
 
-    def get_Qdielectric(self, dielectric, mode, variation):
+    def get_Qdielectric(self, dielectric, mode, variation, U_E = None):
+        if U_E == None:
+            U_E = self.calc_energy_electric(variation) 
         Qdielectric = OrderedDict()
         print('Calculating Qdielectric_' + dielectric + ' for mode ' +
               str(mode) + ' (' + str(mode) + '/' + str(self.n_modes-1) + ')')
 
         U_dielectric = self.calc_energy_electric(variation, volume=dielectric)
-        p_dielectric = U_dielectric/self.U_E
+        p_dielectric = U_dielectric/U_E
         # TODO: Update make p saved sep. and get Q for diff materials, indep. specify in pinfo
         Qdielectric['Qdielectric_'+dielectric+'_' +
                     str(mode)] = 1/(p_dielectric*config.dissipation.tan_delta_sapp)
@@ -841,12 +853,14 @@ class DistributedAnalysis(object):
               str(mode)+' = ' + str(p_dielectric))
         return pd.Series(Qdielectric)
 
-    def get_Qsurface_all(self, mode, variation):
+    def get_Qsurface_all(self, mode, variation, U_E = None):
         '''
         caculate the contribution to Q of a dieletric layer of dirt on all surfaces
         set the dirt thickness and loss tangent in the config file
         ref: http://arxiv.org/pdf/1509.01854.pdf
         '''
+        if U_E == None:
+            U_E = self.calc_energy_electric(variation)
         lv = self._get_lv(variation)
         Qsurf = OrderedDict()
         print('Calculating Qsurface for mode ' + str(mode) +
@@ -863,13 +877,13 @@ class DistributedAnalysis(object):
         A = A.integrate_surf(name='AllObjects')
         U_surf = A.evaluate(lv=lv)
         U_surf *= config.dissipation.th*epsilon_0*config.dissipation.eps_r
-        p_surf = U_surf/self.U_E
+        p_surf = U_surf/U_E
         Qsurf['Qsurf_'+str(mode)] = 1 / \
             (p_surf*config.dissipation.tan_delta_surf)
         print('p_surf'+'_'+str(mode)+' = ' + str(p_surf))
         return pd.Series(Qsurf)
 
-    def calc_Q_external(self, variation, freq_GHz, U_E):
+    def calc_Q_external(self, variation, freq_GHz, U_E = None):
         '''
         Calculate the coupling Q of mode m with each port p
         Expected that you have specified the mode before calling this
@@ -878,7 +892,8 @@ class DistributedAnalysis(object):
             variation (str): A string identifier of the variation,
             such as '0', '1', ...
         '''
-
+        if U_E == None:
+            U_E = self.calc_energy_electric(variation)
         Qp = pd.Series({})
 
         freq = freq_GHz * 1e9  # freq in Hz
@@ -1240,19 +1255,19 @@ class DistributedAnalysis(object):
                 # get seam Q
                 if self.pinfo.dissipative.seams:
                     for seam in self.pinfo.dissipative.seams:
-                        sol = sol.append(self.get_Qseam(seam, mode, variation))
+                        sol = sol.append(self.get_Qseam(seam, mode, variation, self.U_H))
 
                 # get Q dielectric
                 if self.pinfo.dissipative.dielectrics_bulk:
                     for dielectric in self.pinfo.dissipative.dielectrics_bulk:
                         sol = sol.append(self.get_Qdielectric(
-                            dielectric, mode, variation))
+                            dielectric, mode, variation, self.U_E))
 
                 # get Q surface
                 if self.pinfo.dissipative.resistive_surfaces:
                     if self.pinfo.dissipative.resistive_surfaces is 'all':
                         sol = sol.append(
-                            self.get_Qsurface_all(mode, variation))
+                            self.get_Qsurface_all(mode, variation, self.U_E))
                     else:
                         raise NotImplementedError(
                             "Join the team, by helping contribute this piece of code.")
