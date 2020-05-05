@@ -33,6 +33,7 @@ Warning: pyEPR organization was significnatly improved in v0.8-dev (starting 202
 * Serge [Rosenblum Lab](https://www.weizmann.ac.il/condmat/rosenblum/) in the Weizmann Instatue, Israel
 * Peter [Leek Lab](https://leeklab.org/), UK
 * Britton [Plourde Lab](https://bplourde.expressions.syr.edu/), Syracuse University, USA
+* Javad [Shabani Lab](https://wp.nyu.edu/shabanilab/) Quantum Materials & Devices, NYU, NY, USA
 * ... and many more! (Please e-mail `zlatko.minev@aya.yale.edu` with updates.)
 
 # Contents:
