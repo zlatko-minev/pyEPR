@@ -24,7 +24,7 @@ Warning: pyEPR organization was significnatly improved in v0.8-dev (starting 202
 * [Quantum Circuit Group](http://www.physinfo.fr/) Emanuel FLurin, Benjamin Huard, Ecole Normale Supérieure de Lyon, France
 * UC Berkeley, [Quantum Nanoelectronics Laboratory](https://physics.berkeley.edu/quantum-nanoelectronics-laboratory), Irfan Siddiqi, CA, USA 
 * [Quantum Circuits, Inc.](https://quantumcircuits.com/), CT, USA
-* (SeeQc)[https://seeqc.com/] (spin-out of Hypres) Digital Quantum Computing, USA
+* [SeeQc](https://seeqc.com/) (spin-out of Hypres) Digital Quantum Computing, USA
 * Serge [Rosenblum Lab](https://www.weizmann.ac.il/condmat/rosenblum/) in the Weizmann Instatue, Israel
 * Peter [Leek Lab](https://leeklab.org/), UK
 * Britton [Plourde Lab](https://bplourde.expressions.syr.edu/), Syracuse University, USA
