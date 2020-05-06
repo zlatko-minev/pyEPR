@@ -502,8 +502,8 @@ class QuantumAnalysis(object):
             U_mode = (energies['U_tot_cap'] + energies['U_tot_ind'])/2.
             U_diff = abs(energies['U_tot_cap'] - energies['U_tot_ind'])/U_mode
             if np.any(U_diff > 0.15):
-                logger.error(f"WARNING: U_tot_cap-U_tot_ind / mean = {U_diff*100:.1f}% is > 15%.'\
-                    ' Is the simulation converged? Proceed with caution")
+                logger.error(f"WARNING: U_tot_cap-U_tot_ind / mean = {np.max(np.abs(U_diff))*100:.1f}% is > 15%. \
+                    \nIs the simulation converged? Proceed with caution")
 
             # global sums of participations
             Pm_glb_sum = abs((U_mode-energies['U_H'])/U_mode)
