@@ -19,7 +19,7 @@ if 0:
 #    project_info.junctions['jBob']   = {'rect':'qubitBob',    'line': 'bob_line',   'Lj_variable':'LJBob',   'length':0.0001}
 
     # Dissipative elments EPR
-    project_info.dissipative.dielectric_surfaces = None         # supply names here, there are more options in  project_info.dissipative.
+    project_info.dissipative['dielectric_surfaces'] = None         # supply names here, there are more options in  project_info.dissipative.
 
     # Run analysis
     epr_hfss    = DistributedAnalysis(project_info)

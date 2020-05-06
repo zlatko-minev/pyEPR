@@ -175,7 +175,7 @@ def sort_Series_idx(sr):
 def get_instance_vars(obj, Forbidden=[]):
     VARS = {}
     for v in dir(obj):
-        if not ((v.startswith('__')) or (v.startswith('_'))):
+        if not (v.startswith('__') or v.startswith('_')):
             if not callable(getattr(obj, v)):
                 if not (v in Forbidden):
                     VARS[v] = getattr(obj, v)

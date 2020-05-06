@@ -20,8 +20,8 @@ project_info.connect_to_project()
 #project_info.junctions['jBob']   = {'Lj_variable':'LJBob',   'rect':'qubitBob',   'line': 'bob_line',   'length':0.0001}
 #
 ## 2b. Dissipative elements.
-#project_info.dissipative.dielectrics_bulk    = ['si_substrate']    # supply names here, there are more options in project_info.dissipative.
-#project_info.dissipative.dielectric_surfaces = ['interface']
+#project_info.dissipative['dielectrics_bulk']    = ['si_substrate']    # supply names here, there are more options in project_info.dissipative.
+#project_info.dissipative['dielectric_surfaces'] = ['interface']
 #
 ## 3.  Run analysis
 #epr_hfss = DistributedAnalysis(project_info)

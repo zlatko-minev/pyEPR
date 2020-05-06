@@ -103,15 +103,6 @@ class ProjectInfo(object):
 
     """
 
-    class _Dissipative:
-        # TODO: remove and turn to dict
-
-        def __init__(self):
-            self.dielectrics_bulk = None
-            self.dielectric_surfaces = None
-            self.resistive_surfaces = None
-            self.seams = None
-
     def __init__(self, project_path: str = None, project_name: str = None, design_name: str = None,
                  setup_name: str = None, do_connect: bool = True):
         """
@@ -145,7 +136,12 @@ class ProjectInfo(object):
         self.ports = Dict()
 
         # Dissipative HFSS volumes and surfaces
-        self.dissipative = self._Dissipative()
+        self.dissipative = {
+            'dielectrics_bulk':    None
+            'dielectric_surfaces': None
+            'resistive_surfaces':  None
+            'seams':               None
+        }
         self.options = config.ansys
 
         # Conected to HFSS variable
@@ -167,7 +163,7 @@ class ProjectInfo(object):
         '''
         return dict(
             pinfo=pd.Series(get_instance_vars(self, self._Forbidden)),
-            dissip=pd.Series(get_instance_vars(self.dissipative)),
+            dissip=pd.Series(self.dissipative),
             options=pd.Series(get_instance_vars(self.options)),
             junctions=pd.DataFrame(self.junctions),
             ports=pd.DataFrame(self.ports),
