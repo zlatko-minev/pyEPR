@@ -22,6 +22,8 @@ from . import Dict, ansys, config, logger
 from .toolbox.pythonic import get_instance_vars
 
 
+diss_opt = ['dielectrics_bulk', 'dielectric_surfaces', 'resistive_surfaces', 'seams']
+
 class ProjectInfo(object):
     """
     Primary class to store interface information between ``pyEPR`` and ``Ansys``.
@@ -103,6 +105,35 @@ class ProjectInfo(object):
 
     """
 
+    # _Dissipative class for now instead of a dictionary so people have a time window to change their old code
+    class _Dissipative():
+        def __init__(self):
+            for opt in diss_opt:
+                self[opt] = None
+
+        def __setitem__(self, key, value):
+            if not key in diss_opt:
+                raise ValueError(f"No such parameter {key}")
+            super().__setattr__(key, value)
+
+        def __getitem__(self, attr):
+            if not attr in diss_opt:
+                raise AttributeError(f'dissipitive has no attribute "{attr}". The possible attributes are:\n {str(diss_opt)}')
+            return super().__getattribute__(attr)
+
+        def __setattr__(self, attr, value):
+            logger.warning(f"DEPRECATED!! use pinfo.dissipative['{attr}'] = {value} instead!")
+            if not attr in diss_opt:
+                raise AttributeError(f'dissipitive has no attribute "{attr}". The possible attributes are:\n {str(diss_opt)}')
+            super().__setattr__(attr, value)
+
+        def __getattr__(self, attr):
+            raise AttributeError(f'dissipitive has no attribute "{attr}". The possible attributes are:\n {str(diss_opt)}')
+        
+        def __getattribute__(self, attr):
+            logger.warning(f"DEPRECATED!! use pinfo.dissipative['{attr}'] instead!")
+            return super().__getattribute__(attr)
+            
     def __init__(self, project_path: str = None, project_name: str = None, design_name: str = None,
                  setup_name: str = None, do_connect: bool = True):
         """
@@ -136,12 +167,7 @@ class ProjectInfo(object):
         self.ports = Dict()
 
         # Dissipative HFSS volumes and surfaces
-        self.dissipative = {
-            'dielectrics_bulk':    None
-            'dielectric_surfaces': None
-            'resistive_surfaces':  None
-            'seams':               None
-        }
+        self.dissipative = self._Dissipative()
         self.options = config.ansys
 
         # Conected to HFSS variable
