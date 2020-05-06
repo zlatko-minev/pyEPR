@@ -729,7 +729,7 @@ class HfssDesign(COMWrapper):
 
             for arr in s:
                 to_add = [f'NAME:{arr[0]}', "Value:=",  arr[1]]
-                if arr[0][0] is '$':
+                if arr[0][0] == '$':
                     project += [to_add]  # global variable
                 else:
                     local += [to_add]  # local variable
@@ -1710,11 +1710,11 @@ class Optimetrics(COMWrapper):
         print(
             f"Inserting optimetrics setup `{name}` for simulation setup: `{setup_name}`")
 
-        if not setup_type is 'parametric':
+        if setup_type != 'parametric':
             raise NotImplementedError()
 
-        if swp_type is 'linear_step':
-            assert len(swp_params) is 3
+        if swp_type == 'linear_step':
+            assert len(swp_params) == 3
             # e.g., "LIN 12.8nH 13.6nH 0.2nH"
             swp_str = f"LIN {swp_params[0]} {swp_params[1]} {swp_params[2]}"
         else:

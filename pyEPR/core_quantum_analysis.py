@@ -178,7 +178,7 @@ class HamiltonianResultsContainer(OrderedDict):
 
         res = OrderedDict()
         for key in variations:
-            if vs is 'variation':
+            if vs == 'variation':
                 res[key] = self[key][quantity]
             else:
                 # convert the key to numeric if possible
@@ -515,10 +515,10 @@ class QuantumAnalysis(object):
             # this is not the correct scaling yet! WARNING. Factors of 2 laying around too
             # these numbers are a bit all over the place for now. very small
 
-            if _renorm_pj is True or _renorm_pj is 1:
+            if _renorm_pj == True or _renorm_pj is 1:
                 idx = Pm > -1E6  # everywhere scale
                 idx_cap = Pm_cap > -1E6
-            elif _renorm_pj is 2:
+            elif _renorm_pj == 2:
                 idx = Pm > 0.15  # Mask for where to scale
                 idx_cap = Pm_cap > 0.15
             else:
@@ -1037,7 +1037,7 @@ class QuantumAnalysis(object):
         Args:
             swp_var (str) :
         """
-        if swp_var is 'variation':
+        if swp_var == 'variation':
             energies = self.ansys_energies
         else:
             energies = self.get_vs_variable(swp_var, 'ansys_energies')

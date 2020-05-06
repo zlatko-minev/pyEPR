@@ -328,10 +328,10 @@ class DistributedAnalysis(object):
         Returns a multi-index pandas DataFrame
         """
         df = dict()
-        variable = None if vs is 'variation' else self.get_variable_vs_variations(
+        variable = None if vs == 'variation' else self.get_variable_vs_variations(
             vs)
         for variation in self.variations:  # just for the first 2
-            if vs is 'variation':
+            if vs == 'variation':
                 label = variation
             else:
                 label = variable[variation]
@@ -950,7 +950,7 @@ class DistributedAnalysis(object):
             Cj = Cjs[j_name]
             line_name = j_props['line']
 
-            if method is 'J_surf_mag':  # old method
+            if method == 'J_surf_mag':  # old method
 
                 _I_peak_1 = self.calc_avg_current_J_surf_mag(
                     variation, j_props['rect'], line_name)
@@ -966,7 +966,7 @@ class DistributedAnalysis(object):
                 V_peak = _V_peak_2  # make sure this is signed
                 I_peak = _I_peak_1
 
-            elif method is 'line_voltage':  # new preffered method
+            elif method == 'line_voltage':  # new preffered method
 
                 I_peak, V_peak, _ = self.calc_current_using_line_voltage(
                     variation, line_name, Lj, Cj)
@@ -1059,7 +1059,7 @@ class DistributedAnalysis(object):
             variation (str) : label such as '0' or 'all', in which case return
             pandas table for all variations
         """
-        if variation is 'all':
+        if variation == 'all':
             # for all variations and concat
             raise NotImplementedError()  # TODO
         else:
@@ -1265,7 +1265,7 @@ class DistributedAnalysis(object):
 
                 # get Q surface
                 if self.pinfo.dissipative.resistive_surfaces:
-                    if self.pinfo.dissipative.resistive_surfaces is 'all':
+                    if self.pinfo.dissipative.resistive_surfaces == 'all':
                         sol = sol.append(
                             self.get_Qsurface_all(mode, variation, self.U_E))
                     else:
