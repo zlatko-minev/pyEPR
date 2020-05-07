@@ -104,7 +104,7 @@ def black_box_hamiltonian(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual=
         "Make operator <op> tensored with identities at locations other than <loc>"
         op_list = [np.eye(fock_trunc) for _ in range(n_modes)]
         op_list[loc] = op
-        return reduce(np.kron, op_list)
+        return qop.lkron(op_list)
 
     a = qop.destroy(fock_trunc)
     ad = a.T.conj()
@@ -160,14 +160,14 @@ def make_dispersive(H, fock_trunc, fzpfs=None, f0s=None, chi_prime=False,
 
     def fock_state_on(d):
         ''' d={mode number: # of photons} '''
-        return np.kron(*[qop.basis(fock_trunc, d.get(i, 0)) for i in range(N)])  # give me the value d[i]  or 0 if d[i] does not exist
+        return qop.lkron([qop.basis(fock_trunc, d.get(i, 0)) for i in range(N)])  # give me the value d[i] or 0 if d[i] does not exist
 
     if use_1st_order:
         num_modes = N
         print("Using 1st O")
 
         def multi_index_2_vector(d, num_modes, fock_trunc):
-            return np.kron([qop.basis(fock_trunc, d.get(i, 0)) for i in range(num_modes)])
+            return qop.lkron([qop.basis(fock_trunc, d.get(i, 0)) for i in range(num_modes)])
             '''this function creates a vector representation a given fock state given the data for excitations per
                         mode of the form d={mode number: # of photons}'''
 

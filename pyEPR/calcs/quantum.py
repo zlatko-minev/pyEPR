@@ -30,3 +30,11 @@ def basis(N: int, n: int): # Numpy does provide a method that does this but it's
     vec = np.zeros([N, 1])
     vec[n] = 1.0
     return vec
+
+def lkron(vecs: list):
+    """Kronecker product on a list of vectors"""
+    # TODO: This could be much optimized by smart use of numpy merhods
+    prod = vecs.pop(0)
+    for vec in vecs:
+        prod = np.kron(prod, vec)
+    return prod

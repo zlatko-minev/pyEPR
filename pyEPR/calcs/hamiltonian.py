@@ -42,7 +42,7 @@ class HamOps(object):
         ''' d={mode number: # of photons} In the bare eigen basis
         '''
         # give me the value d[i]  or 0 if d[i] does not exist
-        return np.kron(*[qop.basis(fock_trunc, d.get(i, 0)) for i in range(N_modes)])
+        return qop.lkron([qop.basis(fock_trunc, d.get(i, 0)) for i in range(N_modes)])
 
     @staticmethod
     def closest_state_to(s: np.ndarray, energyMHz, evecs):
