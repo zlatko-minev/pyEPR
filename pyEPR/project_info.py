@@ -133,6 +133,9 @@ class ProjectInfo(object):
         def __getattribute__(self, attr):
             logger.warning(f"DEPRECATED!! use pinfo.dissipative['{attr}'] instead!")
             return super().__getattribute__(attr)
+        
+        def __repr__(self):
+            return {str(opt): self[opt] for opt in diss_opt}
             
     def __init__(self, project_path: str = None, project_name: str = None, design_name: str = None,
                  setup_name: str = None, do_connect: bool = True):
@@ -189,7 +192,7 @@ class ProjectInfo(object):
         '''
         return dict(
             pinfo=pd.Series(get_instance_vars(self, self._Forbidden)),
-            dissip=pd.Series({str(opt): self.dissipative[opt] for opt in diss_opt}),
+            dissip=pd.Series(self.dissipative),
             options=pd.Series(get_instance_vars(self.options)),
             junctions=pd.DataFrame(self.junctions),
             ports=pd.DataFrame(self.ports),
