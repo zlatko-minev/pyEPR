@@ -15,16 +15,11 @@ from __future__ import print_function
 from functools import reduce
 
 import numpy as np
+import pyEPR.calcs.quantum as qop
 
 from .constants import Planck as h
 from .constants import fluxQ, hbar
 from .hamiltonian import MatrixOps
-
-try:
-    import qutip
-    from qutip import basis, tensor
-except (ImportError, ModuleNotFoundError):
-    pass
 
 __all__ = [ 'epr_numerical_diagonalization',
             'make_dispersive',
@@ -107,13 +102,13 @@ def black_box_hamiltonian(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual=
 
     def tensor_out(op, loc):
         "Make operator <op> tensored with identities at locations other than <loc>"
-        op_list = [qutip.qeye(fock_trunc) for i in range(n_modes)]
+        op_list = [np.eye(fock_trunc) for _ in range(n_modes)]
         op_list[loc] = op
-        return reduce(qutip.tensor, op_list)
+        return reduce(np.kron, op_list)
 
-    a = qutip.destroy(fock_trunc)
-    ad = a.dag()
-    n = qutip.num(fock_trunc)
+    a = qop.destroy(fock_trunc)
+    ad = a.T.conj()
+    n = qop.num(fock_trunc)
     mode_fields = [tensor_out(a + ad, i) for i in range(n_modes)]
     mode_ns = [tensor_out(n, i) for i in range(n_modes)]
 
@@ -143,15 +138,20 @@ def make_dispersive(H, fock_trunc, fzpfs=None, f0s=None, chi_prime=False,
         Based on the assignment of the excitations, the function returns the dressed mode frequencies $\omega_m^\prime$, and the cross-Kerr matrix (including anharmonicities) extracted from the numerical diagonalization, as well as from 1st order perturbation theory.
         Note, the diagonal of the CHI matrix is directly the anharmonicity term.
     """
-    if hasattr(H, '__len__'):  # is it an array / list?
+    # if hasattr(H, '__len__'):  # is it an array / list?
+    #     print(H.shape)
+    #     [H_lin, H_nl] = H
+    #     H = H_lin + H_nl
+    # else:
+    #     assert type(H) == np.ndarray, "Please pass in either a list of ndarrays or ndarray for the Hamiltonian"
+    try:  # TODO: This might not always work, need to chek that
         [H_lin, H_nl] = H
         H = H_lin + H_nl
-    else:  # make sure its a quanutm object
-        assert type(
-            H) == qutip.qobj.Qobj, "Please pass in either  a list of Qobjs or Qobj for the Hamiltonian"
+    except:
+        pass
 
     print("Starting the diagonalization")
-    evals, evecs = H.eigenstates()
+    evals, evecs = np.linalg.eig(H)
     print("Finished the diagonalization")
     evals -= evals[0]
 
@@ -160,14 +160,14 @@ def make_dispersive(H, fock_trunc, fzpfs=None, f0s=None, chi_prime=False,
 
     def fock_state_on(d):
         ''' d={mode number: # of photons} '''
-        return qutip.tensor(*[qutip.basis(fock_trunc, d.get(i, 0)) for i in range(N)])  # give me the value d[i]  or 0 if d[i] does not exist
+        return np.kron(*[qop.basis(fock_trunc, d.get(i, 0)) for i in range(N)])  # give me the value d[i]  or 0 if d[i] does not exist
 
     if use_1st_order:
         num_modes = N
         print("Using 1st O")
 
         def multi_index_2_vector(d, num_modes, fock_trunc):
-            return tensor([basis(fock_trunc, d.get(i, 0)) for i in range(num_modes)])
+            return np.kron([qop.basis(fock_trunc, d.get(i, 0)) for i in range(num_modes)])
             '''this function creates a vector representation a given fock state given the data for excitations per
                         mode of the form d={mode number: # of photons}'''
 
@@ -179,7 +179,7 @@ def make_dispersive(H, fock_trunc, fzpfs=None, f0s=None, chi_prime=False,
             '''this function generates all possible multi-indices for three modes for a given fock_trunc'''
 
         def get_expect_number(left, middle, right):
-            return (left.dag()*middle*right).data.toarray()[0, 0]
+            return (left.T.conj()*middle*right).data.toarray()[0, 0]
             '''this function calculates the expectation value of an operator called "middle" '''
 
         def get_basis0(fock_trunc, num_modes):
@@ -196,11 +196,11 @@ def make_dispersive(H, fock_trunc, fzpfs=None, f0s=None, chi_prime=False,
                 new_vector = 0 * original_vector
                 for i in range(len(original_basis)):
                     if (energy0[i]-evalue) > 1e-3:
-                        new_vector += ((original_basis[i].dag()*H_nl*original_vector).data.toarray()[
+                        new_vector += ((original_basis[i].T.conj()*H_nl*original_vector).data.toarray()[
                                        0, 0])*original_basis[i]/(evalue-energy0[i])
                     else:
                         pass
-                return (new_vector + original_vector)/(new_vector + original_vector).norm()
+                return (new_vector + original_vector)/np.linalg.norm(new_vector + original_vector)
                 '''this function calculates the normalized vector with the first order correction term
                    from the non-linear hamiltonian '''
 
@@ -209,14 +209,13 @@ def make_dispersive(H, fock_trunc, fzpfs=None, f0s=None, chi_prime=False,
             evalue0 = get_expect_number(vector0, H_lin, vector0)
             vector1 = PT_on_vector(vector0, basis0, H_nl, evalues0, evalue0)
 
-            index = np.argmax([(vector1.dag() * evec).norm()
+            index = np.argmax([np.linalg.norm(vector1.T.conj() * evec)
                                for evec in evecs])
             return evals[index], evecs[index]
 
     else:
         def closest_state_to(s):
-            def distance(s2):
-                return (s.dag() * s2[1]).norm()
+            distance = lambda s2: np.linalg.norm(s.T.conj() * s2[1])
             return max(zip(evals, evecs), key=distance)
 
     f1s = [closest_state_to(fock_state_on({i: 1}))[0] for i in range(N)]

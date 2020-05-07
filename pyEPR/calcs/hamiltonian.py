@@ -1,14 +1,9 @@
 """
 Hamiltonian and Matrix Operations.
-Hamiltonian operations heavily draw on qutip package.
-This package must be installded for them to work.
 """
-try:
-    import qutip
-    from qutip import Qobj  # basis, tensor,
-except (ImportError, ModuleNotFoundError):
-    Qobj=None
-    pass
+import pyEPR.calcs.quantum as qop
+import numpy as np
+import scipy.linalg as sla
 
 from ..toolbox.pythonic import fact
 
@@ -16,14 +11,14 @@ from ..toolbox.pythonic import fact
 class MatrixOps(object):
 
     @staticmethod
-    def cos(op_cos_arg: Qobj):
+    def cos(op_cos_arg: np.ndarray):
         """
         Make cosine opertor matrix from arguemnt  op_cos_arg
 
-            op_cos_arg (qutip.Qobj) : argumetn of the cosine
+            op_cos_arg (np.ndarray) : argumetn of the cosine
         """
 
-        return 0.5*((1j*op_cos_arg).expm() + (-1j*op_cos_arg).expm())
+        return 0.5*(sla.expm(1j*op_cos_arg) + sla.expm(-1j*op_cos_arg))
 
     @staticmethod
     def cos_approx(x, cos_trunc=5):
@@ -47,25 +42,22 @@ class HamOps(object):
         ''' d={mode number: # of photons} In the bare eigen basis
         '''
         # give me the value d[i]  or 0 if d[i] does not exist
-        return qutip.tensor(*[qutip.basis(fock_trunc, d.get(i, 0))
-                              for i in range(N_modes)])
+        return np.kron(*[qop.basis(fock_trunc, d.get(i, 0)) for i in range(N_modes)])
 
     @staticmethod
-    def closest_state_to(s: Qobj, energyMHz, evecs):
+    def closest_state_to(s: np.ndarray, energyMHz, evecs):
         """
         Returns the enery of the closest state to s
         """
-        def distance(s2):
-            return (s.dag() * s2[1]).norm()
+        distance = lambda s2: np.linalg.norm(s.T.conj() * s2[1])
         return max(zip(energyMHz, evecs), key=distance)
 
     @staticmethod
-    def closest_state_to_idx(s: Qobj, evecs):
+    def closest_state_to_idx(s: np.ndarray, evecs):
         """
         Returns the index
         """
-        def distance(s2):
-            return (s.dag() * s2[1]).norm()
+        distance = lambda s2: np.linalg.norm(s.T.conj() * s2[1])
         return max(zip(range(len(evecs)), evecs), key=distance)
 
     @staticmethod

@@ -129,17 +129,6 @@ except (ImportError, ModuleNotFoundError):
 
 # Check for a few usually troublesome packages
 if config.internal.warn_missing_import:
-
-    # Check for qutip
-    try:
-        import qutip
-        del qutip
-    except (ImportError, ModuleNotFoundError):
-        logger.warning("""IMPORT WARNING: `qutip` package not found.
-        Numerical diagonalization will not work. Please install, e.g.:
-            $ conda  install -c conda-forge qutip
-        %s""", config.internal.error_msg_missing_import)
-
     try:
         import pythoncom
         del pythoncom
