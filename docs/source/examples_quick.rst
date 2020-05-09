@@ -29,8 +29,8 @@ succinctly plotted.
     pinfo.validate_junction_info() # Check that valid names of variables and objects have been supplied.
 
     # 2b. Dissipative elements: specify
-    pinfo.dissipative.dielectrics_bulk    = ['si_substrate', 'dielectic_object2'] # supply names of hfss objects
-    pinfo.dissipative.dielectric_surfaces = ['interface1', 'interface2']
+    pinfo.dissipative['dielectrics_bulk']    = ['si_substrate', 'dielectic_object2'] # supply names of hfss objects
+    pinfo.dissipative['dielectric_surfaces'] = ['interface1', 'interface2']
 
     # 3.  Perform microwave analysis on eigenmode solutions
     eprd = epr.DistributedAnalysis(pinfo)

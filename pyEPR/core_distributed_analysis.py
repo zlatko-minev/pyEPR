@@ -1253,26 +1253,26 @@ class DistributedAnalysis(object):
                                                          self.U_E)
 
                 # get seam Q
-                if self.pinfo.dissipative.seams:
-                    for seam in self.pinfo.dissipative.seams:
+                if self.pinfo.dissipative['seams']:
+                    for seam in self.pinfo.dissipative['seams']:
                         sol = sol.append(self.get_Qseam(seam, mode, variation, self.U_H))
 
                 # get Q dielectric
-                if self.pinfo.dissipative.dielectrics_bulk:
-                    for dielectric in self.pinfo.dissipative.dielectrics_bulk:
+                if self.pinfo.dissipative['dielectrics_bulk']:
+                    for dielectric in self.pinfo.dissipative['dielectrics_bulk']:
                         sol = sol.append(self.get_Qdielectric(
                             dielectric, mode, variation, self.U_E))
 
                 # get Q surface
-                if self.pinfo.dissipative.resistive_surfaces:
-                    if self.pinfo.dissipative.resistive_surfaces == 'all':
+                if self.pinfo.dissipative['resistive_surfaces']:
+                    if self.pinfo.dissipative['resistive_surfaces'] == 'all':
                         sol = sol.append(
                             self.get_Qsurface_all(mode, variation, self.U_E))
                     else:
                         raise NotImplementedError(
                             "Join the team, by helping contribute this piece of code.")
 
-                if self.pinfo.dissipative.resistive_surfaces is not None:
+                if self.pinfo.dissipative['resistive_surfaces'] is not None:
                     raise NotImplementedError(
                         "Join the team, by helping contribute this piece of code.")
 
