@@ -357,4 +357,7 @@ class ProjectInfo(object):
                     """pyEPR ProjectInfo user error found \N{face with medical mask}:
                     Seems like for junction `%s` you specified a %s that does not exist
                     in HFSS by the name: `%s` """ % (jjnm, name, jj[name])
-
+  
+    def __del__(self):
+        logger.info('Disconnected from Ansys HFSS')
+        self.disconnect()
