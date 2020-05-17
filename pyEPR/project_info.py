@@ -105,38 +105,59 @@ class ProjectInfo(object):
 
     """
 
-    # _Dissipative class for now instead of a dictionary so people have a time window to change their old code
-    class _Dissipative():
+    class _Dissipative:
+        """
+        Deprecating the _Dissipative class and turning it into a dictionary.
+        This is used to message people on the deprecation so they could change their scripts.
+        """
         def __init__(self):
+            self['pinfo'] = None
             for opt in diss_opt:
                 self[opt] = None
 
         def __setitem__(self, key, value):
-            if not key in diss_opt:
+            # --- check valid inputs ---
+            if not (key in diss_opt or key == 'pinfo'):
                 raise ValueError(f"No such parameter {key}")
+            if key != 'pinfo' and (not isinstance(value, list) or \
+                    not all(isinstance(x, str) for x in value)) and (value != None):
+                raise ValueError(f'dissipative[\'{key}\'] must be a list of strings ' \
+                    'containing names of models in the project!')
+            if key != 'pinfo' and hasattr(self['pinfo'], 'design'):
+                for x in value:
+                    if x not in self['pinfo'].get_all_object_names():
+                        raise ValueError(
+                            f'\'{x}\' is not an object in the HFSS project')
             super().__setattr__(key, value)
 
         def __getitem__(self, attr):
-            if not attr in diss_opt:
-                raise AttributeError(f'dissipitive has no attribute "{attr}". The possible attributes are:\n {str(diss_opt)}')
+            if not (attr in diss_opt or attr == 'pinfo'):
+                raise AttributeError(f'dissipitive has no attribute "{attr}". '\
+                    f'The possible attributes are:\n {str(diss_opt)}')
             return super().__getattribute__(attr)
 
         def __setattr__(self, attr, value):
-            logger.warning(f"DEPRECATED!! use pinfo.dissipative['{attr}'] = {value} instead!")
-            if not attr in diss_opt:
-                raise AttributeError(f'dissipitive has no attribute "{attr}". The possible attributes are:\n {str(diss_opt)}')
-            super().__setattr__(attr, value)
+            logger.warning(
+                f"DEPRECATED!! use pinfo.dissipative['{attr}'] = {value} instead!")
+            self[attr] = value
 
         def __getattr__(self, attr):
-            raise AttributeError(f'dissipitive has no attribute "{attr}". The possible attributes are:\n {str(diss_opt)}')
-        
+            raise AttributeError(f'dissipitive has no attribute "{attr}". '\
+                f'The possible attributes are:\n {str(diss_opt)}')
+
         def __getattribute__(self, attr):
-            logger.warning(f"DEPRECATED!! use pinfo.dissipative['{attr}'] instead!")
+            if attr in diss_opt:
+                logger.warning(
+                    f"DEPRECATED!! use pinfo.dissipative['{attr}'] instead!")
             return super().__getattribute__(attr)
-        
+
         def __repr__(self):
+            return str(self.data())
+
+        def data(self):
+            """Return dissipatvie as dictionary"""
             return {str(opt): self[opt] for opt in diss_opt}
-            
+
     def __init__(self, project_path: str = None, project_name: str = None, design_name: str = None,
                  setup_name: str = None, do_connect: bool = True):
         """
@@ -182,6 +203,7 @@ class ProjectInfo(object):
 
         if do_connect:
             self.connect()
+            self.dissipative['pinfo'] = self
 
     _Forbidden = ['app', 'design', 'desktop', 'project',
                   'dissipative', 'setup', '_Forbidden', 'junctions']
@@ -192,7 +214,7 @@ class ProjectInfo(object):
         '''
         return dict(
             pinfo=pd.Series(get_instance_vars(self, self._Forbidden)),
-            dissip=pd.Series(self.dissipative),
+            dissip=pd.Series(self.dissipative.data()),
             options=pd.Series(get_instance_vars(self.options)),
             junctions=pd.DataFrame(self.junctions),
             ports=pd.DataFrame(self.ports),
