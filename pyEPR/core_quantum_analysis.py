@@ -256,6 +256,7 @@ class QuantumAnalysis(object):
         self.SM = results['Sm']  # sign matrices
         self.I_peak = results['I_peak']
         self.V_peak = results['V_peak']
+        self.modes = results['modes']
 
         self.sols = results['sols']
         self.ansys_energies = results.get('ansys_energies', {})
@@ -264,7 +265,7 @@ class QuantumAnalysis(object):
         self.convergence = results['convergence']
         self.convergence_f_pass = results['convergence_f_pass']
 
-        self.n_modes = self.sols[self.variations[0]].shape[0]
+        self.n_modes = len(self.modes['0'])
         self._renorm_pj = config.epr.renorm_pj
 
         # Unique variation params -- make a get function
@@ -515,7 +516,7 @@ class QuantumAnalysis(object):
             # this is not the correct scaling yet! WARNING. Factors of 2 laying around too
             # these numbers are a bit all over the place for now. very small
 
-            if _renorm_pj == True or _renorm_pj is 1:
+            if _renorm_pj == True or _renorm_pj == 1:
                 idx = Pm > -1E6  # everywhere scale
                 idx_cap = Pm_cap > -1E6
             elif _renorm_pj == 2:
@@ -602,8 +603,7 @@ class QuantumAnalysis(object):
                           cos_trunc: int = None,
                           fock_trunc: int = None,
                           print_result: bool = True,
-                          junctions: List = None,
-                          modes: List[int] = None):
+                          junctions: List = None):
         # TODO avoide analyzing a previously analyzed variation
         '''
         Core analysis function to call!
@@ -612,8 +612,6 @@ class QuantumAnalysis(object):
         ---------------
             junctions: list or slice of junctions to include in the analysis.
                 None defaults to analysing all junctions
-            modes: list or slice of modes to include in the analysis.
-                    None defaults to analysing all modes
 
 
         Returns:
@@ -633,8 +631,7 @@ class QuantumAnalysis(object):
         # ensuring proper matrix dimensionality when slicing
         junctions = (junctions,) if type(junctions) is int else junctions
 
-        # ensuring proper matrix dimensionality when slicing
-        modes = (modes,) if type(modes) is int else modes
+        modes = list(range(self.n_modes))
 
         if (fock_trunc is None) or (cos_trunc is None):
             fock_trunc = cos_trunc = None
@@ -661,7 +658,7 @@ class QuantumAnalysis(object):
             PJ_cap = PJ_cap[:, junctions]
 
         if modes is not None:
-            freqs_hfss = freqs_hfss[modes, ]
+            freqs_hfss = freqs_hfss[self.modes[variation], ]
             PJ = PJ[modes, :]
             SJ = SJ[modes, :]
             Om = Om[modes, :][:, modes]
