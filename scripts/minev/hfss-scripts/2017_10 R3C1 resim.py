@@ -15,7 +15,7 @@ if 1:
     project_info.junctions['jDark']   = {'rect':'juncH',  'line': 'juncV_line', 'Lj_variable':'LJ2', 'length':0.0001}
 
     # Dissipative elments EPR
-    project_info.dissipative.dielectric_surfaces = None         # supply names here, there are more options in  project_info.dissipative.
+    project_info.dissipative['dielectric_surfaces'] = None         # supply names here, there are more options in  project_info.dissipative.
 
     # Run analysis
     epr_hfss    = DistributedAnalysis(project_info)

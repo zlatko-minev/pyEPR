@@ -17,7 +17,7 @@ if 0:
     project_info.junctions['bot_junc'] = {'rect':'bot_junction',  'line': 'bot_junc_line', 'Lj_variable':'bot_lj', 'length':0.0001}
     project_info.junctions['top_junc'] = {'rect':'top_junction',    'line': 'top_junc_line',   'Lj_variable':'top_lj',   'length':0.0001}
 
-    project_info.dissipative.dielectric_surfaces = None         # supply names here, there are more options in  project_info.dissipative.
+    project_info.dissipative['dielectric_surfaces'] = None         # supply names here, there are more options in  project_info.dissipative.
 
     epr_hfss    = DistributedAnalysis(project_info)
     epr_hfss.do_EPR_analysis()
