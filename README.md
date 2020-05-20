@@ -22,7 +22,7 @@ Warning: pyEPR organization was significnatly improved in v0.8-dev (starting 202
 * [IBM Quantum](https://www.ibm.com/quantum-computing/)
 * [QUANTIC](https://team.inria.fr/quantic/people.html#) (QUANTUM INFORMATION CIRCUITS), PARISINRIA, ENS, MINES PARISTECH, UPMC, CNRS. Groups of Zaki Leghtas and team. France
 * [Quantum Circuit Group](http://www.physinfo.fr/) Emanuel Flurin, Benjamin Huard, Ecole Normale Supérieure de Lyon, France
-* UC Berkeley, [Quantum Nanoelectronics Laboratory](https://physics.berkeley.edu/quantum-nanoelectronics-laboratory), Irfan Siddiqi, CA, USA 
+* UC Berkeley, [Quantum Nanoelectronics Laboratory](https://physics.berkeley.edu/quantum-nanoelectronics-laboratory), Irfan Siddiqi, CA, USA
 * [Quantum Circuits, Inc.](https://quantumcircuits.com/), CT, USA
 * [Seeqc](https://seeqc.com/) (spin-out of Hypres) Digital Quantum Computing, USA
 * Serge [Rosenblum Lab](https://www.weizmann.ac.il/condmat/rosenblum/) in the Weizmann Instatue, Israel
@@ -159,6 +159,14 @@ Please keep up to date with `pyEPR` by using git. We like to make it simple usin
  5. Edit pyEPR module `_config_user.py`  to set your data-saving directory and other parameters of interest.  (To keep your changes local, use the shell command `git update-index --skip-worktree _config_user.py` in the `pyEPR/pyEPR` folder)
  6. **ENJOY and cite pyEPR! **  :+1:
 
+#### “Editable” install for development mode
+Although not required, it’s common to locally install your project in “editable” or “develop” mode while you’re working on it. This allows your project to be both installed and editable in project form.
+
+Assuming you’re in the root of your project directory, then run [(see here)](https://packaging.python.org/guides/distributing-packages-using-setuptools/#working-in-development-mode):
+```
+   python -m pip install -e .
+```
+Although somewhat cryptic, -e is short for --editable, and . refers to the current working directory, so together, it means to install the current directory (i.e. your project) in editable mode. This will also install any dependencies declared with “install_requires” and any scripts declared with “console_scripts”. Dependencies will be installed in the usual, non-editable mode. Quoted from [python](https://packaging.python.org/guides/distributing-packages-using-setuptools/#working-in-development-mode)
 
 #### Note for Mac/Linux.
 Follow the same instructions above. You shouldn't have to install mingw or modify distutils.cfg, since your distribution should come with gcc as the default compiler.
