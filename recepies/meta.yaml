@@ -1,0 +1,50 @@
+{% set name = "pyepr-quantum" %}
+{% set version = "0.8.01" %}
+{% set data = load_setup_py_data() %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  # url: https://github.com/zlatko-minev/pyEPR/archive/v0.7.tar.gz
+  # sha256: d25b940662abec11ba39eb5728cbb23757d6c40609da0808c921ea25ee74bcdf
+  path: ..
+
+build:
+  noarch: python
+  number: 0
+  script: "{{ PYTHON }} -m pip install . -vv"
+
+requirements:
+  host:
+    - python
+    - pip
+  run:
+    - python
+    - ipython
+    - numpy>=1.15.0
+    - pandas>=1.0.1
+    - matplotlib>=3.1.0
+    - scipy>=1.3.0
+    - sympy>=1.3
+    - pint
+    - qutip
+    - ipython>=7.0.0
+    - seaborn>=0.10.0
+    - attrdict
+test:
+  imports:
+    - pyEPR
+about:
+  home: {{ data.get('url') }}
+  license: {{ data.get('license') }}
+  license_family: BSD
+  license_file: LICENSE
+  summary: {{ data.get('description') }}
+  doc_url: https://pyepr-docs.readthedocs.io/
+  dev_url: https://github.com/zlatko-minev/pyEPR
+
+extra:
+  recipe-maintainers:
+    - zlatko-minev
