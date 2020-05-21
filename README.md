@@ -157,7 +157,7 @@ Please keep up to date with `pyEPR` by using git. We like to make it simple usin
  3. Fork this pyEPR repository on GitHub with your GitHub account. You may clone the fork to your PC and manage it using the [SourceTree](https://www.sourcetreeapp.com/) git-gui manager.
  4. Add the pyEPR repository folder to your python search path. Make sure to add the git remote to the master is set up,  `git remote add MASTER_MINEV git://github.com/zlatko-minev/pyEPR.git`!  [(Help?)](https://stackoverflow.com/questions/11266478/git-add-remote-branch)
  5. Edit pyEPR module `_config_user.py`  to set your data-saving directory and other parameters of interest.  (To keep your changes local, use the shell command `git update-index --skip-worktree _config_user.py` in the `pyEPR/pyEPR` folder)
- 6. **ENJOY and cite pyEPR! **  :+1:
+ 6. **ENJOY and cite pyEPR!**  :+1:
 
 #### “Editable” install for development mode
 Although not required, it’s common to locally install your project in “editable” or “develop” mode while you’re working on it. This allows your project to be both installed and editable in project form.
@@ -204,6 +204,8 @@ pip install pint --upgrade
 `AttributeError: module 'pandas.compat' has no attribute 'StringIO'`
 
 Caleb pointed this out, see [here](https://stackoverflow.com/questions/58372475/attributeerror-module-pandas-compat-has-no-attribute-iteritems) and here for [solution](https://github.com/zlatko-minev/pyEPR/issues/21). You need to change the pandas version. [pyEPR to be upgraded]
+
+This was solved in [this commit](https://github.com/DanielCohenHillel/pyEPR/commit/fd2b5897d6f819681b8a605734cfed855c002df6). Try to update your pyEPR version to the current master.
 
 
 ###### When importing qutip an error occurs `AttributeError: module 'numpy' has no attribute '__config__'`
