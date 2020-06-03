@@ -139,6 +139,16 @@ epra.quick_plot_mode(0,0,1,numeric=True, swp_variable=swp_variable)
 Use `pyEPR` directly from the source, and pull updates from the master git repo, since we often update it. The following steps explain how to set up Python 3, fork the `pyEPR` repo and use it.
 Please keep up to date with `pyEPR` by using git. We like to make it simple using a git-gui manager, [SourceTree](sourcetree.com) or [GitHub Desktop](https://desktop.github.com/).
 
+**Quick setup**
+We recommend the approach in the following section, which will be most up to date, but for quick use you can use the [conda forge chanel](https://anaconda.org/conda-forge/pyepr-quantum) to install
+```
+conda install -c conda-forge pyepr-quantum
+```
+or the [PyPi](https://pypi.org/project/pyEPR-quantum/0.8/) channel
+```
+pip install pyEPR-quantum
+```
+
 **Recommended procedure.**   <br />
 
  1. Install Python 3.x, we recommend the [Anaconda](https://www.anaconda.com/distribution/#download-section) distribution. <br>
