@@ -34,9 +34,11 @@ Warning: pyEPR organization was significnatly improved in v0.8-dev (starting 202
 
 ## How do I cite `pyEPR` when I publish?
 Cite the following and/or e-mail [`zlatko.minev@aya.yale.edu`](https://www.zlatko-minev.com/) or [`zaki leghtas`](http://cas.ensmp.fr/~leghtas/)
-* Z.K. Minev, Ph.D. Dissertation, Yale University (2018), Chapter 4. [arXiv:1902.10355](https://arxiv.org/abs/1902.10355)
+* [arXiv:1902.10355](https://arxiv.org/abs/1902.10355) Z.K. Minev, Ph.D. Dissertation, Yale University (2018), Chapter 4. 
 * Z.K. Minev, Z. Leghtas, _et al._ (to appear soon on arXiv) (2020)
 
+
+<br>
 
 # Contents:
 * [Start here: Using `pyEPR`](#start-here-using-pyepr)
