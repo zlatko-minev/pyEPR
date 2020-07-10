@@ -21,7 +21,7 @@ config = Dict( # pylint: disable=invalid-name
 
     # Folder to save result data to.
     # PLEASE CHANGE THIS
-    root_dir=r'D:\data-pyEPR',
+    root_dir=r'C:\HFSS_simu',
 
     # Loss properties of various materials and surfaces
     dissipation=Dict(
@@ -31,7 +31,7 @@ config = Dict( # pylint: disable=invalid-name
         # refs: https://arxiv.org/abs/1308.1743
         #       http://arxiv.org/pdf/1509.01854.pdf
         tan_delta_sapp=1e-6,  # tan(delta) for bulk surface
-        epsi=10,    # dielectric
+        epsi=11.5,    # dielectric
 
         ##################################################
         # Surface dielectric

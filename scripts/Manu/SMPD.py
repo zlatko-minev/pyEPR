@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-My First pyEPR Script
+Script for analysing SMPD lambdaover2:
+C:\GitHub\Quantrolib\drawings\Léo\SMPD_lambda2.py
 """
 
 from pyEPR import *
