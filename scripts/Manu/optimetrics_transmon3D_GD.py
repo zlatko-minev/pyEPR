@@ -52,23 +52,28 @@ project_info.junctions['jtransmon'] = {'Lj_variable':'Jinduc', 'rect':'qubit_jun
 
 
 ################# Define the loss function to be minimized
+
+################# 0 - define the variable position vector to be computed for evaluating the jacobian
 ################# 1 - take an array x of variable values to inject in parametric sweep for HFSS
 #################     'x' is of size (n,m) where 'n' is the number of variable and 'm' the number of variation to compute in parallel
 ################# 2 - run 'm' HFSS parametric variation in parallel
 ################# 3 - performs a pyEPR analysis on the new 'm' variations
 ################# 4 - identify the physical modes on physical criterions
 ################# 5 - compute the distance to the target for each variation
-################# 6 - return loss as an array of size (m)
+################# 6 - compute and return the jacobian based on HFSS evals
 
 
 # Create bounds for each variable (to be determined on physical and geometrical criterion within HFSS)
 min_bound = np.array([-1,0.1,0.1,5,20])
 max_bound = np.array([3,1,2,15,60])
 bounds=[(i,j) for i,j in zip(min_bound,max_bound)]
+
 def loss_f_and_g(x0):
     
     print('current_pos =', x0)
     
+    ################# 0 - define the variable position vector to be computed for evaluating the jacobian
+    ##### the epsilon vector is determined based on the bounds (to be refined), note that the gradient direction is chosen randomly
     bounds_span=max_bound-min_bound
     epsilon=bounds_span/20*(2*np.random.randint(2,size=len(x0))-1)
     x_grad=x0+epsilon
@@ -76,6 +81,7 @@ def loss_f_and_g(x0):
     x=np.array([x0]*(len(x0)+1))
     
     for i in range(len(x0)):
+        ##### check if the gradient positions are within the bounds, otherwize we take the oposite direction
         if x_grad[i]>max_bound[i] or x_grad[i]<min_bound[i]:
             epsilon[i]=-epsilon[i]
             x_grad[i]=x0[i]+epsilon[i]
@@ -193,6 +199,9 @@ def loss_f_and_g(x0):
         
         f=np.array(loss_allvar)
     
+    
+        ################# 6 - compute and return the jacobian based on HFSS evals
+
         fxepsilon=f[1:]
         fx=f[0]
     
@@ -202,8 +211,7 @@ def loss_f_and_g(x0):
 
 
     
-    ################# 6 - return loss as an array of size (m)
-    return 0, jac_fx
+    return fx, jac_fx
         
   
 
@@ -211,7 +219,7 @@ def loss_f_and_g(x0):
 ######### Defines the optimizer sequence
 
 
-
+#########
 x0=np.array([-2.58e-2,  5.4e-1,  4.47e-1,  5.03,  43.55])
 
 # Initialize swarm (I have no idea what this is)
