@@ -159,7 +159,7 @@ def loss_function(x):
         weigth['Freq_cav']= 10
         weigth['cav_Q'] = 1
         
-        np.save(r"C:\GitHub\pyEPR\scripts\Manu\%s.dat"%parametric_name,computed_val)
+        np.save(r"C:\GitHub\pyEPR\scripts\Manu\%s"%parametric_name,computed_val)
         
         loss=0 
         for key in target_val.keys():
