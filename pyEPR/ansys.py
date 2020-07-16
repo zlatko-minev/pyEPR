@@ -1691,6 +1691,45 @@ class Optimetrics(COMWrapper):
         """
         return self._optimetrics.SolveSetup(setup_name)
 
+
+    def edit_setup(self, parametric_name,savefields=True,CopyMesh=True):
+        self._optimetrics.EditSetup(parametric_name, 
+        	[
+        		"NAME:"+ parametric_name,
+        		"IsEnabled:="		, True,
+        		[
+        			"NAME:ProdOptiSetupDataV2",
+        			"SaveFields:="		, savefields,
+        			"CopyMesh:="		, CopyMesh
+        		]
+        	])
+            
+    def delete_setup(self, parametric_name):
+        self._optimetrics.DeleteSetups ([parametric_name])
+        
+    def delete_allvariations(self):
+        self.design.DeleteFullVariation (["", True])
+
+
+        
+    def import_setup(self,parametric_name,array_path, savefields=True, CopyMesh=True):
+        self._optimetrics.ImportSetup("OptiParametric", 
+	[
+		"NAME:"+parametric_name, 
+		array_path
+	])
+            
+        self._optimetrics.EditSetup(parametric_name, 
+        	[
+        		"NAME:"+ parametric_name,
+        		"IsEnabled:="		, True,
+        		[
+        			"NAME:ProdOptiSetupDataV2",
+        			"SaveFields:="		, savefields,
+        			"CopyMesh:="		, CopyMesh
+        		]
+        	])
+        
     def create_setup(self, variable, swp_params, name="ParametricSetup1", swp_type='linear_step',
                      setup_name=None,
                      save_fields=True, copy_mesh=True, solve_with_copied_mesh_only=True,

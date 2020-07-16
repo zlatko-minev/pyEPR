@@ -265,7 +265,7 @@ class QuantumAnalysis(object):
         self.convergence = results['convergence']
         self.convergence_f_pass = results['convergence_f_pass']
 
-        self.n_modes = len(self.modes['0'])
+        self.n_modes = len(self.modes[self.variations[0]])
         self._renorm_pj = config.epr.renorm_pj
 
         # Unique variation params -- make a get function
@@ -447,7 +447,7 @@ class QuantumAnalysis(object):
         --------------------
             variations : None returns all_variations otherwis this is a list with number
                          as strings ['0', '1']
-            nalyze_previous :set to true if you wish to overwrite previous analysis
+            analyze_previous :set to true if you wish to overwrite previous analysis
         '''
 
         result = OrderedDict()
