@@ -124,7 +124,7 @@ def loss_function(x):
         ### get the anharmonicity of the current variation
         anharmonicity=np.diag(chis)
         ### get the Q of the current variation
-        total_Q_from_HFSS = np.array(epr.Qs)[:,0]
+        total_Q_from_HFSS = np.array(epr.Qs)[:,var]
         #total_Q_from_couplings = 1/(1/np.array(epr.Qm_coupling[str(0)])).sum(1)
         #Q_couplings_adjusted=np.array([total_Q_from_HFSS/total_Q_from_couplings]).T*np.array(epr.Qm_coupling[str(var)])
         

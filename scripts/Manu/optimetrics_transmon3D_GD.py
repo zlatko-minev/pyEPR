@@ -155,7 +155,7 @@ def loss_f_and_g(x0):
         ### get the anharmonicity of the current variation
         anharmonicity=np.diag(chis)
         ### get the Q of the current variation
-        total_Q_from_HFSS = np.array(epr.Qs)[:,0]
+        total_Q_from_HFSS = np.array(epr.Qs)[:,var]
         #total_Q_from_couplings = 1/(1/np.array(epr.Qm_coupling[str(0)])).sum(1)
         #Q_couplings_adjusted=np.array([total_Q_from_HFSS/total_Q_from_couplings]).T*np.array(epr.Qm_coupling[str(var)])
 
@@ -230,7 +230,7 @@ def loss_f_and_g(x0):
 
 
 ######### position found by the Particle Swarm Optimizer
-x0=np.array([1,  5.4142345e-1,  4.4732343445e-1,  5.0303435,  43.5504312235])
+x0=np.array([1.012,  5.4142345e-1,  4.4732343445e-1,  5.0303435,  43.5504312235])
 
 
 
