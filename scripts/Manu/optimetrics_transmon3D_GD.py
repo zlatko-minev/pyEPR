@@ -140,21 +140,26 @@ def loss_f_and_g(x0):
     freqs=np.array(epr.get_frequencies()).T   
     nb_mode=np.array(freqs).shape[1]
     nb_var=np.array(freqs).shape[0]
-    chis=np.array(epr.get_chis()).reshape(nb_var,nb_mode,nb_mode)
     
     loss_allvar=[]
     for var in range(nb_var):
     
+        
+        
         ### get the frequencies of the current variation
-        freq=freqs[var]
+        chi_dic=epr.results.get_chi_O1()
+        chis=np.abs(np.array(chi_dic[var_list[var]]))
+        ### get the frequencies of the current variation
+        freq_dic=epr.results.get_frequencies_O1()
+        freq=np.abs(np.array(freq_dic[var_list[var]]))
         ### get the anharmonicity of the current variation
-        anharmonicity=np.abs(np.diag(chis[var]))
+        anharmonicity=np.diag(chis)
         ### get the Q of the current variation
         total_Q_from_HFSS = np.array(epr.Qs)[:,0]
         #total_Q_from_couplings = 1/(1/np.array(epr.Qm_coupling[str(0)])).sum(1)
         #Q_couplings_adjusted=np.array([total_Q_from_HFSS/total_Q_from_couplings]).T*np.array(epr.Qm_coupling[str(var)])
-        
-        
+
+
 
         ### sorting modes  
         ### define the qubit as the mode with the largest anharmanocity
@@ -163,8 +168,12 @@ def loss_f_and_g(x0):
         index['cav']=np.argsort(anharmonicity)[-2]
         
         ### get the dispersive shifts of the current variation
-        dispersiveshifts=np.array(epr.get_chis()).reshape(nb_var,nb_mode,nb_mode)[var,index['qubit']]
+        dispersiveshifts=chis[index['qubit']]
         
+        print('freq=',freq)
+        print('anharmonicity=',anharmonicity)
+        print('dispersiveshifts=',dispersiveshifts)
+        print('total_Q_from_HFSS=',total_Q_from_HFSS)
         
         ################# 5 - compute the distance to the target for each variation
         computed_val={}
@@ -205,7 +214,7 @@ def loss_f_and_g(x0):
 
         fxepsilon=f[1:]
         fx=f[0]
-    print(f)
+    print('f=',f)
     jac_fx=jac(fxepsilon,fx,epsilon)
         
     np.save(r"C:\GitHub\pyEPR\scripts\Manu\%s_f"%parametric_name,f)
@@ -221,11 +230,11 @@ def loss_f_and_g(x0):
 
 
 ######### position found by the Particle Swarm Optimizer
-x0=np.array([-2.5854443e-2,  5.414345e-1,  4.4732345e-1,  5.030435,  43.5504312235])
+x0=np.array([1,  5.4142345e-1,  4.4732343445e-1,  5.0303435,  43.5504312235])
 
 
 
 res=sp.minimize(loss_f_and_g, x0, jac=True, bounds=bounds, options={'disp': True})
 print(res)
 
-
+epr_hfss = DistributedAnalysis(project_info)

@@ -114,15 +114,19 @@ def loss_function(x):
     loss_allvar=[]
     for var in range(nb_var):
     
+        ### get the chis of the current variation
+        chi_dic=epr.results.get_chi_O1()
+        chis=np.abs(np.array(chi_dic[var_list[var]]))
+        
         ### get the frequencies of the current variation
-        freq=freqs[var]
+        freq_dic=epr.results.get_frequencies_O1()
+        freq=np.abs(np.array(freq_dic[var_list[var]]))
         ### get the anharmonicity of the current variation
-        anharmonicity=np.abs(np.diag(chis[var]))
+        anharmonicity=np.diag(chis)
         ### get the Q of the current variation
         total_Q_from_HFSS = np.array(epr.Qs)[:,0]
         #total_Q_from_couplings = 1/(1/np.array(epr.Qm_coupling[str(0)])).sum(1)
         #Q_couplings_adjusted=np.array([total_Q_from_HFSS/total_Q_from_couplings]).T*np.array(epr.Qm_coupling[str(var)])
-        
         
 
         ### sorting modes  
