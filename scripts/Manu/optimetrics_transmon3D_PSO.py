@@ -128,8 +128,8 @@ def loss_function(x):
         ### sorting modes  
         ### define the qubit as the mode with the largest anharmanocity
         index={}
-        index['qubit']=np.argsort(anharmonicity)[0]
-        index['cav']=np.argsort(anharmonicity)[1]
+        index['qubit']=np.argsort(anharmonicity)[-1]
+        index['cav']=np.argsort(anharmonicity)[-2]
         
         ### get the dispersive shifts of the current variation
         dispersiveshifts=np.array(epr.get_chis()).reshape(nb_var,nb_mode,nb_mode)[var,index['qubit']]
@@ -144,7 +144,7 @@ def loss_function(x):
         computed_val['cav_DS'] = dispersiveshifts[index['cav']]
         computed_val['Freq_cav']=freq[index['cav']]
         computed_val['cav_Q'] = total_Q_from_HFSS[index['cav']]
-        
+        print(computed_val)
 #        def supfunc(x,delta):
 #            return x*(x>delta)
 #                
@@ -163,6 +163,7 @@ def loss_function(x):
         
         loss=0 
         for key in target_val.keys():
+            print((computed_val[key]-target_val[key])/target_val[key])
             loss+=weigth[key]*((computed_val[key]-target_val[key])/target_val[key])**2
         loss_allvar.append(loss)
         

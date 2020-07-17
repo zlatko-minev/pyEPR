@@ -159,8 +159,8 @@ def loss_f_and_g(x0):
         ### sorting modes  
         ### define the qubit as the mode with the largest anharmanocity
         index={}
-        index['qubit']=np.argsort(anharmonicity)[0]
-        index['cav']=np.argsort(anharmonicity)[1]
+        index['qubit']=np.argsort(anharmonicity)[-1]
+        index['cav']=np.argsort(anharmonicity)[-2]
         
         ### get the dispersive shifts of the current variation
         dispersiveshifts=np.array(epr.get_chis()).reshape(nb_var,nb_mode,nb_mode)[var,index['qubit']]
@@ -194,6 +194,7 @@ def loss_f_and_g(x0):
         print(computed_val)
         loss=0 
         for key in target_val.keys():
+            print((computed_val[key]-target_val[key])/target_val[key])
             loss+=weigth[key]*((computed_val[key]-target_val[key])/target_val[key])**2
         loss_allvar.append(loss)
         
@@ -204,7 +205,7 @@ def loss_f_and_g(x0):
 
         fxepsilon=f[1:]
         fx=f[0]
-    
+    print(f)
     jac_fx=jac(fxepsilon,fx,epsilon)
         
     np.save(r"C:\GitHub\pyEPR\scripts\Manu\%s_f"%parametric_name,f)
@@ -219,10 +220,9 @@ def loss_f_and_g(x0):
 ######### Defines the optimizer sequence
 
 
-#########
-x0=np.array([-2.58e-2,  5.4e-1,  4.47e-1,  5.03,  43.55])
+######### position found by the Particle Swarm Optimizer
+x0=np.array([-2.5854443e-2,  5.414345e-1,  4.4732345e-1,  5.030435,  43.5504312235])
 
-# Initialize swarm (I have no idea what this is)
 
 
 res=sp.minimize(loss_f_and_g, x0, jac=True, bounds=bounds, options={'disp': True})
