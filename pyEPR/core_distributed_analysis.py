@@ -1080,7 +1080,8 @@ class DistributedAnalysis(object):
     def do_EPR_analysis(self,
                         variations: list = None,
                         modes=None,
-                        append_analysis=True):
+                        append_analysis=True,
+                        computeUE=True):
         """
         Main analysis routine
 
@@ -1231,8 +1232,11 @@ class DistributedAnalysis(object):
 
                 # Electric
                 print('ℰ_electric')
-                self.U_E = self.calc_energy_electric(variation)
-
+                
+                if computeUE==True:
+                    self.U_E = self.calc_energy_electric(variation)
+                else:
+                    4-self.U_H
                 # the unnormed
                 sol = pd.Series({'U_H': self.U_H, 'U_E': self.U_E})
 

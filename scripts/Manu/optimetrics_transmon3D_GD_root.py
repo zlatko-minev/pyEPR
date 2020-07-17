@@ -191,6 +191,7 @@ def loss_f_and_g(x0):
         computed_val['Freq_cav']=freq[index['cav']]
         computed_val['cav_Q'] = total_Q_from_HFSS[index['cav']]
         
+
 #        def supfunc(x,delta):
 #            return x*(x>delta)
 #                
@@ -204,9 +205,18 @@ def loss_f_and_g(x0):
         weigth['cav_DS'] = 1
         weigth['Freq_cav']= 10
         weigth['cav_Q'] = 1
-        
+                
         np.save(r"C:\GitHub\pyEPR\scripts\Manu\%s_anh_DS_freq_Q"%parametric_name,computed_val)
         print(computed_val)
+        
+        k=0
+        while len(computed_val)!=len(x0):
+            keywordstring='dummy'+str(k)
+            computed_val[keywordstring] = 1
+            target_val[keywordstring] = 1
+            weigth[keywordstring] = 1
+            k+=1
+            print(computed_val)
 #        loss=0 
 #        for key in target_val.keys():
 #            print((computed_val[key]-target_val[key])/target_val[key])
@@ -219,10 +229,11 @@ def loss_f_and_g(x0):
 
 
     ################# 6 - compute and return the jacobian based on HFSS evals
+    print('f_var=',root_array)
 
     root_xepsilon=root_array[1:]
     root_x=root_array[0]
-    jac_root=jac(root_xepsilon,root_x,epsilon)
+    jac_root=jac(root_xepsilon,root_x,epsilon).T
     print('f=',root_x)
     print('jac_fx=',jac_root)
     np.save(r"C:\GitHub\pyEPR\scripts\Manu\%s_jac"%parametric_name,jac_root)
@@ -239,7 +250,7 @@ def loss_f_and_g(x0):
 
 
 ######### position found by the Particle Swarm Optimizer
-x0=np.array([1.0122,  5.4142345e-1,  4.4732343445e-1,  5.0303435,  43.5504312235])
+x0=np.array([1.012542+np.random.rand()/100,  5.4142345e-1,  4.4732343445e-1,  5.0303435,  43.5504312235])
 
 
 
