@@ -82,6 +82,12 @@ def loss_f_and_g(x0):
     
     for i in range(len(x0)):
         ##### check if the gradient positions are within the bounds, otherwize we take the oposite direction
+        if x0[i]>max_bound[i]:
+            x0[i]=max_bound[i]
+            
+        if x0[i]<min_bound[i]:
+            x0[i]=min_bound[i]
+            
         if x_grad[i]>max_bound[i] or x_grad[i]<min_bound[i]:
             epsilon[i]=-epsilon[i]
             x_grad[i]=x0[i]+epsilon[i]
@@ -141,7 +147,7 @@ def loss_f_and_g(x0):
     nb_mode=np.array(freqs).shape[1]
     nb_var=np.array(freqs).shape[0]
     
-    loss_allvar=[]
+    root_array=[]
     for var in range(nb_var):
     
         
@@ -201,29 +207,30 @@ def loss_f_and_g(x0):
         
         np.save(r"C:\GitHub\pyEPR\scripts\Manu\%s_anh_DS_freq_Q"%parametric_name,computed_val)
         print(computed_val)
-        loss=0 
-        for key in target_val.keys():
-            print((computed_val[key]-target_val[key])/target_val[key])
-            loss+=weigth[key]*((computed_val[key]-target_val[key])/target_val[key])**2
-        loss_allvar.append(loss)
-        
-    f=np.array(loss_allvar)
+#        loss=0 
+#        for key in target_val.keys():
+#            print((computed_val[key]-target_val[key])/target_val[key])
+#            loss+=weigth[key]*((computed_val[key]-target_val[key])/target_val[key])**2
+#        
+        root_vec=[(computed_val[key]-target_val[key])/target_val[key] for key in target_val.keys()]
+        root_array.append(root_vec)
+
+    root_array=np.vstack(root_array)
 
 
     ################# 6 - compute and return the jacobian based on HFSS evals
 
-    fxepsilon=f[1:]
-    fx=f[0]
-    
-    jac_fx=jac(fxepsilon,fx,epsilon)
-    print('f=',f)
-    print('jac=',jac_fx)
-    np.save(r"C:\GitHub\pyEPR\scripts\Manu\%s_f"%parametric_name,f)
-    np.save(r"C:\GitHub\pyEPR\scripts\Manu\%s_jac"%parametric_name,jac_fx)
+    root_xepsilon=root_array[1:]
+    root_x=root_array[0]
+    jac_root=jac(root_xepsilon,root_x,epsilon)
+    print('f=',root_x)
+    print('jac_fx=',jac_root)
+    np.save(r"C:\GitHub\pyEPR\scripts\Manu\%s_jac"%parametric_name,jac_root)
+    np.save(r"C:\GitHub\pyEPR\scripts\Manu\%s_f"%parametric_name,root_x)
 
 
     
-    return fx, jac_fx
+    return root_x, jac_root
         
   
 
@@ -232,11 +239,10 @@ def loss_f_and_g(x0):
 
 
 ######### position found by the Particle Swarm Optimizer
-x0=np.array([1.012,  5.4142345e-1,  4.4732343445e-1,  5.0303435,  43.5504312235])
+x0=np.array([1.0122,  5.4142345e-1,  4.4732343445e-1,  5.0303435,  43.5504312235])
 
 
 
-res=sp.minimize(loss_f_and_g, x0, jac=True, bounds=bounds, options={'disp': True})
+res=sp.root(loss_f_and_g, x0, jac=True)
 print(res)
 
-epr_hfss = DistributedAnalysis(project_info)
