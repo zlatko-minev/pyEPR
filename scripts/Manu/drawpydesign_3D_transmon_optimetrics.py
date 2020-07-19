@@ -78,9 +78,9 @@ reso = Body(pm, name='reso')
 Jinduc = pm.set_variable( '10nH')
 pad_length=pm.set_variable('0.095mm')
 pad_width=pm.set_variable('0.7mm')
+pad_spacing =pm.set_variable('0.07mm')
 
-cutout_size = [3*pad_length,2*pad_width]
-pad_spacing = '0.07mm'
+cutout_size = [3*pad_length+pad_spacing,2*pad_width]
 pad_size = [pad_length, pad_width]
 Jwidth = '10um'
 Jlength = '0.5um'

@@ -25,7 +25,7 @@ def jac(fxepsilon,fx,epsilon):
 
 ################# 1.  Project and design. Open link to HFSS controls.
 project_info = ProjectInfo(r'C:\HFSS_simu\\',
-			     project_name = 'SMPD', # Project file name (string). "None" will get the current active one.
+			     project_name = 'SMPD2', # Project file name (string). "None" will get the current active one.
 			     design_name  = 'transmon_3D'       # Design name (string). "None" will get the current active one.
 			    )
 
@@ -64,8 +64,8 @@ project_info.junctions['jtransmon'] = {'Lj_variable':'Jinduc', 'rect':'qubit_jun
 
 
 # Create bounds for each variable (to be determined on physical and geometrical criterion within HFSS)
-min_bound = np.array([-1,0.1,0.1,5,20])
-max_bound = np.array([3,1,2,15,60])
+min_bound = np.array([-1.,0.1,0.1,5.,15.,0.05])
+max_bound = np.array([3.,1.,2.,15.,30.,0.5])
 bounds=[(i,j) for i,j in zip(min_bound,max_bound)]
 
 def loss_f_and_g(x0):
@@ -75,7 +75,7 @@ def loss_f_and_g(x0):
     ################# 0 - define the variable position vector to be computed for evaluating the jacobian
     ##### the epsilon vector is determined based on the bounds (to be refined), note that the gradient direction is chosen randomly
     bounds_span=max_bound-min_bound
-    epsilon=bounds_span/20*(2*np.random.randint(2,size=len(x0))-1)
+    epsilon=bounds_span/20.*(2*np.random.randint(2,size=len(x0))-1)
     x_grad=x0+epsilon
     
     x=np.array([x0]*(len(x0)+1))
@@ -111,7 +111,7 @@ def loss_f_and_g(x0):
         var=epr_hfss.design.get_variables()   
         
         ###list of variable to be optimized (should probably done outside)
-        name=np.array(["connect_penetrationlength1","pad_length","pad_width","Jinduc","box_length"])
+        name=np.array(["connect_penetrationlength1","pad_length","pad_width","Jinduc","box_height","pad_spacing"])
         
         ###dirty way to get the unit of the variable of interest (for some reason HFSS wants the same units than the project variable for the variation)
         units=[var[key][-2:] for key in name]
@@ -190,21 +190,26 @@ def loss_f_and_g(x0):
         computed_val['cav_DS'] = dispersiveshifts[index['cav']]
         computed_val['Freq_cav']=freq[index['cav']]
         computed_val['cav_Q'] = total_Q_from_HFSS[index['cav']]
+        computed_val['Freq_qubit']=freq[index['qubit']]
         
 
 #        def supfunc(x,delta):
 #            return x*(x>delta)
 #                
         ####definition of the targets (should probably done outside)
-        target_val['qubit_anharmonicity']=180
-        target_val['cav_DS'] = 3
-        target_val['Freq_cav']= 7300
+        target_val['qubit_anharmonicity']=180.
+        target_val['cav_DS'] = 3.
+        target_val['Freq_cav']= 7300.
         target_val['cav_Q'] = 1e4
+        target_val['Freq_qubit']= 6300.
+
         
         weigth['qubit_anharmonicity']=1
         weigth['cav_DS'] = 1
-        weigth['Freq_cav']= 10
         weigth['cav_Q'] = 1
+        weigth['Freq_qubit']= 10
+        weigth['Freq_cav']= 10
+
                 
         np.save(r"C:\GitHub\pyEPR\scripts\Manu\%s_anh_DS_freq_Q"%parametric_name,computed_val)
         print(computed_val)
@@ -222,7 +227,7 @@ def loss_f_and_g(x0):
 #            print((computed_val[key]-target_val[key])/target_val[key])
 #            loss+=weigth[key]*((computed_val[key]-target_val[key])/target_val[key])**2
 #        
-        root_vec=[(computed_val[key]-target_val[key])/target_val[key] for key in target_val.keys()]
+        root_vec=[weigth[key]*(computed_val[key]-target_val[key])/target_val[key] for key in target_val.keys()]
         root_array.append(root_vec)
 
     root_array=np.vstack(root_array)
@@ -250,10 +255,17 @@ def loss_f_and_g(x0):
 
 
 ######### position found by the Particle Swarm Optimizer
-x0=np.array([1.012542+np.random.rand()/100,  5.4142345e-1,  4.4732343445e-1,  5.0303435,  43.5504312235])
+name=np.array(["connect_penetrationlength1","pad_length","pad_width","Jinduc","box_height","pad_spacing"])
+
+x0=np.array([1.+np.random.rand()/100,  0.5,  0.5,  10.,  25., 0.15])
 
 
 
 res=sp.root(loss_f_and_g, x0, jac=True)
 print(res)
 
+
+var=epr_hfss.design.get_variables()   
+units=[var[key][-2:] for key in name]
+for i in range(len(name)):
+    epr_hfss.design.set_variable(name[i],str(res.x[i])+units[i])

@@ -106,18 +106,19 @@ def loss_function(x):
     epr.analyze_all_variations(var_list,cos_trunc = 5, fock_trunc = 4)
     
     ################# 4 - identify the physical modes on physical criterion
+    
+    loss_allvar=[]
     freqs=np.array(epr.get_frequencies()).T   
     nb_mode=np.array(freqs).shape[1]
     nb_var=np.array(freqs).shape[0]
-    chis=np.array(epr.get_chis()).reshape(nb_var,nb_mode,nb_mode)
     
-    loss_allvar=[]
     for var in range(nb_var):
     
-        ### get the chis of the current variation
+        
+        
+        ### get the frequencies of the current variation
         chi_dic=epr.results.get_chi_O1()
         chis=np.abs(np.array(chi_dic[var_list[var]]))
-        
         ### get the frequencies of the current variation
         freq_dic=epr.results.get_frequencies_O1()
         freq=np.abs(np.array(freq_dic[var_list[var]]))
@@ -127,7 +128,8 @@ def loss_function(x):
         total_Q_from_HFSS = np.array(epr.Qs)[:,var]
         #total_Q_from_couplings = 1/(1/np.array(epr.Qm_coupling[str(0)])).sum(1)
         #Q_couplings_adjusted=np.array([total_Q_from_HFSS/total_Q_from_couplings]).T*np.array(epr.Qm_coupling[str(var)])
-        
+
+
 
         ### sorting modes  
         ### define the qubit as the mode with the largest anharmanocity
