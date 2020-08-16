@@ -5,6 +5,14 @@ Welcome to pyEPR :beers:!
 [![star this repo](http://githubbadges.com/star.svg?user=zlatko-minev&repo=pyEPR&style=flat)](https://github.com/zlatko-minev/pyEPR)
 [![fork this repo](http://githubbadges.com/fork.svg?user=zlatko-minev&repo=pyEPR&style=flat)](https://github.com/zlatko-minev/pyEPR/fork)
 
+<br>
+
+## :bangbang: :bangbang: pyEPR Working group meeting -- Planning for the future of pyEPR 
+
+* Please sign-up here: https://github.com/zlatko-minev/pyEPR/issues/45 :bangbang: :beers:
+
+<br>
+
 ### Automated Python module for the design and quantization of Josephson quantum circuits
 
 **Abstract:** Superconducting circuits incorporating non-linear devices, such as Josephson junctions and nanowires, are among the leading platforms for emerging quantum technologies. Promising applications require designing and optimizing circuits with ever-increasing complexity and controlling their dissipative and Hamiltonian parameters to several significant digits. Therefore, there is a growing need for a systematic, simple, and robust approach for precise circuit design, extensible to increased complexity. The energy-participation ratio (EPR) approach presents such an approach to unify the design of dissipation and Hamiltonians around a single concept — the energy participation, a number between zero and one — in a single-step electromagnetic simulation. This markedly reduces the required number of simulations and allows for robust extension to complex systems. The approach is general purpose, derived ab initio, and valid for arbitrary non-linear devices and circuit architectures. Experimental results on a variety of circuit quantum electrodynamics (cQED) devices and architectures, 3D and flip-chip (2.5D), have been demonstrated to exhibit ten percent to percent-level agreement for non-linear coupling and modal Hamiltonian parameters over five-orders of magnitude and across a dozen samples. Here, in this package, all routines of the EPR approach are fully automated.
@@ -22,7 +30,7 @@ Warning: pyEPR organization was significnatly improved in v0.8-dev (starting 202
 * [IBM Quantum](https://www.ibm.com/quantum-computing/)
 * [QUANTIC](https://team.inria.fr/quantic/people.html#) (QUANTUM INFORMATION CIRCUITS), PARISINRIA, ENS, MINES PARISTECH, UPMC, CNRS. Groups of Zaki Leghtas and team. France
 * [Quantum Circuit Group](http://www.physinfo.fr/) Emanuel Flurin, Benjamin Huard, Ecole Normale Supérieure de Lyon, France
-* UC Berkeley, [Quantum Nanoelectronics Laboratory](https://physics.berkeley.edu/quantum-nanoelectronics-laboratory), Irfan Siddiqi, CA, USA 
+* UC Berkeley, [Quantum Nanoelectronics Laboratory](https://physics.berkeley.edu/quantum-nanoelectronics-laboratory), Irfan Siddiqi, CA, USA
 * [Quantum Circuits, Inc.](https://quantumcircuits.com/), CT, USA
 * [Seeqc](https://seeqc.com/) (spin-out of Hypres) Digital Quantum Computing, USA
 * Serge [Rosenblum Lab](https://www.weizmann.ac.il/condmat/rosenblum/) in the Weizmann Instatue, Israel
@@ -34,9 +42,11 @@ Warning: pyEPR organization was significnatly improved in v0.8-dev (starting 202
 
 ## How do I cite `pyEPR` when I publish?
 Cite the following and/or e-mail [`zlatko.minev@aya.yale.edu`](https://www.zlatko-minev.com/) or [`zaki leghtas`](http://cas.ensmp.fr/~leghtas/)
-* Z.K. Minev, Ph.D. Dissertation, Yale University (2018), Chapter 4. [arXiv:1902.10355](https://arxiv.org/abs/1902.10355)
+* [arXiv:1902.10355](https://arxiv.org/abs/1902.10355) Z.K. Minev, Ph.D. Dissertation, Yale University (2018), Chapter 4. 
 * Z.K. Minev, Z. Leghtas, _et al._ (to appear soon on arXiv) (2020)
 
+
+<br>
 
 # Contents:
 * [Start here: Using `pyEPR`](#start-here-using-pyepr)
@@ -139,6 +149,16 @@ epra.quick_plot_mode(0,0,1,numeric=True, swp_variable=swp_variable)
 Use `pyEPR` directly from the source, and pull updates from the master git repo, since we often update it. The following steps explain how to set up Python 3, fork the `pyEPR` repo and use it.
 Please keep up to date with `pyEPR` by using git. We like to make it simple using a git-gui manager, [SourceTree](sourcetree.com) or [GitHub Desktop](https://desktop.github.com/).
 
+**Quick setup**
+We recommend the approach in the following section, which will be most up to date, but for quick use you can use the [conda forge chanel](https://anaconda.org/conda-forge/pyepr-quantum) to install
+```
+conda install -c conda-forge pyepr-quantum
+```
+or the [PyPi](https://pypi.org/project/pyEPR-quantum/0.8/) channel
+```
+pip install pyEPR-quantum
+```
+
 **Recommended procedure.**   <br />
 
  1. Install Python 3.x, we recommend the [Anaconda](https://www.anaconda.com/distribution/#download-section) distribution. <br>
@@ -157,8 +177,16 @@ Please keep up to date with `pyEPR` by using git. We like to make it simple usin
  3. Fork this pyEPR repository on GitHub with your GitHub account. You may clone the fork to your PC and manage it using the [SourceTree](https://www.sourcetreeapp.com/) git-gui manager.
  4. Add the pyEPR repository folder to your python search path. Make sure to add the git remote to the master is set up,  `git remote add MASTER_MINEV git://github.com/zlatko-minev/pyEPR.git`!  [(Help?)](https://stackoverflow.com/questions/11266478/git-add-remote-branch)
  5. Edit pyEPR module `_config_user.py`  to set your data-saving directory and other parameters of interest.  (To keep your changes local, use the shell command `git update-index --skip-worktree _config_user.py` in the `pyEPR/pyEPR` folder)
- 6. **ENJOY and cite pyEPR! **  :+1:
+ 6. **ENJOY and cite pyEPR!**  :+1:
 
+#### “Editable” install for development mode
+Although not required, it’s common to locally install your project in “editable” or “develop” mode while you’re working on it. This allows your project to be both installed and editable in project form.
+
+Assuming you’re in the root of your project directory, then run [(see here)](https://packaging.python.org/guides/distributing-packages-using-setuptools/#working-in-development-mode):
+```
+   python -m pip install -e .
+```
+Although somewhat cryptic, -e is short for --editable, and . refers to the current working directory, so together, it means to install the current directory (i.e. your project) in editable mode. This will also install any dependencies declared with “install_requires” and any scripts declared with “console_scripts”. Dependencies will be installed in the usual, non-editable mode. Quoted from [python](https://packaging.python.org/guides/distributing-packages-using-setuptools/#working-in-development-mode)
 
 #### Note for Mac/Linux.
 Follow the same instructions above. You shouldn't have to install mingw or modify distutils.cfg, since your distribution should come with gcc as the default compiler.
@@ -196,6 +224,8 @@ pip install pint --upgrade
 `AttributeError: module 'pandas.compat' has no attribute 'StringIO'`
 
 Caleb pointed this out, see [here](https://stackoverflow.com/questions/58372475/attributeerror-module-pandas-compat-has-no-attribute-iteritems) and here for [solution](https://github.com/zlatko-minev/pyEPR/issues/21). You need to change the pandas version. [pyEPR to be upgraded]
+
+This was solved in [this commit](https://github.com/DanielCohenHillel/pyEPR/commit/fd2b5897d6f819681b8a605734cfed855c002df6). Try to update your pyEPR version to the current master.
 
 
 ###### When importing qutip an error occurs `AttributeError: module 'numpy' has no attribute '__config__'`
@@ -260,7 +290,7 @@ This error happens when trying to read in an hdf file with numpy version 1.16, s
 * Contributors: [Phil Rheinhold](https://github.com/PhilReinhold), Lysander Christakis, [Devin Cody](https://github.com/devincody), ...
 Original versions of pyHFSS.py and pyNumericalDiagonalization.py contributed by [Phil Rheinhold](https://github.com/PhilReinhold), excellent original [repo](https://github.com/PhilReinhold/pyHFSS).
 * Terms of use: Use freely and kindly cite the paper (arXiv link to be posted here) and/or this package.
-* How can I contribute? Contact [Z. Minev](zlatko-minev.com) or [Z. Leghtas](http://cas.ensmp.fr/~leghtas/).
+* How can I contribute? Contact [Z. Minev](https://www.zlatko-minev.com/) or [Z. Leghtas](http://cas.ensmp.fr/~leghtas/).
 
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/zlatko-minev/pyEPR/graphs/commit-activity)
 

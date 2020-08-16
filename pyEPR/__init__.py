@@ -191,3 +191,5 @@ __all__ = ['logger', 'config',
            'Project_Info', 'pyEPR_HFSSAnalysis','pyEPR_Analysis', # names to be depricated
            'parse_units', 'parse_units_user', 'parse_entry'
            ]
+
+# TODO: Add "about" method. Add to tutorial

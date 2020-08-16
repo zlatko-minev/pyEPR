@@ -1,0 +1,45 @@
+{% set data = load_setup_py_data() %}
+
+package:
+  name: pyepr-quantum
+  version: {{ data.get('version') }}
+
+build:
+  number: 0
+  script: python setup.py install --single-version-externally-managed --record=record.txt
+
+source:
+  url: https://github.com/zlatko-minev/pyEPR.git
+
+requirements:
+  build: 
+    - python 
+  run:
+    - python >=3.6
+    - pip
+    - setuptools
+    - numpy >=1.15
+    - attrdict
+
+test:
+  imports:
+    pyEPR
+
+about:
+  home: {{ data.get('url') }}
+  license: {{ data.get('license') }}
+  license_file: LICENSE
+  summary: {{ data.get('description') }}
+  description: >
+    pyEPR is an open source, BSD-licensed library providing high-efficiency,
+    easy-to-use analysis functions and automation for the design of quantum
+    chips based on superconducting quantum circuits, both distributed and lumped.
+    pyEPR interfaces the classical distributed microwave analysis with that of 
+    quantum structures and Hamiltonians. It is chiefly based on the energy participation 
+    ratio approach; however, it has since v0.4 extended to cover a broad range of
+    design approaches. pyEPR stradels the analysis from Maxwell’s to Schrodinger’s
+    equations, and converts the solutions of distributed microwve (typically eignmode
+    simulations) to a fully diagonalized spectrum of the energy levels, couplings,
+    and key parameters of a many-body quantum Hamiltonian.
+  doc_url: https://pyepr-docs.readthedocs.io/en/latest/
+  dev_url: https://github.com/zlatko-minev/pyEPR

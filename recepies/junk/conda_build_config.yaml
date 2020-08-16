@@ -1,0 +1,25 @@
+python:
+  # - 3.5
+  - 3.6
+  # - 3.7
+
+# channel_sources:
+#   - conda-forge/label/gcc7,defaults
+#   - conda-forge,defaults
+
+cross_compiler_target_platform:  # [win]
+  - win-64                     # [win]
+
+# The following are helpful variables to simplify go meta.yaml files.
+target_goos:
+  - linux                      # [linux]
+  - darwin                     # [osx]
+  - windows                    # [win]
+target_goarch:
+  - amd64                      # [x86_64]
+
+# we build for the oldest version possible of numpy for forward compatibility
+numpy:
+  - 1.14       # [not (aarch64 or ppc64le)]
+  - 1.15       # [aarch64 or ppc64le]
+  - 1.16       # [aarch64 or ppc64le]
