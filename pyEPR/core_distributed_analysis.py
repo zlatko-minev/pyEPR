@@ -642,11 +642,11 @@ class DistributedAnalysis(object):
         A = A.dot(B)
         A = A.real()
 
-        if obj_dims==1:
+        if obj_dims == 1:
             A = A.integrate_line(name=obj)
-        elif obj_dims==2:
+        elif obj_dims == 2:
             A = A.integrate_surf(name=obj)
-        elif obj_dims==3:
+        elif obj_dims == 3:
             A = A.integrate_vol(name=obj)
         else:
             logger.warn(f'Invalid object dimensions {obj_dims}, using default of 3 (volume)')
@@ -724,7 +724,8 @@ class DistributedAnalysis(object):
         # self.design.Clear_Field_Clac_Stack()
         return I
 
-    def calc_current_using_line_voltage(self, variation: str, junc_line_name: str, junc_L_Henries: float, Cj_Farads: float = None):
+    def calc_current_using_line_voltage(self, variation: str, junc_line_name: str,
+                                        junc_L_Henries: float, Cj_Farads: float = None):
         '''
         Peak current I_max for prespecified mode calculating line voltage across junction.
 
@@ -796,20 +797,22 @@ class DistributedAnalysis(object):
         uj = [float(u[0]/jl), float(u[1]/jl), float(u[2]/jl)]
         return jl, uj
 
-    def get_Qseam(self, seam, mode, variation, U_H = None):
+    def get_Qseam(self, seam, mode, variation, U_H=None):
         r'''
         Caculate the contribution to Q of a seam, by integrating the current in
         the seam with finite conductance: set in the config file
         ref: http://arxiv.org/pdf/1509.01119.pdf
         '''
-        
+
         if U_H is None:
             U_H = self.calc_energy_magnetic(variation)
-        
+
+        _, freqs_bare_vals = self.get_freqs_bare(variation)
+        self.omega = 2*np.pi*freqs_bare_vals[mode]
+
         lv = self._get_lv(variation)
         Qseam = OrderedDict()
-        print('Calculating Qseam_' + seam + ' for mode ' + str(mode) +
-              ' (' + str(mode) + '/' + str(self.n_modes-1) + ')')
+        print(f'Calculating Qseam_{seam} for mode {mode} ({mode}/{self.n_modes-1})')
         # overestimating the loss by taking norm2 of j, rather than jperp**2
         j_2_norm = self.fields.Vector_Jsurf.norm_2()
         int_j_2 = j_2_norm.integrate_line(seam)
@@ -819,8 +822,7 @@ class DistributedAnalysis(object):
         Qseam['Qseam_'+seam+'_' +
               str(mode)] = config.dissipation.gseam/yseam
 
-        print('Qseam_' + seam + '_' + str(mode) + str(' = ') +
-              str(config.dissipation.gseam/config.dissipation.yseam))
+        print('Qseam_' + seam + '_' + str(mode), '=', str(config.dissipation.gseam/yseam))
 
         return pd.Series(Qseam)
 
@@ -834,7 +836,7 @@ class DistributedAnalysis(object):
 
         if U_H is None:
             U_H = self.calc_energy_(variation)
-       
+
         self.solutions.set_mode(mode+1, 0)
         self.fields = self.setup.get_fields()
         freqs_bare_dict, freqs_bare_vals = self.get_freqs_bare(variation)
