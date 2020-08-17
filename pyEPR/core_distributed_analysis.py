@@ -233,18 +233,18 @@ class DistributedAnalysis(object):
         if not self.data_dir.is_dir():
             self.data_dir.mkdir(parents=True, exist_ok=True)
 
-    def calc_p_junction_single(self, mode, variation, U_E = None, U_H = None):
+    def calc_p_junction_single(self, mode, variation, U_E=None, U_H=None):
         '''
         This function is used in the case of a single junction only.
         For multiple junctions, see `calc_p_junction`.
 
         Assumes no lumped capacitive elements.
         '''
-        if U_E == None:
+        if U_E is None:
             U_E = self.calc_energy_electric(variation)
-        if U_H == None:
+        if U_H is None:
             U_H = self.calc_energy_magnetic(variation)
-        
+
         pj = OrderedDict()
         pj_val = (U_E-U_H)/U_E
         pj['pj_'+str(mode)] = np.abs(pj_val)
@@ -445,7 +445,7 @@ class DistributedAnalysis(object):
         """
         try:
             return str(self._list_variations.index(self._nominal_variation))
-        except:
+        except Exception:
             print('WARNING: Unsure of the index, returning 0')
             return '0'
 
@@ -555,8 +555,10 @@ class DistributedAnalysis(object):
 
     def calc_energy_electric(self,
                              variation: str = None,
-                             volume: str = 'AllObjects',
-                             smooth: bool = False):
+                             obj: str = 'AllObjects',
+                             volume: str = 'Deprecated',
+                             smooth: bool = False,
+                             obj_dims: int = 3):
         r'''
         Calculates two times the peak electric energy, or 4 times the RMS,
         :math:`4*\mathcal{E}_{\mathrm{elec}}`
@@ -568,8 +570,9 @@ class DistributedAnalysis(object):
         Args:
             variation (str): A string identifier of the variation,
                 such as '0', '1', ...
-            volume (string | 'AllObjects'): Name of the volume to integrate over
+            obj (string | 'AllObjects'): Name of the object to integrate over
             smooth (bool | False) : Smooth the electric field or not when performing calculation
+            obj_dims (int | 3) : 1 - line, 2 - surface, 3 - volume. Default volume
 
         Example:
             Example use to calcualte the energy participation ratio (EPR) of a substrate
@@ -577,11 +580,14 @@ class DistributedAnalysis(object):
             .. code-block:: python
                 :linenos:
 
-                ℰ_total  = epr_hfss.calc_energy_electric(volume='AllObjects')
-                ℰ_substr = epr_hfss.calc_energy_electric(volume='Box1')
+                ℰ_total  = epr_hfss.calc_energy_electric(obj='AllObjects')
+                ℰ_substr = epr_hfss.calc_energy_electric(obj='Box1')
                 print(f'Energy in substrate = {100*ℰ_substr/ℰ_total:.1f}%')
 
         '''
+        if volume != 'Deprecated':
+            logger.warning('The use of the "volume" argument is deprecated... use "obj" instead')
+            obj = volume
 
         calcobject = CalcObject([], self.setup)
 
@@ -592,15 +598,26 @@ class DistributedAnalysis(object):
         B = vecE.conj()
         A = A.dot(B)
         A = A.real()
-        A = A.integrate_vol(name=volume)
+
+        if obj_dims == 1:
+            A = A.integrate_line(name=obj)
+        elif obj_dims == 2:
+            A = A.integrate_surf(name=obj)
+        elif obj_dims == 3:
+            A = A.integrate_vol(name=obj)
+        else:
+            logger.warning('Invalid object dimensions %s, using default of 3 (volume)' % obj_dims)
+            A = A.integrate_vol(name=obj)
 
         lv = self._get_lv(variation)
         return A.evaluate(lv=lv)
 
     def calc_energy_magnetic(self,
-                             variation=None,
-                             volume='AllObjects',
-                             smooth=True):
+                             variation: str = None,
+                             obj: str = 'AllObjects',
+                             volume: str = 'Deprecated',
+                             smooth: bool = False,
+                             obj_dims: int = 3):
         '''
         See calc_energy_electric.
 
@@ -609,7 +626,11 @@ class DistributedAnalysis(object):
                 such as '0', '1', ...
             volume (string | 'AllObjects'): Name of the volume to integrate over
             smooth (bool | False) : Smooth the electric field or not when performing calculation
+            obj_dims (int | 3) : 1 - line, 2 - surface, 3 - volume. Default volume
         '''
+        if volume != 'Deprecated':
+            logger.warning('The use of the "volume" argument is deprecated... use "obj" instead')
+            obj = volume
 
         calcobject = CalcObject([], self.setup)
 
@@ -620,7 +641,16 @@ class DistributedAnalysis(object):
         B = vecH.conj()
         A = A.dot(B)
         A = A.real()
-        A = A.integrate_vol(name=volume)
+
+        if obj_dims==1:
+            A = A.integrate_line(name=obj)
+        elif obj_dims==2:
+            A = A.integrate_surf(name=obj)
+        elif obj_dims==3:
+            A = A.integrate_vol(name=obj)
+        else:
+            logger.warn(f'Invalid object dimensions {obj_dims}, using default of 3 (volume)')
+            A = A.integrate_vol(name=obj)
 
         lv = self._get_lv(variation)
         return A.evaluate(lv=lv)
@@ -647,12 +677,12 @@ class DistributedAnalysis(object):
 
         if E_total is None:
             logger.debug('Calculating ℰ_total')
-            ℰ_total = self.calc_energy_electric(volume=relative_to)
+            ℰ_total = self.calc_energy_electric(obj=relative_to)
         else:
             ℰ_total = E_total
 
         logger.debug('Calculating ℰ_object')
-        ℰ_object = self.calc_energy_electric(volume=name_dielectric3D)
+        ℰ_object = self.calc_energy_electric(obj=name_dielectric3D)
 
         return ℰ_object/ℰ_total, (ℰ_object, ℰ_total)
 
@@ -773,7 +803,7 @@ class DistributedAnalysis(object):
         ref: http://arxiv.org/pdf/1509.01119.pdf
         '''
         
-        if U_H == None:
+        if U_H is None:
             U_H = self.calc_energy_magnetic(variation)
         
         lv = self._get_lv(variation)
@@ -794,7 +824,7 @@ class DistributedAnalysis(object):
 
         return pd.Series(Qseam)
 
-    def get_Qseam_sweep(self, seam, mode, variation, variable, values, unit, U_H = None, pltresult=True):
+    def get_Qseam_sweep(self, seam, mode, variation, variable, values, unit, U_H=None, pltresult=True):
         """
         Q due to seam loss.
 
@@ -802,9 +832,9 @@ class DistributedAnalysis(object):
         ref: http://arxiv.org/pdf/1509.01119.pdf
         """
 
-        if U_H == None:
+        if U_H is None:
             U_H = self.calc_energy_(variation)
-        
+       
         self.solutions.set_mode(mode+1, 0)
         self.fields = self.setup.get_fields()
         freqs_bare_dict, freqs_bare_vals = self.get_freqs_bare(variation)
@@ -838,14 +868,14 @@ class DistributedAnalysis(object):
 
         return Qseamsweep
 
-    def get_Qdielectric(self, dielectric, mode, variation, U_E = None):
-        if U_E == None:
+    def get_Qdielectric(self, dielectric, mode, variation, U_E=None):
+        if U_E is None:
             U_E = self.calc_energy_electric(variation) 
         Qdielectric = OrderedDict()
         print('Calculating Qdielectric_' + dielectric + ' for mode ' +
               str(mode) + ' (' + str(mode) + '/' + str(self.n_modes-1) + ')')
 
-        U_dielectric = self.calc_energy_electric(variation, volume=dielectric)
+        U_dielectric = self.calc_energy_electric(variation, obj=dielectric)
         p_dielectric = U_dielectric/U_E
         # TODO: Update make p saved sep. and get Q for diff materials, indep. specify in pinfo
         Qdielectric['Qdielectric_'+dielectric+'_' +
@@ -854,13 +884,13 @@ class DistributedAnalysis(object):
               str(mode)+' = ' + str(p_dielectric))
         return pd.Series(Qdielectric)
 
-    def get_Qsurface_all(self, mode, variation, U_E = None):
+    def get_Qsurface_all(self, mode, variation, U_E=None):
         '''
         caculate the contribution to Q of a dieletric layer of dirt on all surfaces
         set the dirt thickness and loss tangent in the config file
         ref: http://arxiv.org/pdf/1509.01854.pdf
         '''
-        if U_E == None:
+        if U_E is None:
             U_E = self.calc_energy_electric(variation)
         lv = self._get_lv(variation)
         Qsurf = OrderedDict()
@@ -893,7 +923,7 @@ class DistributedAnalysis(object):
             variation (str): A string identifier of the variation,
             such as '0', '1', ...
         '''
-        if U_E == None:
+        if U_E is None:
             U_E = self.calc_energy_electric(variation)
         Qp = pd.Series({})
 
