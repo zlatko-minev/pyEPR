@@ -612,7 +612,8 @@ class QuantumAnalysis(object):
         ---------------
             junctions: list or slice of junctions to include in the analysis.
                 None defaults to analysing all junctions
-
+            modes: list or slice of modes to include in the analysis.
+                None defaults to analysing all modes
 
         Returns:
         ----------------
@@ -631,7 +632,14 @@ class QuantumAnalysis(object):
         # ensuring proper matrix dimensionality when slicing
         junctions = (junctions,) if type(junctions) is int else junctions
 
-        modes = list(range(self.n_modes))
+        if modes is None:
+            modes = list(range(self.n_modes))
+        
+        tmp_n_modes = self.n_modes
+        tmp_modes =self.modes[variation]
+        self.n_modes = len(modes)
+        self.modes[variation]= modes
+    
 
         if (fock_trunc is None) or (cos_trunc is None):
             fock_trunc = cos_trunc = None
@@ -645,7 +653,7 @@ class QuantumAnalysis(object):
         # Get matrices
         PJ, SJ, Om, EJ, PHI_zpf, PJ_cap, n_zpf = self.get_epr_base_matrices(
             variation)
-        freqs_hfss = self.freqs_hfss[variation].values
+        freqs_hfss = self.freqs_hfss[variation].values[(modes)]
         Ljs = self.Ljs[variation].values
 
         # reduce matrices to only include certain modes/junctions
@@ -709,6 +717,9 @@ class QuantumAnalysis(object):
         self.results[variation] = result
         self.results.save()
 
+        self.n_modes = tmp_n_modes #TODO is this smart should consider defining the modes of intrest in the initilazaition of the quantum object
+        self.modes[variation]=tmp_modes 
+        
         if print_result:
             self.print_variation(variation)
             self.print_result(result)
