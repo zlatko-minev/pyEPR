@@ -603,7 +603,8 @@ class QuantumAnalysis(object):
                           cos_trunc: int = None,
                           fock_trunc: int = None,
                           print_result: bool = True,
-                          junctions: List = None):
+                          junctions: List = None,
+                          modes: List = None):
         # TODO avoide analyzing a previously analyzed variation
         '''
         Core analysis function to call!
