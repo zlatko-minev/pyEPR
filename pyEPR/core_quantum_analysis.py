@@ -603,7 +603,8 @@ class QuantumAnalysis(object):
                           cos_trunc: int = None,
                           fock_trunc: int = None,
                           print_result: bool = True,
-                          junctions: List = None):
+                          junctions: List = None,
+                          modes: List = None):
         # TODO avoide analyzing a previously analyzed variation
         '''
         Core analysis function to call!
@@ -612,7 +613,8 @@ class QuantumAnalysis(object):
         ---------------
             junctions: list or slice of junctions to include in the analysis.
                 None defaults to analysing all junctions
-
+            modes: list or slice of modes to include in the analysis.
+                None defaults to analysing all modes
 
         Returns:
         ----------------
@@ -631,7 +633,14 @@ class QuantumAnalysis(object):
         # ensuring proper matrix dimensionality when slicing
         junctions = (junctions,) if type(junctions) is int else junctions
 
-        modes = list(range(self.n_modes))
+        if modes is None:
+            modes = list(range(self.n_modes))
+        
+        tmp_n_modes = self.n_modes
+        tmp_modes =self.modes[variation]
+        self.n_modes = len(modes)
+        self.modes[variation]= modes
+    
 
         if (fock_trunc is None) or (cos_trunc is None):
             fock_trunc = cos_trunc = None
@@ -645,7 +654,7 @@ class QuantumAnalysis(object):
         # Get matrices
         PJ, SJ, Om, EJ, PHI_zpf, PJ_cap, n_zpf = self.get_epr_base_matrices(
             variation)
-        freqs_hfss = self.freqs_hfss[variation].values
+        freqs_hfss = self.freqs_hfss[variation].values[(modes)]
         Ljs = self.Ljs[variation].values
 
         # reduce matrices to only include certain modes/junctions
@@ -658,7 +667,7 @@ class QuantumAnalysis(object):
             PJ_cap = PJ_cap[:, junctions]
 
         if modes is not None:
-            freqs_hfss = freqs_hfss[self.modes[variation], ]
+            freqs_hfss = freqs_hfss[range(len(self.modes[variation])), ]
             PJ = PJ[modes, :]
             SJ = SJ[modes, :]
             Om = Om[modes, :][:, modes]
@@ -682,7 +691,7 @@ class QuantumAnalysis(object):
             f1_ND, CHI_ND = None, None
 
         result = OrderedDict()
-        result['f_0'] = self.freqs_hfss[variation] * \
+        result['f_0'] = self.freqs_hfss[variation][modes] * \
             1E3  # MHz - obtained directly from HFSS
         result['f_1'] = pd.Series(f1s)*1E3     # MHz
         result['f_ND'] = pd.Series(f1_ND)*1E-6  # MHz
@@ -690,29 +699,40 @@ class QuantumAnalysis(object):
         result['chi_ND'] = pd.DataFrame(CHI_ND)   # why dataframe?
         result['ZPF'] = PHI_zpf
         result['Pm_normed'] = PJ
-        result['Pm_raw'] = self.PM[variation]
-        result['Pm_cap'] = PJ_cap  # normed
+        try:
+            result['Pm_raw'] = self.PM[variation][self.PM[variation].columns[0]][modes]#TODO change the columns to junctions
+        except:
+             result['Pm_raw'] = self.PM[variation]
         _temp = self._get_participation_normalized(
             variation, _renorm_pj=self._renorm_pj, print_=print_result)
-        result['_Pm_norm'] = _temp['Pm_norm']
-        result['_Pm_cap_norm'] = _temp['Pm_cap_norm']
+        result['_Pm_norm'] = _temp['Pm_norm'][modes]
+        result['_Pm_cap_norm'] = _temp['Pm_cap_norm'][modes]
 
         # just propagate
         result['hfss_variables'] = self._hfss_variables[variation]
         result['Ljs'] = self.Ljs[variation]
         result['Cjs'] = self.Cjs[variation]
-        result['Q_coupling'] = self.Qm_coupling[variation]
-        result['Qs'] = self.Qs[variation]
+        try:
+            result['Q_coupling'] = self.Qm_coupling[variation][self.Qm_coupling[variation].columns[junctions]][modes]#TODO change the columns to junctions
+        except:
+             result['Q_coupling'] = self.Qm_coupling[variation]
+        
+        try:
+            result['Qs'] = self.Qs[variation][self.PM[variation].columns[junctions]][modes] #TODO change the columns to junctions
+        except:
+             result['Qs'] = self.Qs[variation][modes]
         result['fock_trunc'] = fock_trunc
         result['cos_trunc'] = cos_trunc
 
         self.results[variation] = result
         self.results.save()
-
+        
         if print_result:
             self.print_variation(variation)
             self.print_result(result)
-
+    
+        self.n_modes = tmp_n_modes #TODO is this smart should consider defining the modes of intrest in the initilazaition of the quantum object
+        self.modes[variation]=tmp_modes 
         return result
 
     def print_variation(self, variation):
