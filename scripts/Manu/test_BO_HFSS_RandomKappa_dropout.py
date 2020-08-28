@@ -97,6 +97,7 @@ def func_to_max_HFSS(x0):
     nb_var=np.array(freqs).shape[0]
     
     loss_allvar=[]
+    computed_val_list=[]
     for var in range(nb_var):
     
         
@@ -155,9 +156,7 @@ def func_to_max_HFSS(x0):
         weigth['cav_Q'] = 1
         weigth['Freq_qubit']= 10
         weigth['Freq_cav']= 10
-        
-        np.save(r"C:\GitHub\pyEPR\scripts\Manu\%s_anh_DS_freq_Q"%parametric_name,computed_val)
-        print(computed_val)
+        computed_val_list.append(computed_val)
         loss=0 
         for key in target_val.keys():
             print((computed_val[key]-target_val[key])/target_val[key])
@@ -171,9 +170,13 @@ def func_to_max_HFSS(x0):
 
     
     print('f=',f)
+    print(computed_val_list)
+
+    np.save(r"C:\GitHub\pyEPR\scripts\Manu\%s_anh_DS_freq_Q"%parametric_name,computed_val_list)
     np.save(r"C:\GitHub\pyEPR\scripts\Manu\%s_f"%parametric_name,f)
-
-
+    np.save(r"C:\GitHub\pyEPR\scripts\Manu\%s_param"%parametric_name,x0)
+    
+    np.save(r"C:\GitHub\pyEPR\scripts\Manu\%s_summary"%parametric_name,{'x0':x0,'score':f,'values':computed_val_list})
     
     return f
 
