@@ -30,12 +30,6 @@ def cost_camille_list(next_points):
         targets.append(cost_camille(**next_point))
     return targets
 
-pbounds = {'x': (-5, 5), 'y': (-5, 5)}
-bounds_transformer = SequentialDomainReductionTransformer()
-## Reduces the bounds ###
-optimizer = BayesianOptimization(f = cost_camille, pbounds=pbounds)#,
-                              #   bounds_transformer=bounds_transformer)
-
 
 
 
@@ -48,12 +42,11 @@ def random_kappa(x0,sigma):
     kappa=5*np.random.rand()
     return kappa
 
-
-def maximize(cost_camille_list,N_parallel=7,n_iter=15,x0=4,sigma=5):
+def maximize(cost_camille_list,guess=[],N_parallel=7,n_iter=15,x0=4,sigma=5):
     points_list=[]
     optimax=[]
-    for _ in range(n_iter):
-        next_points=[]
+    next_points=guess
+    for k in range(n_iter):
         for i in range(N_parallel):
             kappa=random_kappa(x0,sigma)
             print('random kappa =',kappa)
@@ -66,7 +59,6 @@ def maximize(cost_camille_list,N_parallel=7,n_iter=15,x0=4,sigma=5):
 
         targets=cost_camille_list(next_points)
 
-
         for next_point,target in zip(next_points,targets):
             optimizer.register(params=next_point, target=target)
 
@@ -74,6 +66,7 @@ def maximize(cost_camille_list,N_parallel=7,n_iter=15,x0=4,sigma=5):
 
         print()
         print(targets, next_points)
+        next_points=[]
 
         print()
         print('"current_max =', optimizer.max)
@@ -84,8 +77,17 @@ def maximize(cost_camille_list,N_parallel=7,n_iter=15,x0=4,sigma=5):
     print(optimizer.max)
     return optimax
 
+pbounds = {'x': (-5, 5), 'y': (-5, 5)}
+bounds_transformer = SequentialDomainReductionTransformer()
+## Reduces the bounds ###
+optimizer = BayesianOptimization(f = cost_camille, pbounds=pbounds)#,
+                              #   bounds_transformer=bounds_transformer)
 
-optimax=maximize(cost_camille_list)
+
+
+guess=[{'x': 1.1529464694705334, 'y': 0.7045588858311227}]
+
+optimax=maximize(cost_camille_list,guess)
 plt.figure()
 plt.plot(optimax)
 

@@ -4,7 +4,7 @@ import drawpylib.cpw_elements as elt
 from HFSSdrawpy.utils import val
 from quantrolib.parameters import TRACK, GAP, RLC, MESH, MASK, DEFAULT, ELEC, \
     eps
-
+import numpy as np
 pm = Modeler('hfss')
 pm.is_hfss=True
 #############################################################################################
@@ -78,9 +78,10 @@ reso = Body(pm, name='reso')
 Jinduc = pm.set_variable( '10nH')
 pad_length=pm.set_variable('0.095mm')
 pad_width=pm.set_variable('0.7mm')
-pad_spacing =pm.set_variable('0.07mm')
+pad_spacing = pm.set_variable('0.07mm')
 
-cutout_size = [3*pad_length+pad_spacing,2*pad_width]
+
+cutout_size = [3*pad_length,2*pad_width]
 pad_size = [pad_length, pad_width]
 Jwidth = '10um'
 Jlength = '0.5um'
@@ -100,30 +101,8 @@ for elmt in reso.entities[TRACK]:
     elmt.assign_perfect_E()
 
 
-#pos = [-0.5*(wire_length-teeth_gap),0,0]
-#ori = [1,0]
-#with reso(pos, ori):
-#    resonator = elt.draw_capa_interdigitated_rectangle(reso, N_pairs, wire_dimensions, teeth_dimensions, pad_height, mesh_width, fillet)
-#
-#rect_mesh=reso.rect_center([0,0],[wire_length+2*pad_height,wire_gap+4*N_pairs*(teeth_width+teeth_gap)],name='rect_mesh')
-#rect_mesh.assign_mesh_length(0.5*teeth_width)
-#
-#i=0
-#with reso([-0.5*wire_length-pad_height,0,0],ori):
-#	while i*val(teeth_width+teeth_gap)<val(0.5*wire_gap+2*N_pairs*(teeth_width+teeth_gap)):
-#		reso.rect([0,0.5*teeth_width+i*(teeth_width+teeth_gap)],[pad_height-teeth_width,teeth_gap],layer=GAP)
-#		reso.rect([0,-0.5*teeth_width-teeth_gap-i*(teeth_width+teeth_gap),0],[pad_height-teeth_width,teeth_gap],layer=GAP)
-#		i=i+1
-#
-#i=0
-#with reso([0.5*wire_length+teeth_width,0,0],ori):
-#	while i*val(teeth_width+teeth_gap)<val(0.5*wire_gap+2*N_pairs*(teeth_width+teeth_gap)):
-#		reso.rect([0,0.5*teeth_width+i*(teeth_width+teeth_gap)],[pad_height-teeth_width,teeth_gap],layer=GAP)
-#		reso.rect([0,-0.5*teeth_width-teeth_gap-i*(teeth_width+teeth_gap),0],[pad_height-teeth_width,teeth_gap],layer=GAP)
-#		i=i+1
-#
-#resonator.subtract(reso.entities[GAP],keep_originals=False)
-#L=len(reso.entities[GAP])
-#for i in range(L):
-#	reso.entities[GAP][L-i-1].delete()
-#resonator.unite(reso.entities[TRACK])
+name_list=np.array(["connect_penetrationlength1","pad_length","pad_width","Jinduc","box_height","pad_spacing"])
+unit_list=np.array(["mm","mm","mm","nH","mm","mm"])
+x0=np.array([ 0.87991289,  0.35229587,  0.35229587,  9.2995847 , 24.99623459,  0.15      ])
+for value,unit,name in zip(x0,unit_list,name_list):
+    pm.set_variable(str(value)+unit, name)

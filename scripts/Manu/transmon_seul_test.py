@@ -49,12 +49,12 @@ if new_geometry :
     ground_plane.assign_perfect_E()
     
     #chip substrate
-    chip1.box([0,0,-chip_thickness],[chip_width, chip_length, chip_thickness], material='silicon', name='substrate')
-    chip1.box([0,0,0],[chip_width, chip_length, 3*chip_thickness], name='vaccuum')
+    chip1.box([0,0,-chip_thickness],[chip_width, chip_length, chip_thickness], material='silicon')
+    chip1.box([0,0,0],[chip_width, chip_length, 3*chip_thickness], name='vacuum')
     
     
-    path = r'D:\Users\hqc\Documents\Jules\drawpy_camille_jules'
-    pm.generate_gds(path, 'transmon_seul')
+#    path = r'D:\Users\hqc\Documents\Jules\drawpy_camille_jules'
+#    pm.generate_gds(path, 'transmon_seul')
 
 
 #TUNING
@@ -67,12 +67,15 @@ def timestamp_name(name):
     timestamp = '%d%d%d_%d%d%d' % (timeObj.tm_year,timeObj.tm_mon,timeObj.tm_mday,   timeObj.tm_hour, timeObj.tm_min, timeObj.tm_sec)
     return timestamp+'_'+name
 
-
-dir_path = r"D:\Users\hqc\Documents\Jules\HFSS"
-project_info = ProjectInfo(r"D:\Users\hqc\Documents\Jules\\",
-                               project_name  = 'Exemple_tomograpy',  # Name of the project file (string). "None" will get the current active one.
-                               design_name   = 'HFSSDesign20',  # Name of the desgin file (string). "None" will get the current active one.
-                               setup_name = 'Setup1')
+project_info = ProjectInfo(r'C:\HFSS_simu\\',
+			     project_name = 'SMPD2', # Project file name (string). "None" will get the current active one.
+			     design_name  = 'transmon_3D',       # Design name (string). "None" will get the current active one.
+			     setup_name = 'Setup1')
+dir_path = r"C:\GitHub\pyEPR\scripts\Manu"
+#project_info = ProjectInfo(r"D:\Users\hqc\Documents\Jules\\",
+#                               project_name  = 'Exemple_tomograpy',  # Name of the project file (string). "None" will get the current active one.
+#                               design_name   = 'HFSSDesign20',  # Name of the desgin file (string). "None" will get the current active one.
+#                               setup_name = 'Setup1')
 project_info.junctions['jtransmon'] = {'rect':'ind_JJind_rect',  'line': 'ind_JJ_junction_line', 'Lj_variable':'Lj'}
 
 

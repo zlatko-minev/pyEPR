@@ -1712,7 +1712,7 @@ class Optimetrics(COMWrapper):
 
 
         
-    def import_setup(self,parametric_name,array_path, savefields=True, CopyMesh=True):
+    def import_setup(self,parametric_name,array_path, savefields=True, CopyMesh=False):
         self._optimetrics.ImportSetup("OptiParametric", 
 	[
 		"NAME:"+parametric_name, 

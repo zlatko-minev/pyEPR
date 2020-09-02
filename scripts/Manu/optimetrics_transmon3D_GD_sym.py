@@ -20,8 +20,7 @@ def timestamp_name(name):
     timestamp = '%d%d%d_%d%d%d' % (timeObj.tm_year,timeObj.tm_mon,timeObj.tm_mday,   timeObj.tm_hour, timeObj.tm_min, timeObj.tm_sec)
     return timestamp+'_'+name
 
-def jac(fxepsilon,fx,epsilon):
-    return (fxepsilon-fx)/epsilon
+
 
 ################# 1.  Project and design. Open link to HFSS controls.
 project_info = ProjectInfo(r'C:\HFSS_simu\\',
@@ -66,7 +65,15 @@ project_info.junctions['jtransmon'] = {'Lj_variable':'Jinduc', 'rect':'qubit_jun
 # Create bounds for each variable (to be determined on physical and geometrical criterion within HFSS)
 min_bound = np.array([-1.,0.1,0.1,5.,15.,0.05])
 max_bound = np.array([3.,1.,2.,15.,30.,0.5])
+
+#min_bound = np.array([-5,-5])
+#max_bound = np.array([5,5])
+
 bounds=[(i,j) for i,j in zip(min_bound,max_bound)]
+
+def jac(fxepsilon_plus,fxepsilon_minus,fx,epsilon):
+    return (fxepsilon_plus-fxepsilon_minus)/(2*epsilon)
+
 
 def loss_f_and_g(x0):
     
@@ -75,18 +82,20 @@ def loss_f_and_g(x0):
     ################# 0 - define the variable position vector to be computed for evaluating the jacobian
     ##### the epsilon vector is determined based on the bounds (to be refined), note that the gradient direction is chosen randomly
     bounds_span=max_bound-min_bound
-    epsilon=bounds_span/20*(2*np.random.randint(2,size=len(x0))-1)
-    x_grad=x0+epsilon
+    epsilon=bounds_span/30
+    x_grad_plus=x0+epsilon
+    x_grad_minus=x0-epsilon
     
-    x=np.array([x0]*(len(x0)+1))
+    x=np.array([x0]*(2*len(x0)+1))
     
     for i in range(len(x0)):
         ##### check if the gradient positions are within the bounds, otherwize we take the oposite direction
-        if x_grad[i]>max_bound[i] or x_grad[i]<min_bound[i]:
-            epsilon[i]=-epsilon[i]
-            x_grad[i]=x0[i]+epsilon[i]
+#        if x_grad[i]>max_bound[i] or x_grad[i]<min_bound[i]:
+#            epsilon[i]=-epsilon[i]
+#            x_grad[i]=x0[i]+epsilon[i]
             
-        x[i+1,i]=x_grad[i]
+        x[2*i+1,i]=x_grad_plus[i]
+        x[2*i+2,i]=x_grad_minus[i]
     
     print('x',x)
 
@@ -142,6 +151,7 @@ def loss_f_and_g(x0):
     nb_var=np.array(freqs).shape[0]
     
     loss_allvar=[]
+    computed_val_list= []
     for var in range(nb_var):
     
         
@@ -202,11 +212,14 @@ def loss_f_and_g(x0):
         weigth['Freq_cav']= 10
         
         np.save(r"C:\GitHub\pyEPR\scripts\Manu\%s_anh_DS_freq_Q"%parametric_name,computed_val)
-        print(computed_val)
+        computed_val_list.append(computed_val)
+
+        print(computed_val_list)
+
         loss=0 
         for key in target_val.keys():
             print((computed_val[key]-target_val[key])/target_val[key])
-            loss+=(weigth[key]*(computed_val[key]-target_val[key])/target_val[key])**2
+            loss+=((weigth[key]*(computed_val[key]-target_val[key])/target_val[key])**2)
         loss_allvar.append(loss)
         
     f=np.array(loss_allvar)
@@ -214,21 +227,75 @@ def loss_f_and_g(x0):
 
     ################# 6 - compute and return the jacobian based on HFSS evals
 
-    fxepsilon=f[1:]
+    fxepsilon_plus=f[1::2]
+    fxepsilon_minus=f[2::2]
     fx=f[0]
     
-    jac_fx=jac(fxepsilon,fx,epsilon)
+    jac_fx=jac(fxepsilon_plus,fxepsilon_minus,fx,epsilon)
     print('f=',f)
     print('jac=',jac_fx)
     np.save(r"C:\GitHub\pyEPR\scripts\Manu\%s_f"%parametric_name,f)
     np.save(r"C:\GitHub\pyEPR\scripts\Manu\%s_jac"%parametric_name,jac_fx)
+    
+    np.save(r"C:\GitHub\pyEPR\scripts\Manu\%s_summary"%parametric_name,{'x0':x0,'x':x,'score':f,'jac':jac_fx,'values':computed_val_list})
 
 
     
     return fx, jac_fx
-        
-  
-
+#        
+#def cost_camille(x0):
+#    x=x0[0]
+#    y=x0[1]
+#    return -(x+y-2)**2-x**2-3*np.cos(5*(x+y)+0.1)
+#
+#def cost_camille_list(next_points):
+#    targets=[]
+#    for next_point in next_points:
+#        targets.append(cost_camille(next_point))
+#    return targets
+#
+#def loss_f_and_g(x0):
+#    
+#    print('current_pos =', x0)
+#    
+#    ################# 0 - define the variable position vector to be computed for evaluating the jacobian
+#    ##### the epsilon vector is determined based on the bounds (to be refined), note that the gradient direction is chosen randomly
+#    bounds_span=max_bound-min_bound
+#    epsilon=bounds_span/50
+#    x_grad_plus=x0+epsilon
+#    x_grad_minus=x0-epsilon
+#    
+#    x=np.array([x0]*(2*len(x0)+1))
+#    
+#    for i in range(len(x0)):
+#        ##### check if the gradient positions are within the bounds, otherwize we take the oposite direction
+##        if x_grad[i]>max_bound[i] or x_grad[i]<min_bound[i]:
+##            epsilon[i]=-epsilon[i]
+##            x_grad[i]=x0[i]+epsilon[i]
+#            
+#        x[2*i+1,i]=x_grad_plus[i]
+#        x[2*i+2,i]=x_grad_minus[i]
+#    
+#    print('x',x)
+#
+#    
+#    
+#    f=-np.array(cost_camille_list(x))
+#
+#
+#    ################# 6 - compute and return the jacobian based on HFSS evals
+#
+#    fxepsilon_plus=f[1::2]
+#    fxepsilon_minus=f[2::2]
+#    fx=f[0]
+#    
+#    jac_fx=jac(fxepsilon_plus,fxepsilon_minus,fx,epsilon)
+#    print('f=',f)
+#    print('jac=',jac_fx)
+#
+#
+#    
+#    return fx, jac_fx
 ######### Main code
 ######### Defines the optimizer sequence
 
@@ -236,10 +303,11 @@ def loss_f_and_g(x0):
 name=np.array(["connect_penetrationlength1","pad_length","pad_width","Jinduc","box_height","pad_spacing"])
 
 x0=np.array([1.+np.random.rand()/100,  0.5,  0.5,  10.,  25., 0.15])
+#x0=np.array([-4,3])
+x0=np.array([ 0.87991289+np.random.rand()/100,  0.35229587,  0.36,  9.2995847 , 24.99623459,  0.15      ])
 
 
-
-res=sp.minimize(loss_f_and_g, x0, jac=True, bounds=bounds, options={'disp': True})
+res=sp.minimize(loss_f_and_g, x0, jac=True, bounds=bounds, options={'disp': True}, method='L-BFGS-B' )
 print(res)
 
-epr_hfss = DistributedAnalysis(project_info)
+#epr_hfss = DistributedAnalysis(project_info)

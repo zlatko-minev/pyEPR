@@ -75,7 +75,7 @@ def loss_f_and_g(x0):
     ################# 0 - define the variable position vector to be computed for evaluating the jacobian
     ##### the epsilon vector is determined based on the bounds (to be refined), note that the gradient direction is chosen randomly
     bounds_span=max_bound-min_bound
-    epsilon=bounds_span/20.*(2*np.random.randint(2,size=len(x0))-1)
+    epsilon=bounds_span/100.*(2*np.random.randint(2,size=len(x0))-1)
     x_grad=x0+epsilon
     
     x=np.array([x0]*(len(x0)+1))
@@ -192,10 +192,7 @@ def loss_f_and_g(x0):
         computed_val['cav_Q'] = total_Q_from_HFSS[index['cav']]
         computed_val['Freq_qubit']=freq[index['qubit']]
         
-
-#        def supfunc(x,delta):
-#            return x*(x>delta)
-#                
+                
         ####definition of the targets (should probably done outside)
         target_val['qubit_anharmonicity']=180.
         target_val['cav_DS'] = 3.
