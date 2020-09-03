@@ -16,7 +16,7 @@ def getfiles_h5(dirpath,extention_string='.h5'):
     return [i for i in a if i.endswith(extention_string)]
 
 file_list=getfiles_h5(r'C:\GitHub\pyEPR\scripts\Manu','summary.npy')
-file_list=getfiles_h5(r'C:\GitHub\pyEPR\scripts\Manu\GD_summary02092020','summary.npy')
+file_list=getfiles_h5(r'C:\GitHub\pyEPR\scripts\Manu\GD_sumary_03092020','summary.npy')
 
 
 f_max=[]
@@ -24,7 +24,7 @@ x0_max=[]
 values_max=[]
 jac_list=[]
 for file in file_list:
-    summary=np.load('C:\GitHub\pyEPR\scripts\Manu\GD_summary02092020\\'+file)[()]
+    summary=np.load('C:\GitHub\pyEPR\scripts\Manu\GD_sumary_03092020\\'+file)[()]
     
     summary['score']
     
@@ -50,7 +50,7 @@ Freq_qubit = [values['Freq_qubit'] for values in values_max]
 
 
 plt.figure()
-plt.plot(f_max,label='f_max')
+plt.semilogy(f_max,label='f_max')
 plt.legend()
 
 plt.figure()

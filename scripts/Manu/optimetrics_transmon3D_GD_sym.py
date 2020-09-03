@@ -205,10 +205,10 @@ def loss_f_and_g(x0):
         target_val['Freq_qubit']= 6300.
 
         
-        weigth['qubit_anharmonicity']=1
-        weigth['cav_DS'] = 1
+        weigth['qubit_anharmonicity']=2
+        weigth['cav_DS'] = 2
         weigth['cav_Q'] = 1
-        weigth['Freq_qubit']= 10
+        weigth['Freq_qubit']= 0
         weigth['Freq_cav']= 10
         
         np.save(r"C:\GitHub\pyEPR\scripts\Manu\%s_anh_DS_freq_Q"%parametric_name,computed_val)
@@ -302,10 +302,12 @@ def loss_f_and_g(x0):
 ######### position found by the Particle Swarm Optimizer
 name=np.array(["connect_penetrationlength1","pad_length","pad_width","Jinduc","box_height","pad_spacing"])
 
-x0=np.array([1.+np.random.rand()/100,  0.5,  0.5,  10.,  25., 0.15])
+x0=np.array([1,  0.5,  0.5,  10.,  25., 0.15])
 #x0=np.array([-4,3])
-x0=np.array([ 0.87991289+np.random.rand()/100,  0.35229587,  0.36,  9.2995847 , 24.99623459,  0.15      ])
+x0=np.array([ 0.87991289,  0.35229587,  0.36,  9.2995847 , 24.99623459,  0.15      ])
 
+x0=np.array( [ 0.91755446,  0.3519256,   0.40556735,  9.34107044, 24.97869501,  0.16953198])
+x0+=np.random.rand(len(x0))/200
 
 res=sp.minimize(loss_f_and_g, x0, jac=True, bounds=bounds, options={'disp': True}, method='L-BFGS-B' )
 print(res)
