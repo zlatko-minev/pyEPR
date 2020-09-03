@@ -214,10 +214,13 @@ project_info.junctions['jtransmon'] = {'Lj_variable':'Jinduc', 'rect':'qubit_jun
 problem = MyProblem()
 
 
+x0=np.array( [[ 0.91755446,  0.3519256,   0.40556735,  9.34107044, 24.97869501,  0.16953198]])
+x0+=np.random.rand(len(x0))/200
+
 algorithm = NSGA2(
     pop_size=10,
     n_offsprings=10,
-    sampling=get_sampling("real_random"),
+    sampling=x0,
     crossover=get_crossover("real_sbx", prob=0.9, eta=15),
     mutation=get_mutation("real_pm", eta=20),
     eliminate_duplicates=True
