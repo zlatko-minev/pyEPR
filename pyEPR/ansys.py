@@ -2114,10 +2114,13 @@ class HfssModeler(COMWrapper):
 
         return objs
 
-    def assign_perfect_E(self, obj, name='PerfE'):
+    def assign_perfect_E(self, obj:List[str], name:str='PerfE'):
         '''
-            Takes a name of an object or a list of object names.
-            If `name` is not specified `PerfE` is appended to object name for the name.
+        Assign a boundary condition to a list of objects.
+
+        Arg:
+            objs (List[str]): Takes a name of an object or a list of object names.
+            name(str): If `name` is not specified `PerfE` is appended to object name for the name.
         '''
         if not isinstance(obj, list):
             obj = [obj]
