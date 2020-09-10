@@ -554,9 +554,10 @@ class DistributedAnalysis(object):
         return s
 
     def calc_energy_electric(self,
-                             variation: str = None,
-                             volume: str = 'AllObjects',
-                             smooth: bool = False):
+                             variation = None,
+                             mode = None,
+                             volume =  'AllObjects',
+                             smooth = False):
         r'''
         Calculates two times the peak electric energy, or 4 times the RMS,
         :math:`4*\mathcal{E}_{\mathrm{elec}}`
@@ -599,6 +600,43 @@ class DistributedAnalysis(object):
 
     def calc_energy_magnetic(self,
                              variation=None,
+                             mode = None,
+                             volume ='AllObjects',
+                             smooth=True, saved=False):
+        
+        
+        '''
+        See calc_energy_electric.
+
+        Args:
+            variation (str): A string identifier of the variation,
+                such as '0', '1', ...
+            volume (string | 'AllObjects'): Name of the volume to integrate over
+            smooth (bool | False) : Smooth the electric field or not when performing calculation
+        '''
+
+        if not saved:
+            calcobject = CalcObject([], self.setup)
+    
+            vecH = calcobject.getQty("H")
+            if smooth:
+                vecH = vecH.smooth()
+            A = vecH.times_mu()
+            B = vecH.conj()
+            A = A.dot(B)
+            A = A.real()
+            A = A.integrate_vol(name=volume)
+    
+            lv = self._get_lv(variation)
+            return A.evaluate(lv=lv)
+        if saved:
+            energies=np.load()
+            
+            
+    
+    
+    def save_calc_energy_magnetic(self,
+                             variation=None,
                              volume='AllObjects',
                              smooth=True):
         '''
@@ -621,9 +659,52 @@ class DistributedAnalysis(object):
         A = A.dot(B)
         A = A.real()
         A = A.integrate_vol(name=volume)
+        A.save_as("calc_energy_magnetic")
+        
+    def save_calc_energy_electric(self,
+                             variation=None,
+                             volume='AllObjects',
+                             smooth=True):
+        r'''
+        Calculates two times the peak electric energy, or 4 times the RMS,
+        :math:`4*\mathcal{E}_{\mathrm{elec}}`
+        (since we do not divide by 2 and use the peak phasors).
 
-        lv = self._get_lv(variation)
-        return A.evaluate(lv=lv)
+        .. math::
+            \mathcal{E}_{\mathrm{elec}}=\frac{1}{4}\mathrm{Re}\int_{V}\mathrm{d}v\vec{E}_{\text{max}}^{*}\overleftrightarrow{\epsilon}\vec{E}_{\text{max}}
+
+        Args:
+            variation (str): A string identifier of the variation,
+                such as '0', '1', ...
+            volume (string | 'AllObjects'): Name of the volume to integrate over
+            smooth (bool | False) : Smooth the electric field or not when performing calculation
+
+        Example:
+            Example use to calcualte the energy participation ratio (EPR) of a substrate
+
+            .. code-block:: python
+                :linenos:
+
+                ℰ_total  = epr_hfss.calc_energy_electric(volume='AllObjects')
+                ℰ_substr = epr_hfss.calc_energy_electric(volume='Box1')
+                print(f'Energy in substrate = {100*ℰ_substr/ℰ_total:.1f}%')
+
+        '''
+
+        calcobject = CalcObject([], self.setup)
+
+        vecE = calcobject.getQty("E")
+        if smooth:
+            vecE = vecE.smooth()
+        A = vecE.times_eps()
+        B = vecE.conj()
+        A = A.dot(B)
+        A = A.real()
+        A = A.integrate_vol(name=volume)
+
+        A.save_as("calc_energy_electric")
+
+
 
     def calc_p_electric_volume(self,
                                name_dielectric3D,
@@ -1221,7 +1302,7 @@ class DistributedAnalysis(object):
                 # Magnetic
                 print('    Calculating ℰ_magnetic', end=',')
                 try:
-                    self.U_H = self.calc_energy_magnetic(variation)
+                    self.U_H = self.calc_energy_magnetic(variation,mode)
                 except Exception as e:
                     tb = sys.exc_info()[2]
                     print("\n\nError:\n", e)
@@ -1234,7 +1315,7 @@ class DistributedAnalysis(object):
                 print('ℰ_electric')
                 
                 if computeUE==True:
-                    self.U_E = self.calc_energy_electric(variation)
+                    self.U_E = self.calc_energy_electric(variation,mode)
                 else:
                     4-self.U_H
                 # the unnormed

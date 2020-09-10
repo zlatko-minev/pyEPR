@@ -1385,6 +1385,8 @@ class HfssDesignSolutions(COMWrapper):
 
 class HfssEMDesignSolutions(HfssDesignSolutions):
 
+    
+    
     def eigenmodes(self, lv=""):
         '''
         Returns the eigenmode data of freq and kappa/2p
@@ -1677,6 +1679,30 @@ class Optimetrics(COMWrapper):
         self.setup_names = list(self._optimetrics.GetSetupNames())
         return self.setup_names.copy()
 
+
+    def get_calc(self, lv=""):
+        '''
+        Returns the eigenmode data of freq and kappa/2p
+        '''
+        
+        setup_names=self.get_setup_names()
+        
+        
+        fn = tempfile.mktemp()+'.csv'
+        print(setup_names)
+        print(fn)
+#        oModule.ExportOptimetricsResult("ParametricSetup1", "C:/Users/eflurin/Desktop/ParametricSetup1_Result.csv", False)
+
+        self._optimetrics.ExportOptimetricsResult(setup_names[-1], fn,False)
+        data = np.genfromtxt(fn, dtype='str',delimiter=',')[1:]
+        print(len(data[1:]))
+        print(data[:,-2:].astype(np.float))
+        energies=data[:,-2:].astype(np.float)
+        
+        return energies
+
+
+
     def solve_setup(self, setup_name: str):
         """
         Solves the specified Optimetrics setup.
@@ -1712,7 +1738,7 @@ class Optimetrics(COMWrapper):
 
 
         
-    def import_setup(self,parametric_name,array_path, savefields=True, CopyMesh=False):
+    def import_setup(self,parametric_name,array_path, savefields=True, CopyMesh=False,calc_enable=True):
         self._optimetrics.ImportSetup("OptiParametric", 
 	[
 		"NAME:"+parametric_name, 
@@ -1729,6 +1755,60 @@ class Optimetrics(COMWrapper):
         			"CopyMesh:="		, CopyMesh
         		]
         	])
+            
+        self._optimetrics.EditSetup(parametric_name, 
+        	[
+        		"NAME:"+ parametric_name,
+        		"IsEnabled:="		, True,
+        		[
+        			"NAME:ProdOptiSetupDataV2",
+        			"SaveFields:="		, savefields,
+        			"CopyMesh:="		, CopyMesh
+        		]
+        	])
+            
+        if calc_enable:
+ 
+            self._optimetrics.EditSetup(parametric_name, 
+    	[
+                		"NAME:"+ parametric_name,
+    		"IsEnabled:="		, True,
+    		
+    		[
+    			"NAME:Goals",
+    			[
+    				"NAME:Goal",
+    				"ReportType:="		, "Fields",
+    				"Solution:="		, "Setup1 : LastAdaptive",
+    				[
+    					"NAME:SimValueContext"
+    				],
+    				"Calculation:="		, "calc_energy_electric",
+    				"Name:="		, "calc_energy_electric",
+    				[
+    					"NAME:Ranges",
+    					"Range:="		, [						"Var:="			, "Phase",						"Type:="		, "d",						"DiscreteValues:="	, "0deg"]
+    				]
+    			],
+    			[
+    				"NAME:Goal",
+    				"ReportType:="		, "Fields",
+    				"Solution:="		, "Setup1 : LastAdaptive",
+    				[
+    					"NAME:SimValueContext"
+    				],
+    				"Calculation:="		, "calc_energy_magnetic",
+    				"Name:="		, "calc_energy_magnetic",
+    				[
+    					"NAME:Ranges",
+    					"Range:="		, [						"Var:="			, "Phase",						"Type:="		, "d",						"DiscreteValues:="	, "0deg"]
+    				]
+    			]
+    		]
+    	])
+            
+            
+       
         
     def create_setup(self, variable, swp_params, name="ParametricSetup1", swp_type='linear_step',
                      setup_name=None,

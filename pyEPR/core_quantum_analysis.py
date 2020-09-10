@@ -545,12 +545,12 @@ class QuantumAnalysis(object):
             if print_:
                 print('NO renorm!')
 
-        if np.any(Pm < 0.0):
-            print_color("  ! Warning:  Some p_mj was found <= 0. This is probably a numerical error,'\
-                'or a super low-Q mode.  We will take the abs value.  Otherwise, rerun with more precision,'\
-                'inspect, and do due dilligence.)")
-            print(Pm, '\n')
-            Pm = np.abs(Pm)
+#        if np.any(Pm < 0.0):
+#            print_color("  ! Warning:  Some p_mj was found <= 0. This is probably a numerical error,'\
+#                'or a super low-Q mode.  We will take the abs value.  Otherwise, rerun with more precision,'\
+#                'inspect, and do due dilligence.)")
+#            print(Pm, '\n')
+        Pm = np.abs(Pm)
 
         return {'PJ': Pm, 'Pm_norm': Pm_norm, 'PJ_cap': Pm_cap,
                 'Pm_cap_norm': Pm_cap_norm,
