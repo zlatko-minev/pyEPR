@@ -9,7 +9,7 @@ Welcome to pyEPR :beers:!
 
 ## :bangbang: :bangbang: pyEPR Working group meeting -- Planning for the future of pyEPR 
 
-* Please sign-up here: https://github.com/zlatko-minev/pyEPR/issues/45 :bangbang: :beers:
+* Please sign-up here: https://github.com/zlatko-minev/pyEPR/issues/45 or [directly here](https://docs.google.com/forms/d/e/1FAIpQLScd3WyfzDS47D0WB9skkSPQAXCnKLf7JMxsZ7BnMwK0LjE3Sw/viewform?usp=sf_link) :bangbang: :beers:
 
 <br>
 
