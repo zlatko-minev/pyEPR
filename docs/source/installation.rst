@@ -35,7 +35,7 @@ Main installation method
 
 .. _install-via_pip:
 
-Installing lcoally with via pip
+Installing locally with via pip
 ===============================
 
 In the future, ``pyEPR`` can be installed using the Python package manager `pip <http://www.pip-installer.org/>`_.
