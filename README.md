@@ -33,10 +33,19 @@ Warning: pyEPR organization was significnatly improved in v0.8-dev (starting 202
 * UC Berkeley, [Quantum Nanoelectronics Laboratory](https://physics.berkeley.edu/quantum-nanoelectronics-laboratory), Irfan Siddiqi, CA, USA
 * [Quantum Circuits, Inc.](https://quantumcircuits.com/), CT, USA
 * [Seeqc](https://seeqc.com/) (spin-out of Hypres) Digital Quantum Computing, USA
-* Serge [Rosenblum Lab](https://www.weizmann.ac.il/condmat/rosenblum/) in the Weizmann Instatue, Israel
-* Peter [Leek Lab](https://leeklab.org/), UK
+* Serge [Rosenblum Lab] quantum circuits group (https://www.weizmann.ac.il/condmat/rosenblum/) in the Weizmann Instatue, Israel
+* University of Oxford - LeekLab - Peter [Leek Lab](https://leeklab.org/), UK
 * Britton [Plourde Lab](https://bplourde.expressions.syr.edu/), Syracuse University, USA
 * Javad [Shabani Lab](https://wp.nyu.edu/shabanilab/) Quantum Materials & Devices, NYU, NY, USA
+* UChicago Dave Schuster Lab, USA
+* SQC lab - Shay Hacohen Gourgy, Israel 
+* Lawrence Berkeley National Lab
+* Colorado School of Mines, USA
+* Syracuse University, USA
+* IPQC, SJTU, Shanghai, China
+* Bhabha Atomic Research Centre, India
+* Quantum Computing UK
+* Alice&Bob, France 
 * ... and many more! (Please e-mail `zlatko.minev@aya.yale.edu` with updates.)
 
 
