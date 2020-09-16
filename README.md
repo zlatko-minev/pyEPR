@@ -5,6 +5,7 @@ Welcome to pyEPR :beers:!
 [![star this repo](http://githubbadges.com/star.svg?user=zlatko-minev&repo=pyEPR&style=flat)](https://github.com/zlatko-minev/pyEPR)
 [![fork this repo](http://githubbadges.com/fork.svg?user=zlatko-minev&repo=pyEPR&style=flat)](https://github.com/zlatko-minev/pyEPR/fork)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/pyepr-quantum/badges/installer/conda.svg)](https://conda.anaconda.org/conda-forge)
+[![PyPI version](https://badge.fury.io/py/pyEPR-quantum.svg)](https://badge.fury.io/py/pyEPR-quantum)
 
 <br>
 
