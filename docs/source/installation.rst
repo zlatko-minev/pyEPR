@@ -63,13 +63,16 @@ Now we can locally install the pyEPR module.
 Installing via conda
 ====================
 
-For Python 3.6+, installation via conda will be supported in a future version.
-
-
-In the meantime, if you are using conda, you can locally install from the cloned repo.
-Perform the steps in the :ref:`install-main` section.
-Now, you can use
+For Python 3.6+, installation via conda is supported since ``pyEPR`` v.0.8.03, through the ``conda-forge`` channel. You can download and install ``pyEPR`` typing in from the shell:
 
 .. code-block:: bash
 
-    python -m pip install -e .
+    conda install -c conda-forge pyepr-quantum
+
+The prefix ``-c conda-forge`` is required to activate the optional ``conda-forge`` channel.
+
+Note that the name of the recipe on the ``conda-forge`` channel is
+`pyepr-quantum`_, as the name `pyepr` was already taken by another project. This does not change anything in the way the library is imported in Python as documented in the examples.
+
+.. _pyepr-quantum: https://anaconda.org/conda-forge/pyepr-quantum
+
