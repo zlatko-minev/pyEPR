@@ -160,7 +160,7 @@ Use `pyEPR` directly from the source, and pull updates from the master git repo,
 Please keep up to date with `pyEPR` by using git. We like to make it simple using a git-gui manager, [SourceTree](sourcetree.com) or [GitHub Desktop](https://desktop.github.com/).
 
 **Quick setup**
-We recommend the approach in the following section, which will be most up to date, but for quick use you can use the [conda forge chanel](https://anaconda.org/conda-forge/pyepr-quantum) to install
+We recommend the approach in the following section, which will be most up to date, but for quick use you can use the [conda forge channel](https://anaconda.org/conda-forge/pyepr-quantum) to install
 ```
 conda install -c conda-forge pyepr-quantum
 ```
