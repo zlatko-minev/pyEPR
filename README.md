@@ -4,10 +4,12 @@ Welcome to pyEPR :beers:!
 [![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/zlatko-minev/pyEPR)
 [![star this repo](http://githubbadges.com/star.svg?user=zlatko-minev&repo=pyEPR&style=flat)](https://github.com/zlatko-minev/pyEPR)
 [![fork this repo](http://githubbadges.com/fork.svg?user=zlatko-minev&repo=pyEPR&style=flat)](https://github.com/zlatko-minev/pyEPR/fork)
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/pyepr-quantum/badges/installer/conda.svg)](https://conda.anaconda.org/conda-forge)
+[![PyPI version](https://badge.fury.io/py/pyEPR-quantum.svg)](https://badge.fury.io/py/pyEPR-quantum)
 
 <br>
 
-## :bangbang: :bangbang: pyEPR Working group meeting -- Planning for the future of pyEPR 
+## :bangbang: :bangbang: pyEPR Working group meeting -- Planning for the future of pyEPR
 
 * Please sign-up here: https://github.com/zlatko-minev/pyEPR/issues/45 or [directly here](https://docs.google.com/forms/d/e/1FAIpQLScd3WyfzDS47D0WB9skkSPQAXCnKLf7JMxsZ7BnMwK0LjE3Sw/viewform?usp=sf_link) :bangbang: :beers:
 
@@ -38,20 +40,20 @@ Warning: pyEPR organization was significnatly improved in v0.8-dev (starting 202
 * Britton [Plourde Lab](https://bplourde.expressions.syr.edu/), Syracuse University, USA
 * Javad [Shabani Lab](https://wp.nyu.edu/shabanilab/) Quantum Materials & Devices, NYU, NY, USA
 * UChicago Dave Schuster Lab, USA
-* SQC lab - Shay Hacohen Gourgy, Israel 
+* SQC lab - Shay Hacohen Gourgy, Israel
 * Lawrence Berkeley National Lab
 * Colorado School of Mines, USA
 * Syracuse University, USA
 * IPQC, SJTU, Shanghai, China
 * Bhabha Atomic Research Centre, India
 * Quantum Computing UK
-* Alice&Bob, France 
+* Alice&Bob, France
 * ... and many more! (Please e-mail `zlatko.minev@aya.yale.edu` with updates.)
 
 
 ## How do I cite `pyEPR` when I publish?
 Cite the following and/or e-mail [`zlatko.minev@aya.yale.edu`](https://www.zlatko-minev.com/) or [`zaki leghtas`](http://cas.ensmp.fr/~leghtas/)
-* [arXiv:1902.10355](https://arxiv.org/abs/1902.10355) Z.K. Minev, Ph.D. Dissertation, Yale University (2018), Chapter 4. 
+* [arXiv:1902.10355](https://arxiv.org/abs/1902.10355) Z.K. Minev, Ph.D. Dissertation, Yale University (2018), Chapter 4.
 * Z.K. Minev, Z. Leghtas, _et al._ (to appear soon on arXiv) (2020)
 
 
@@ -159,7 +161,7 @@ Use `pyEPR` directly from the source, and pull updates from the master git repo,
 Please keep up to date with `pyEPR` by using git. We like to make it simple using a git-gui manager, [SourceTree](sourcetree.com) or [GitHub Desktop](https://desktop.github.com/).
 
 **Quick setup**
-We recommend the approach in the following section, which will be most up to date, but for quick use you can use the [conda forge chanel](https://anaconda.org/conda-forge/pyepr-quantum) to install
+We recommend the approach in the following section, which will be most up to date, but for quick use you can use the [conda forge channel](https://anaconda.org/conda-forge/pyepr-quantum) to install
 ```
 conda install -c conda-forge pyepr-quantum
 ```
