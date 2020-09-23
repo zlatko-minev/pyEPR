@@ -263,8 +263,12 @@ class ProjectInfo(object):
                 elif self.design.solution_type == 'DrivenModal':
                     setup = self.design.create_dm_setup()  # adding a driven modal design
                     self.setup_name = setup.name
-            else:
+            elif self.setup_name == None:
                 self.setup_name = setup_names[0]
+            elif self.setup_name not in setup_names:
+                logger.error(f"\tSetup does not exist.")
+                raise(Exception(' Did you provide the correct setup name?\
+                    Failed to pull up setup. \N{loudly crying face}'))
 
             # get the actual setup if there is one
             self.get_setup(self.setup_name)
