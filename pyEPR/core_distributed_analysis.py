@@ -736,6 +736,26 @@ class DistributedAnalysis(object):
         ℰ_object = self.calc_energy_electric(volume=name_dielectric3D)
 
         return ℰ_object/ℰ_total, (ℰ_object, ℰ_total)
+    
+    def calc_surf_loss(self, variation, surf):
+        ''' Power dissipated in a lossy surface (e.g. lumped R).
+            Integrate the SurfaceLossDensity over the surface.
+            SurfaceLossDensity is an HFSS short hand for 
+            the real part of the Pyonting vector.
+        Args:
+            variation (str): A string identifier of the variation,
+                such as '0', '1', ...
+            surf (str) : name of the surface to integrate over.
+        Returns:
+            Value of the dissipated power.
+        '''
+        lv = self.get_lv(variation)
+
+        calc = CalcObject([], self.setup)
+        calc = (calc.getQty("SurfaceLossDensity")).integrate_surf(name=surf)
+        P = calc.evaluate(lv=lv)
+        
+        return P
 
     def calc_current(self, fields, line: str):
         '''
@@ -980,9 +1000,18 @@ class DistributedAnalysis(object):
 
         freq = freq_GHz * 1e9  # freq in Hz
         for port_nm, port in self.pinfo.ports.items():
-            I_peak = self.calc_avg_current_J_surf_mag(variation, port['rect'],
-                                                      port['line'])
-            U_dissip = 0.5 * port['R'] * I_peak**2 * 1 / freq
+            if self.pinfo.options.method_calc_Q == 'Jsurf':
+                I_peak = self.calc_avg_current_J_surf_mag(variation, 
+                                                          port['rect'],
+                                                          port['line'])
+                P = 0.5 * port['R'] * I_peak**2
+            elif self.pinfo.options.method_calc_Q == 'SurfaceLossDensity':
+                P = self.calc_surf_loss(variation, port['rect'])
+            else:
+                raise NotImplementedError('Other calculation methods \
+                                          (self.pinfo.options.method_calc_Q) \
+                                          are possible but not implemented here.')
+            U_dissip = P / freq
             p = U_dissip / (U_E/2)  # U_E is 2x the peak electrical energy
             kappa = p * freq
             Q = 2 * np.pi * freq / kappa
