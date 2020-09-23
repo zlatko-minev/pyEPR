@@ -73,7 +73,14 @@ config = Dict( # pylint: disable=invalid-name
         # 					Will calculate the Pj matrix for the selected modes for the given junctions
         # 					junc_rect array & length of junctions
         method_calc_P_mj='line_voltage',
-
+        
+        # method_calc_Q sets the method to calculate the external quality factors in eigenmode.
+        # Valid values :
+        #    'SurfaceLossDensity' : integrates the SurfaceLossDensity (i.e. real 
+        #                           part of the Poynting vector) over the surface
+        #    'Jsurf' : calculates the average value of the peak current across  
+        #              the resistor and deduces the dissipated Joule power.
+        method_calc_Q='SurfaceLossDensity',
     ),
 
     plotting=Dict(
