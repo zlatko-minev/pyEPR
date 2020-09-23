@@ -600,7 +600,7 @@ class DistributedAnalysis(object):
     def calc_energy_magnetic(self,
                              variation=None,
                              volume='AllObjects',
-                             smooth=True):
+                             smooth=False):
         '''
         See calc_energy_electric.
 
