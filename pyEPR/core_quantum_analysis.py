@@ -737,7 +737,7 @@ class QuantumAnalysis(object):
     def full_report_variations(self, var_list: list=None):
         """see full_variation_report"""
         if var_list is None: var_list =self.variations
-        for variation in var_list(): 
+        for variation in var_list: 
             self.full_variation_report(variation)
     
     def full_variation_report(self,variation):
@@ -780,7 +780,7 @@ class QuantumAnalysis(object):
         """
         Utility reporting function
         """
-        if result is str or result is int: result = self.results[str(result)]
+        if type(result) is str or type(result) is int: result = self.results[str(result)]
 
         # TODO: actually make into dataframe with mode labela and junction labels
         pritm = lambda x, frmt="{:9.2g}": print_matrix(x, frmt=frmt)
