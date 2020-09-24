@@ -734,8 +734,9 @@ class QuantumAnalysis(object):
         self.n_modes = tmp_n_modes #TODO is this smart should consider defining the modes of intrest in the initilazaition of the quantum object
         self.modes[variation]=tmp_modes 
         return result
-    def full_report_variations(self, var_list: list):
+    def full_report_variations(self, var_list: list=None):
         """see full_variation_report"""
+        if var_list is None: var_list =self.variations
         for variation in var_list(): 
             self.full_variation_report(variation)
     
