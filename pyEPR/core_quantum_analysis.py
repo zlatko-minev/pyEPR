@@ -734,11 +734,36 @@ class QuantumAnalysis(object):
         self.n_modes = tmp_n_modes #TODO is this smart should consider defining the modes of intrest in the initilazaition of the quantum object
         self.modes[variation]=tmp_modes 
         return result
+    def full_report_variations(self, var_list: list):
+        """see full_variation_report"""
+        for variation in var_list(): 
+            self.full_variation_report(variation)
+    
+    def full_variation_report(self,variation):
+        """
+        prints the results and paramters of a specific variation
 
+        Parameters
+        ----------
+        variation : int or str
+            the variation to be printed .
+
+        Returns
+        -------
+        None.
+
+        """
+        self.print_variation(variation)
+        
+        self.print_result(variation)
+        
+        
     def print_variation(self, variation):
         """
         Utility reporting function
         """
+        if variation is int: variation = str(variation)
+
         if len(self.hfss_vars_diff_idx) > 0:
             print('\n*** Different parameters')
             display(self._hfss_variables[self.hfss_vars_diff_idx][variation])
@@ -754,6 +779,7 @@ class QuantumAnalysis(object):
         """
         Utility reporting function
         """
+        if result is str or result is int: result = self.results[str(result)]
 
         # TODO: actually make into dataframe with mode labela and junction labels
         pritm = lambda x, frmt="{:9.2g}": print_matrix(x, frmt=frmt)
