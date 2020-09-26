@@ -1476,7 +1476,7 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
             self._solutions.EditSources(
                 [
                     [
-                        "FieldType:=", "EigenPeakElectricField"
+                        "FieldType:=", FieldType
                     ],
                     [
                         "Name:=", "Modes",
@@ -1491,7 +1491,7 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
             # see https://ansyshelp.ansys.com/account/secured?returnurl=/Views/Secured/Electronics/v195//Subsystems/HFSS/Subsystems/HFSS%20Scripting/HFSS%20Scripting.htm
 
             self._solutions.EditSources(
-                "EigenStoredEnergy",
+                FieldType,
                 ["NAME:SourceNames", "EigenMode"],
                 ["NAME:Modes", n_modes],
                 ["NAME:Magnitudes"] + [1 if i + 1 ==
