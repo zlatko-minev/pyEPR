@@ -1194,8 +1194,7 @@ class DistributedAnalysis(object):
                 def _parse(name): return ureg.Quantity(
                     _variables['_'+val[name]]).to_base_units().magnitude
                 Ljs[junc_name] = _parse('Lj_variable')
-                Cjs[junc_name] = 2E-15  # _parse(
-                # 'Cj_variable') if 'Cj_variable' in val else 0
+                Cjs[junc_name] = _parse('Cj_variable') if 'Cj_variable' in val else 0.0
 
         return Ljs, Cjs
 
