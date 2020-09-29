@@ -48,6 +48,7 @@ Warning: pyEPR organization was significnatly improved in v0.8-dev (starting 202
 * Bhabha Atomic Research Centre, India
 * Quantum Computing UK
 * Alice&Bob, France
+* Centre for Quantum Technologies / Qcrew
 * ... and many more! (Please e-mail `zlatko.minev@aya.yale.edu` with updates.)
 
 
