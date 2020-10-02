@@ -656,6 +656,28 @@ class DistributedAnalysis(object):
 
         return ℰ_object/ℰ_total, (ℰ_object, ℰ_total)
     
+    def calc_energy_line(self, variation, line):
+        
+        lv = self._get_lv(variation)
+        
+        
+        calcobject = CalcObject([], self.setup)
+        vecE = calcobject.getQty("E")
+        E_2_norm    = vecE.norm_2()
+        int_E_2     = E_2_norm.integrate_line(line)
+        int_E_2_val = int_E_2.evaluate(lv=lv)
+        
+        calcobject = CalcObject([], self.setup)
+        vecH = calcobject.getQty("H")
+        H_2_norm    = vecH.norm_2()
+        int_H_2     = H_2_norm.integrate_line(line)
+        int_H_2_val = int_H_2.evaluate(lv=lv)
+        
+        eps0 = 8.854e-12
+        mu0  = 1.257e-6
+        
+        return eps0 * int_E_2_val + mu0 * int_H_2_val
+    
     def calc_surf_loss(self, variation, surf):
         ''' Power dissipated in a lossy surface (e.g. lumped R).
             Integrate the SurfaceLossDensity over the surface.
@@ -1061,7 +1083,7 @@ class DistributedAnalysis(object):
         PCj = pd.Series(OrderedDict([(j_name, Uj_cap/U_norm)
                                      for j_name, Uj_cap in U_J_caps.items()]))
 
-        print(f"\n\t{'junction':<15s} EPR p_{mode}j   sign s_{mode}j    (p_capacitive)")
+        print(f"\t{'junction':<15s} EPR p_{mode}j   sign s_{mode}j    (p_capacitive)")
         for j_name, j_props in self.pinfo.junctions.items():
             pmj_ind = Pj[j_name]
             pmj_cap = PCj[j_name]
@@ -1078,6 +1100,24 @@ class DistributedAnalysis(object):
              'U_tot_cap': U_tot_cap,
              'U_norm': U_norm,
              'U_diff': U_diff}
+
+    def calc_p_resonator(self, variation, U_H, U_E, mode):
+
+        Pr = pd.Series({})
+
+        print(f"\t{'resonator':<15s} p_{mode}r (a.u.)")
+        for r_name, r_props in self.pinfo.resonators.items():
+            logger.debug(f'Calculating participations for {(r_name, r_props)}')
+            line_name = r_props['line']
+            
+            energy_line = self.calc_energy_line(variation, line_name)
+            
+            Pr[r_name] = energy_line
+            
+            print(f'\t{r_name:<15} {energy_line:>8.6g}')
+
+        return Pr    
+            
 
     def get_previously_analyzed(self):
         """
@@ -1240,6 +1280,7 @@ class DistributedAnalysis(object):
             I_peak = OrderedDict()
             V_peak = OrderedDict()
             ansys_energies = OrderedDict()
+            Pr = OrderedDict()
 
             for mode in modes:  # integer of mode number [0,1,2,3,..]
 
@@ -1296,14 +1337,21 @@ class DistributedAnalysis(object):
                 # the unnormed
                 sol = pd.Series({'U_H': self.U_H, 'U_E': self.U_E})
 
-                # Calcualte EPR for each of the junctions
-                print(
-                    f'    Calculating junction energy participation ration (EPR)\n\tMethod=`{self.pinfo.options.method_calc_P_mj}`.')
-
-                half_U_H = self.U_H / 2.0 if self.U_H else None
-                half_U_E = self.U_E / 2.0 if self.U_E else None
-                Pm[mode], Sm[mode], Pm_cap[mode], I_peak[mode], V_peak[mode], ansys_energies[mode] = self.calc_p_junction(
-                    variation, half_U_H, half_U_E, Ljs, Cjs, mode)
+                if len(self.pinfo.junctions):
+                    # Calculate EPR for each of the junctions
+                    print(
+                        f'    Calculating junction energy participation ratio (EPR)\n\tMethod=`{self.pinfo.options.method_calc_P_mj}`.')
+                    
+                    half_U_H = self.U_H / 2.0 if self.U_H else None
+                    half_U_E = self.U_E / 2.0 if self.U_E else None
+                    Pm[mode], Sm[mode], Pm_cap[mode], I_peak[mode], V_peak[mode], ansys_energies[mode] = self.calc_p_junction(
+                        variation, half_U_H, half_U_E, Ljs, Cjs, mode)
+                
+                if len(self.pinfo.resonators):
+                    # Calculate energy participation for each of the resonators (in arbitrary unit)
+                    print(f'    Calculating resonator energy participation (in arbitrary unit).')
+                    
+                    Pr[mode] = self.calc_p_resonator(variation, self.U_H, self.U_E, mode)
 
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                 # EPR Dissipative calculations -- should be a function block below
@@ -1347,7 +1395,7 @@ class DistributedAnalysis(object):
                                  freqs_bare_GHz, Qs_bare, Ljs, Cjs,
                                  Pm_cap, I_peak, V_peak,
                                  ansys_energies,
-                                 self._hfss_variables[variation])
+                                 self._hfss_variables[variation], Pr)
             self.save()
 
             self._previously_analyzed.add(variation)
@@ -1359,13 +1407,14 @@ class DistributedAnalysis(object):
 
     def _update_results(self, variation: str, Om, Pm, Sm, Qm_coupling, sols,
                         freqs_bare_GHz, Qs_bare, Ljs, Cjs, Pm_cap, I_peak, V_peak,
-                        ansys_energies, _hfss_variables):
+                        ansys_energies, _hfss_variables, Pr):
         '''
         Save variation
         '''
         # raw, not normalized - DataFrames
         self.results[variation]['Pm'] = pd.DataFrame(Pm).transpose()
         self.results[variation]['Pm_cap'] = pd.DataFrame(Pm_cap).transpose()
+        self.results[variation]['Pr'] = pd.DataFrame(Pr).transpose()
         self.results[variation]['Sm'] = pd.DataFrame(Sm).transpose()
         self.results[variation]['Om'] = pd.DataFrame(Om)
         self.results[variation]['sols'] = pd.DataFrame(sols).transpose()

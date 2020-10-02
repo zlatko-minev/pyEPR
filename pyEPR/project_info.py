@@ -189,6 +189,7 @@ class ProjectInfo(object):
         # TODO: introduce modal labels
         self.junctions = Dict()  # See above for help
         self.ports = Dict()
+        self.resonators = Dict()
 
         # Dissipative HFSS volumes and surfaces
         self.dissipative = self._Dissipative()
