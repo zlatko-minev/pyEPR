@@ -11,14 +11,18 @@ Welcome to pyEPR :beers:! &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;([arXiv:2010.00620](http
 
 ### Automated Python module for the design and quantization of Josephson quantum circuits
 
+<br>
+
 ## :bangbang: :bangbang: pyEPR Working group meeting -- Planning for the future of pyEPR
 
 * Please sign-up here: https://github.com/zlatko-minev/pyEPR/issues/45 or [directly here](https://docs.google.com/forms/d/e/1FAIpQLScd3WyfzDS47D0WB9skkSPQAXCnKLf7JMxsZ7BnMwK0LjE3Sw/viewform?usp=sf_link) :bangbang: :beers:
 
 <br>
+
 ##### Abstract
+
 Superconducting microwave circuits incorporating nonlinear devices, such as Josephson junctions, are one of the leading platforms for emerging quantum technologies. Increasing circuit complexity further requires efficient methods for the calculation and optimization of the spectrum, nonlinear interactions, and dissipation in multi-mode distributed quantum circuits. Here, we present a method based on the energy-participation ratio (EPR) of a dissipative or nonlinear element in an electromagnetic mode. The EPR, a number between zero and one, quantifies how much of the energy of a mode is stored in each element. It obeys universal constraints---valid regardless of the circuit topology and nature of the nonlinear elements. The EPR of the elements are calculated from a unique, efficient electromagnetic eigenmode simulation of the linearized circuit, including lossy elements. Their set is the key input to the determination of the quantum Hamiltonian of the system. The method provides an intuitive and simple-to-use tool to quantize multi-junction circuits. It is especially well-suited for finding the Hamiltonian and dissipative parameters of weakly anharmonic systems, such as transmon qubits coupled to resonators, or Josephson transmission lines. We experimentally tested this method on a variety of Josephson circuits, and demonstrated agreement within several percents for nonlinear couplings and modal Hamiltonian parameters, spanning five-orders of magnitude in energy, across a dozen samples. Here, in this package, all routines of the EPR approach are fully automated. 
-([arXiv:2010.00620](https://arxiv.org/abs/2010.00620))
+[arXiv:2010.00620](https://arxiv.org/abs/2010.00620)
 
 
 ## Documentation
