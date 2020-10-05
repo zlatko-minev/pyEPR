@@ -84,7 +84,7 @@ You can additionally drop us an e-mail [`zlatko.minev@aya.yale.edu`](https://www
 2. **Clone** :point_down: your forked repository locally. ([How to clone a GitHub repo?](https://help.github.com/en/articles/cloning-a-repository)). Setup the `pyEPR` python code by following [Installation and Python Setup](#installation-of-pyepr).
 3. **Tutorials**  Learn how to use using the [jupyter notebook tutorials](https://github.com/zlatko-minev/pyEPR/tree/master/_tutorial_notebooks)
 4. **Stay up to date** Enjoy and make sure to git add the master remote branch  `git remote add MASTER_MINEV git://github.com/zlatko-minev/pyEPR.git` [(help?)](https://stackoverflow.com/questions/11266478/git-add-remote-branch).
-5. **Cite `pyEPR`** [arXiv:1902.10355](https://arxiv.org/abs/1902.10355)  and enjoy! :birthday:
+5. **Cite `pyEPR`**  [arXiv:2010.00620](https://arxiv.org/abs/2010.00620) / [arXiv:1902.10355](https://arxiv.org/abs/1902.10355)  and enjoy! :birthday:
 
 #### Start-up example
 
