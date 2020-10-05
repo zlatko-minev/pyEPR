@@ -22,7 +22,8 @@ Main installation method
    branch
    ``git remote add MASTER_MINEV git://github.com/zlatko-minev/pyEPR.git``
    `(help?)`_.
-5. **Cite ``pyEPR``** `arXiv:1902.10355`_ and enjoy!  🎂
+5. **Cite ``pyEPR``** `arXiv:2010.00620 <https://arxiv.org/abs/2010.00620>`_ and `arXiv:1902.10355 <https://arxiv.org/abs/1902.10355>`_ enjoy!  🎂
+
 
 .. _``pyEPR top-level repository``: https://github.com/zlatko-minev/pyEPR
 .. _How to fork a GitHub repo?: https://help.github.com/en/articles/fork-a-repo
