@@ -1,4 +1,4 @@
-Welcome to pyEPR :beers:! <br> &nbsp;([arXiv:2010.00620](https://arxiv.org/abs/2010.00620))
+Welcome to pyEPR :beers:! &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;([arXiv:2010.00620](https://arxiv.org/abs/2010.00620))
 ===================
 [![Open Source Love](https://badges.frapsoft.com/os/v1/open-source.png?v=103)](https://github.com/zlatko-minev/pyEPR)
 [![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/zlatko-minev/pyEPR)
