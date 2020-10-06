@@ -52,6 +52,7 @@ Superconducting microwave circuits incorporating nonlinear devices, such as Jose
 * Quantum Computing UK
 * Alice&Bob, France
 * Centre for Quantum Technologies / Qcrew
+* Quantum Device Lab ETHZ; Andreas Wallraff
 * ... and many more! (Please e-mail `zlatko.minev@aya.yale.edu` with updates.)
 
 
