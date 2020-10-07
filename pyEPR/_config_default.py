@@ -35,6 +35,20 @@ config = Dict( # pylint: disable=invalid-name
         # 					Will calculate the Pj matrix for the selected modes for the given junctions
         # 					junc_rect array & length of junctions
         method_calc_P_mj='line_voltage',
+        
+        # method_calc_Q sets the method to calculate the external quality factors in eigenmode.
+        # Valid values :
+        #    'SurfaceLossDensity' : integrates the SurfaceLossDensity (i.e. real 
+        #                           part of the Poynting vector) over the surface
+        #    'Jsurf' : calculates the average value of the peak current across  
+        #              the resistor and deduces the dissipated Joule power.
+        method_calc_Q='SurfaceLossDensity',
+        
+        # Sets whether U_H and / or U_E are used to calculate the mode energy.
+        # If both are False, you must be 100% sure that your simulation has converged well.
+        # Note that calculating U_H takes much more time than calculating U_E.
+        calc_U_H = False,
+        calc_U_E = True,
 
         # To save or not the mesh statistics from an HFSS run
         save_mesh_stats=True,
@@ -50,7 +64,7 @@ config = Dict( # pylint: disable=invalid-name
         # 2     : use enforcement of U_J_total to be U_mode-U_H (i.e., 1)
         #         only when the total particiaption is above a certain threshold
         #         preffered method.
-        renorm_pj = 2,
+        renorm_pj = False,
     ),
 
     # Loss properties of various materials and surfaces

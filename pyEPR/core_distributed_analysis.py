@@ -600,7 +600,7 @@ class DistributedAnalysis(object):
     def calc_energy_magnetic(self,
                              variation=None,
                              volume='AllObjects',
-                             smooth=True):
+                             smooth=False):
         '''
         See calc_energy_electric.
 
@@ -655,6 +655,48 @@ class DistributedAnalysis(object):
         ℰ_object = self.calc_energy_electric(volume=name_dielectric3D)
 
         return ℰ_object/ℰ_total, (ℰ_object, ℰ_total)
+    
+    def calc_energy_line(self, variation, line):
+        
+        lv = self._get_lv(variation)
+        
+        
+        calcobject = CalcObject([], self.setup)
+        vecE = calcobject.getQty("E")
+        E_2_norm    = vecE.norm_2()
+        int_E_2     = E_2_norm.integrate_line(line)
+        int_E_2_val = int_E_2.evaluate(lv=lv)
+        
+        calcobject = CalcObject([], self.setup)
+        vecH = calcobject.getQty("H")
+        H_2_norm    = vecH.norm_2()
+        int_H_2     = H_2_norm.integrate_line(line)
+        int_H_2_val = int_H_2.evaluate(lv=lv)
+        
+        eps0 = 8.854e-12
+        mu0  = 1.257e-6
+        
+        return eps0 * int_E_2_val + mu0 * int_H_2_val
+    
+    def calc_surf_loss(self, variation, surf):
+        ''' Power dissipated in a lossy surface (e.g. lumped R).
+            Integrate the SurfaceLossDensity over the surface.
+            SurfaceLossDensity is an HFSS short hand for 
+            the real part of the Pyonting vector.
+        Args:
+            variation (str): A string identifier of the variation,
+                such as '0', '1', ...
+            surf (str) : name of the surface to integrate over.
+        Returns:
+            Value of the dissipated power.
+        '''
+        lv = self._get_lv(variation)
+
+        calc = CalcObject([], self.setup)
+        calc = (calc.getQty("SurfaceLossDensity")).integrate_surf(name=surf)
+        P = calc.evaluate(lv=lv)
+        
+        return P
 
     def calc_current(self, fields, line: str):
         '''
@@ -688,7 +730,7 @@ class DistributedAnalysis(object):
         uj = ConstantVecCalcObject(uj, self.setup)
         calc = CalcObject([], self.setup)
         #calc = calc.getQty("Jsurf").mag().integrate_surf(name = junc_rect)
-        calc = (((calc.getQty("Jsurf")).dot(uj)).imag()
+        calc = (((calc.getQty("Jsurf")).dot(uj)).complexmag()
                 ).integrate_surf(name=junc_rect)
         I = calc.evaluate(lv=lv) / jl  # phase = 90
         # self.design.Clear_Field_Clac_Stack()
@@ -899,9 +941,18 @@ class DistributedAnalysis(object):
 
         freq = freq_GHz * 1e9  # freq in Hz
         for port_nm, port in self.pinfo.ports.items():
-            I_peak = self.calc_avg_current_J_surf_mag(variation, port['rect'],
-                                                      port['line'])
-            U_dissip = 0.5 * port['R'] * I_peak**2 * 1 / freq
+            if self.pinfo.options.method_calc_Q == 'Jsurf':
+                I_peak = self.calc_avg_current_J_surf_mag(variation, 
+                                                          port['rect'],
+                                                          port['line'])
+                P = 0.5 * port['R'] * I_peak**2
+            elif self.pinfo.options.method_calc_Q == 'SurfaceLossDensity':
+                P = self.calc_surf_loss(variation, port['rect'])
+            else:
+                raise NotImplementedError('Other calculation methods \
+                                          (self.pinfo.options.method_calc_Q) \
+                                          are possible but not implemented here.')
+            U_dissip = P / freq
             p = U_dissip / (U_E/2)  # U_E is 2x the peak electrical energy
             kappa = p * freq
             Q = 2 * np.pi * freq / kappa
@@ -909,7 +960,7 @@ class DistributedAnalysis(object):
 
         return Qp
 
-    def calc_p_junction(self, variation, U_H, U_E, Ljs, Cjs):
+    def calc_p_junction(self, variation, U_H, U_E, Ljs, Cjs, mode):
         '''
         For a single specific mode.
         Expected that you have specified the mode before calling this, `self.set_mode(num)`
@@ -981,18 +1032,10 @@ class DistributedAnalysis(object):
             V_peak_[j_name] = V_peak
             Sj['s_' + j_name] = _Smj = 1 if V_peak > 0 else - 1
 
-            # REPORT prelimnary
-            pmj_ind = 0.5*Ljs[j_name] * I_peak**2 / U_E
-            pmj_cap = 0.5*Cjs[j_name] * V_peak**2 / U_E
-            #print('\tpmj_ind=',pmj_ind, Ljs[j_name], U_E)
-
             self.I_peak = I_peak
             self.V_peak = V_peak
             self.Ljs = Ljs
             self.Cjs = Cjs
-            print(
-                f'\t{j_name:<15} {pmj_ind:>8.6g}{("(+)"if _Smj else "(-)"):>5s}        {pmj_cap:>8.6g}')
-            #print('\tV_peak=', V_peak)
 
         # ------------------------------------------------------------
         # Calcualte participations from the peak voltage and currents
@@ -1004,18 +1047,35 @@ class DistributedAnalysis(object):
         U_J_caps = {j_name: 0.5*Cjs[j_name] * V_peak_[j_name]
                     ** 2 for j_name in self.pinfo.junctions}
 
-        U_tot_ind = U_H + sum(list(U_J_inds.values()))  # total
-        U_tot_cap = U_E + sum(list(U_J_caps.values()))
+        if U_H == None and U_E == None:
+            print('''\tWARNING: neither U_H nor U_E were configured to be calculated. \
+                  It's fine only if you're sure the simulation has converged sufficiently \
+                  so that the modes energies are as defined in Edit Sources (ie 1 Joule)''')
+            U_tot_ind = 1.0
+            U_tot_cap = 1.0
+            U_norm    = 1.0
+        elif U_H == None:
+            print('\tUsing E field only to calculate the mode energy (faster but lacks sanity check).')
+            U_tot_cap = U_E + sum(list(U_J_caps.values()))
+            U_tot_ind = U_tot_cap
+            U_norm    = U_tot_cap
+        elif U_E == None:
+            print('\tUsing H field only to calculate the mode energy.')
+            U_tot_ind = U_H + sum(list(U_J_inds.values()))
+            U_tot_cap = U_tot_ind
+            U_norm    = U_tot_ind
+        else:
+            U_tot_ind = U_H + sum(list(U_J_inds.values()))
+            U_tot_cap = U_E + sum(list(U_J_caps.values()))
+            U_norm    = (U_tot_ind + U_tot_cap) / 2
 
-        # what to use for the norm?  U_tot_cap or the mean of  U_tot_ind and  U_tot_cap?
-        # i.e., (U_tot_ind + U_tot_cap)/2
-        U_norm = U_tot_cap
         U_diff = (U_tot_cap-U_tot_ind)/(U_tot_cap+U_tot_ind)
-        print("\t\t"f"(U_tot_cap-U_tot_ind)/mean={U_diff*100:.2f}%")
-        if abs(U_diff) > 0.15:
-            print('WARNING: This simulation must not have converged well!!!\
-                The difference in the total cap and ind energies is larger than 10%.\
-                Proceed with caution.')
+        if U_H != None and U_E != None:
+            print("\t\t"f"(U_tot_cap-U_tot_ind)/mean={U_diff*100:.2f}%")
+            if abs(U_diff) > 0.15:
+                print('WARNING: This simulation must not have converged well!!!\
+                    The difference in the total cap and ind energies is larger than 10%.\
+                    Proceed with caution.')
 
         Pj = pd.Series(OrderedDict([(j_name, Uj_ind/U_norm)
                                     for j_name, Uj_ind in U_J_inds.items()]))
@@ -1023,10 +1083,13 @@ class DistributedAnalysis(object):
         PCj = pd.Series(OrderedDict([(j_name, Uj_cap/U_norm)
                                      for j_name, Uj_cap in U_J_caps.items()]))
 
-        # print('\t{:<15} {:>8.6g} {:>5s}'.format(
-        #    j_name,
-        #    Pj['p_' + j_name],
-        #    '+' if Sj['s_' + j_name] > 0 else '-'))
+        print(f"\t{'junction':<15s} EPR p_{mode}j   sign s_{mode}j    (p_capacitive)")
+        for j_name, j_props in self.pinfo.junctions.items():
+            pmj_ind = Pj[j_name]
+            pmj_cap = PCj[j_name]
+            _Smj    = Sj['s_' + j_name]
+            print(
+                f'\t{j_name:<15} {pmj_ind:>8.6g}{("(+)"if _Smj else "(-)"):>5s}        {pmj_cap:>8.6g}')
 
         return Pj, Sj, PCj, pd.Series(I_peak), pd.Series(V_peak), \
             {'U_J_inds': U_J_inds,
@@ -1037,6 +1100,24 @@ class DistributedAnalysis(object):
              'U_tot_cap': U_tot_cap,
              'U_norm': U_norm,
              'U_diff': U_diff}
+
+    def calc_p_resonator(self, variation, U_H, U_E, mode):
+
+        Pr = pd.Series({})
+
+        print(f"\t{'resonator':<15s} p_{mode}r (a.u.)")
+        for r_name, r_props in self.pinfo.resonators.items():
+            logger.debug(f'Calculating participations for {(r_name, r_props)}')
+            line_name = r_props['line']
+            
+            energy_line = self.calc_energy_line(variation, line_name)
+            
+            Pr[r_name] = energy_line
+            
+            print(f'\t{r_name:<15} {energy_line:>8.6g}')
+
+        return Pr    
+            
 
     def get_previously_analyzed(self):
         """
@@ -1072,8 +1153,7 @@ class DistributedAnalysis(object):
                 def _parse(name): return ureg.Quantity(
                     _variables['_'+val[name]]).to_base_units().magnitude
                 Ljs[junc_name] = _parse('Lj_variable')
-                Cjs[junc_name] = 2E-15  # _parse(
-                # 'Cj_variable') if 'Cj_variable' in val else 0
+                Cjs[junc_name] = _parse('Cj_variable') if 'Cj_variable' in val else 0.0
 
         return Ljs, Cjs
 
@@ -1200,11 +1280,12 @@ class DistributedAnalysis(object):
             I_peak = OrderedDict()
             V_peak = OrderedDict()
             ansys_energies = OrderedDict()
+            Pr = OrderedDict()
 
             for mode in modes:  # integer of mode number [0,1,2,3,..]
 
                 # Load fields for mode
-                self.set_mode(mode)
+                self.set_mode(mode, FieldType='EigenStoredEnergy')
 
                 # Get HFSS  solved frequencies
                 _Om = pd.Series({})
@@ -1215,40 +1296,62 @@ class DistributedAnalysis(object):
                     '\n'f'  \033[1mMode {mode} at {"%.2f" % temp_freq} GHz   [{mode+1}/{self.n_modes}]\033[0m')
 
                 # EPR Hamiltonian calculations
-                # Calculation global energies and report
+                # Calculate global field energies  
+                # Report the peak energy - the 2 is from the calculation method
 
                 # Magnetic
-                print('    Calculating ℰ_magnetic', end=',')
-                try:
-                    self.U_H = self.calc_energy_magnetic(variation)
-                except Exception as e:
-                    tb = sys.exc_info()[2]
-                    print("\n\nError:\n", e)
-                    raise(Exception(' Did you save the field solutions?\n\
-                    Failed during calculation of the total magnetic energy.\
-                    This is the first calculation step, and is indicative that there are \
-                    no field solutions saved. ').with_traceback(tb))
+                if self.pinfo.options.calc_U_H == True:     
+                    print('    Calculating ℰ_magnetic:', end=' ')
+                    try:
+                        self.U_H = self.calc_energy_magnetic(variation)
+                    except Exception as e:
+                        tb = sys.exc_info()[2]
+                        print("\n\nError:\n", e)
+                        raise(Exception(' Did you save the field solutions?\n\
+                        Failed during calculation of the total magnetic energy.\
+                        This is the first calculation step, and is indicative that there are \
+                        no field solutions saved. ').with_traceback(tb))
+                    print(f"{self.U_H/2:>9.4g}")
+                else:
+                    self.U_H = None
 
                 # Electric
-                print('ℰ_electric')
-                self.U_E = self.calc_energy_electric(variation)
+                if self.pinfo.options.calc_U_E == True:
+                    print('    Calculating ℰ_electric:', end=' ')
+                    try:
+                        self.U_E = self.calc_energy_electric(variation)
+                    except Exception as e:
+                        tb = sys.exc_info()[2]
+                        print("\n\nError:\n", e)
+                        raise(Exception(' Did you save the field solutions?\n\
+                        Failed during calculation of the total magnetic energy.\
+                        This is the first calculation step, and is indicative that there are \
+                        no field solutions saved. ').with_traceback(tb))
+                    print(f"{self.U_E/2:>9.4g}")
+                else:
+                    self.U_E = None
+                    
+                if self.pinfo.options.calc_U_H == True and self.pinfo.options.calc_U_E == True:
+                    print(f"     (ℰ_E-ℰ_H)/ℰ_E = {100*(self.U_E - self.U_H)/self.U_E:.1f}")
 
                 # the unnormed
                 sol = pd.Series({'U_H': self.U_H, 'U_E': self.U_E})
 
-                # Fraction - report the peak energy, properly normalized
-                # the 2 is from the calcualtion methods
-                print(f"""     {'(ℰ_E-ℰ_H)/ℰ_E':>15s} {'ℰ_E':>9s} {'ℰ_H':>9s}
-    {100*(self.U_E - self.U_H)/self.U_E:>15.1f}%  {self.U_E/2:>9.4g} {self.U_H/2:>9.4g}\n""")
-
-                # Calcualte EPR for each of the junctions
-                print(
-                    f'    Calculating junction energy participation ration (EPR)\n\tmethod=`{self.pinfo.options.method_calc_P_mj}`. First estimates:')
-                print(
-                    f"\t{'junction':<15s} EPR p_{mode}j   sign s_{mode}j    (p_capacitive)")
-
-                Pm[mode], Sm[mode], Pm_cap[mode], I_peak[mode], V_peak[mode], ansys_energies[mode] = self.calc_p_junction(
-                    variation, self.U_H/2., self.U_E/2., Ljs, Cjs)
+                if len(self.pinfo.junctions):
+                    # Calculate EPR for each of the junctions
+                    print(
+                        f'    Calculating junction energy participation ratio (EPR)\n\tMethod=`{self.pinfo.options.method_calc_P_mj}`.')
+                    
+                    half_U_H = self.U_H / 2.0 if self.U_H else None
+                    half_U_E = self.U_E / 2.0 if self.U_E else None
+                    Pm[mode], Sm[mode], Pm_cap[mode], I_peak[mode], V_peak[mode], ansys_energies[mode] = self.calc_p_junction(
+                        variation, half_U_H, half_U_E, Ljs, Cjs, mode)
+                
+                if len(self.pinfo.resonators):
+                    # Calculate energy participation for each of the resonators (in arbitrary unit)
+                    print(f'    Calculating resonator energy participation (in arbitrary unit).')
+                    
+                    Pr[mode] = self.calc_p_resonator(variation, self.U_H, self.U_E, mode)
 
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                 # EPR Dissipative calculations -- should be a function block below
@@ -1292,7 +1395,7 @@ class DistributedAnalysis(object):
                                  freqs_bare_GHz, Qs_bare, Ljs, Cjs,
                                  Pm_cap, I_peak, V_peak,
                                  ansys_energies,
-                                 self._hfss_variables[variation])
+                                 self._hfss_variables[variation], Pr)
             self.save()
 
             self._previously_analyzed.add(variation)
@@ -1304,13 +1407,14 @@ class DistributedAnalysis(object):
 
     def _update_results(self, variation: str, Om, Pm, Sm, Qm_coupling, sols,
                         freqs_bare_GHz, Qs_bare, Ljs, Cjs, Pm_cap, I_peak, V_peak,
-                        ansys_energies, _hfss_variables):
+                        ansys_energies, _hfss_variables, Pr):
         '''
         Save variation
         '''
         # raw, not normalized - DataFrames
         self.results[variation]['Pm'] = pd.DataFrame(Pm).transpose()
         self.results[variation]['Pm_cap'] = pd.DataFrame(Pm_cap).transpose()
+        self.results[variation]['Pr'] = pd.DataFrame(Pr).transpose()
         self.results[variation]['Sm'] = pd.DataFrame(Sm).transpose()
         self.results[variation]['Om'] = pd.DataFrame(Om)
         self.results[variation]['sols'] = pd.DataFrame(sols).transpose()
@@ -1469,7 +1573,7 @@ class DistributedAnalysis(object):
         '''
         return self.hfss_report_f_convergence(variation)
 
-    def set_mode(self, mode_num, phase=0):
+    def set_mode(self, mode_num, phase=0, FieldType='EigenStoredEnergy'):
         '''
         Set source excitations should be used for fields post processing.
         Counting modes from 0 onward
@@ -1479,7 +1583,7 @@ class DistributedAnalysis(object):
         if mode_num < 0:
             logger.error('Too small a mode number')
 
-        self.solutions.set_mode(mode_num + 1, phase)
+        self.solutions.set_mode(mode_num + 1, phase, FieldType)
 
         if self.has_fields() == False:
             logger.warning(f" Error: HFSS does not have field solution for variation={mode_num}.\
