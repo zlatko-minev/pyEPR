@@ -265,7 +265,7 @@ class QuantumAnalysis(object):
         self.convergence = results['convergence']
         self.convergence_f_pass = results['convergence_f_pass']
 
-        self.n_modes = len(self.modes[self.variations[0]])
+        self.n_modes = len(self.modes['0'])
         self._renorm_pj = config.epr.renorm_pj
 
         # Unique variation params -- make a get function
