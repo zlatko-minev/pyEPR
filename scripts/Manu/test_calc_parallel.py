@@ -48,28 +48,35 @@ try:
     epr_hfss.save_calc_energy_electric()
     epr_hfss.save_calc_energy_magnetic()
 except:
-    print("expression already exist in the stack")
+    print("expressions already exist in the stack")
 
-
+epr_hfss = DistributedAnalysis(project_info)
 opti=Optimetrics( epr_hfss.design)
+optimetrics_namelist = opti.get_setup_names()
+last_optimetrics_name=optimetrics_namelist[-1]
 if 0:
     opti.import_setup("test2",r"C:\GitHub\pyEPR\scripts\Manu\202093_213743_parametric.txt")
 
+modes=[0,1]
+
 energies=[]
-for mode in range(2):
+for mode in modes:
     epr_hfss.solutions.set_mode(mode+1, 0)
-    opti.solve_setup("202099_102153_parametric")
+    opti.solve_setup(last_optimetrics_name)
     energies.append(opti.get_calc())
 energies=np.array(energies)
 
 
-#epr_hfss.setup.get_fields()
-opti.solve_setup("202099_102153_parametric")
-opti.get_calc()
 
-
-self.solutions.set_mode(mode+1, 0)
-        self.fields = self.setup.get_fields()
-
-
-from pyEPR.ansys import Optimetrics, HfssDesign
+#
+#
+##epr_hfss.setup.get_fields()
+#opti.solve_setup(last_optimetrics_name)
+##opti.get_calc()
+#
+#
+#self.solutions.set_mode(mode+1, 0)
+#        self.fields = self.setup.get_fields()
+#
+#
+#from pyEPR.ansys import Optimetrics, HfssDesign

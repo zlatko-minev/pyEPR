@@ -104,5 +104,8 @@ for elmt in reso.entities[TRACK]:
 name_list=np.array(["connect_penetrationlength1","pad_length","pad_width","Jinduc","box_height","pad_spacing"])
 unit_list=np.array(["mm","mm","mm","nH","mm","mm"])
 x0=np.array([ 0.87991289,  0.35229587,  0.35229587,  9.2995847 , 24.99623459,  0.15      ])
+
+x0=np.array( [ 1.01229762,  0.51420822,  0.5726396,   7.50452277, 24.92835189,  0.18133639])
+
 for value,unit,name in zip(x0,unit_list,name_list):
     pm.set_variable(str(value)+unit, name)

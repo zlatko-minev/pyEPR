@@ -15,34 +15,41 @@ def getfiles_h5(dirpath,extention_string='.h5'):
     a.sort(key=lambda s: os.path.getmtime(os.path.join(dirpath, s)))
     return [i for i in a if i.endswith(extention_string)]
 
-
-foldername='ADAM_notsym_summary'
 file_list=getfiles_h5(r'C:\GitHub\pyEPR\scripts\Manu','summary.npy')
-file_list=getfiles_h5(r'C:\\GitHub\\pyEPR\\scripts\\Manu\\'+foldername,'summary.npy')
+file_list=getfiles_h5(r'C:\GitHub\pyEPR\scripts\Manu\Pymoo_sumary','summary.npy')
 
 
 f_max=[]
 x0_max=[]
 values_max=[]
-jac_list=[]
-for file in file_list:
-    summary=np.load('C:\\GitHub\\pyEPR\\scripts\\Manu\\'+foldername+'\\'+file)[()]
+for file in file_list[1:]:
+    summary=np.load('C:\GitHub\pyEPR\scripts\Manu\Pymoo_sumary\\'+file)[()]
     
     summary['score']
     
     
-    
-    f_max.append(summary['score'][0])
+    f_max.append(summary['score'])
     x0_max.append(summary['x0'])
-    values_max.append(summary['values'][0])
+    values_max.append(summary['values'])
     
-    jac_list.append(summary['jac'])
 print(f_max)
 print(x0_max)
 print(values_max)
 
-jac_list=np.array(jac_list)
+
+plt.figure()
+plt.semilogy(np.array(f_max)[:,:,0].flatten())
+plt.semilogy(np.array(f_max)[:,:,1].flatten())
+plt.semilogy(np.array(f_max)[:,:,2].flatten())
+plt.semilogy(np.array(f_max)[:,:,3].flatten())
+
+
+plt.figure()
+plt.semilogy(np.array(f_max)[:,:,:].sum(-1).flatten())
+
 x0_max=np.array(x0_max)
+
+values_max=np.array(values_max).flatten()
 
 qubit_anharmonicity = [values['qubit_anharmonicity'] for values in values_max]
 cav_DS = [values['cav_DS'] for values in values_max]
@@ -51,9 +58,6 @@ cav_Q = [values['cav_Q'] for values in values_max]
 Freq_qubit = [values['Freq_qubit'] for values in values_max]
 
 
-plt.figure()
-plt.semilogy(f_max,label='f_max')
-plt.legend()
 
 plt.figure()
 plt.plot(qubit_anharmonicity,label='qubit_anharmonicity')
@@ -78,24 +82,5 @@ plt.legend()
 
 name=np.array(["connect_penetrationlength1","pad_length","pad_width","Jinduc","box_height","pad_spacing"])
 
-for i in range(6):
-    plt.figure()
-
-    plt.plot(jac_list[:,i],label='jac_list_'+name[i])
-    plt.legend()
-    
-    plt.figure()
-
-    plt.plot(x0_max[:,i],label='x0_max_'+name[i])
-    plt.legend()
 
 
-plt.figure()
-plt.plot(x0_max[:,1],label='x0_max'+name[1])
-plt.plot(x0_max[:,2],label='x0_max'+name[2])
-
-
-
-plt.figure()
-plt.plot(jac_list[:,1],label='x0_max'+name[1])
-plt.plot(jac_list[:,2],label='x0_max'+name[2])
