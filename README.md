@@ -1,4 +1,4 @@
-Welcome to pyEPR :beers:!
+Welcome to pyEPR :beers:! &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(see [arXiv:2010.00620](https://arxiv.org/abs/2010.00620))
 ===================
 [![Open Source Love](https://badges.frapsoft.com/os/v1/open-source.png?v=103)](https://github.com/zlatko-minev/pyEPR)
 [![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/zlatko-minev/pyEPR)
@@ -6,6 +6,8 @@ Welcome to pyEPR :beers:!
 [![fork this repo](http://githubbadges.com/fork.svg?user=zlatko-minev&repo=pyEPR&style=flat)](https://github.com/zlatko-minev/pyEPR/fork)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/pyepr-quantum/badges/installer/conda.svg)](https://conda.anaconda.org/conda-forge)
 [![PyPI version](https://badge.fury.io/py/pyEPR-quantum.svg)](https://badge.fury.io/py/pyEPR-quantum)
+
+### Automated Python module for the design and quantization of Josephson quantum circuits
 
 <br>
 
@@ -15,23 +17,24 @@ Welcome to pyEPR :beers:!
 
 <br>
 
-### Automated Python module for the design and quantization of Josephson quantum circuits
+#### Abstract
 
-**Abstract:** Superconducting circuits incorporating non-linear devices, such as Josephson junctions and nanowires, are among the leading platforms for emerging quantum technologies. Promising applications require designing and optimizing circuits with ever-increasing complexity and controlling their dissipative and Hamiltonian parameters to several significant digits. Therefore, there is a growing need for a systematic, simple, and robust approach for precise circuit design, extensible to increased complexity. The energy-participation ratio (EPR) approach presents such an approach to unify the design of dissipation and Hamiltonians around a single concept — the energy participation, a number between zero and one — in a single-step electromagnetic simulation. This markedly reduces the required number of simulations and allows for robust extension to complex systems. The approach is general purpose, derived ab initio, and valid for arbitrary non-linear devices and circuit architectures. Experimental results on a variety of circuit quantum electrodynamics (cQED) devices and architectures, 3D and flip-chip (2.5D), have been demonstrated to exhibit ten percent to percent-level agreement for non-linear coupling and modal Hamiltonian parameters over five-orders of magnitude and across a dozen samples. Here, in this package, all routines of the EPR approach are fully automated.
+Superconducting microwave circuits incorporating nonlinear devices, such as Josephson junctions, are one of the leading platforms for emerging quantum technologies. Increasing circuit complexity further requires efficient methods for the calculation and optimization of the spectrum, nonlinear interactions, and dissipation in multi-mode distributed quantum circuits. Here, we present a method based on the energy-participation ratio (EPR) of a dissipative or nonlinear element in an electromagnetic mode. The EPR, a number between zero and one, quantifies how much of the energy of a mode is stored in each element. It obeys universal constraints---valid regardless of the circuit topology and nature of the nonlinear elements. The EPR of the elements are calculated from a unique, efficient electromagnetic eigenmode simulation of the linearized circuit, including lossy elements. Their set is the key input to the determination of the quantum Hamiltonian of the system. The method provides an intuitive and simple-to-use tool to quantize multi-junction circuits. It is especially well-suited for finding the Hamiltonian and dissipative parameters of weakly anharmonic systems, such as transmon qubits coupled to resonators, or Josephson transmission lines. We experimentally tested this method on a variety of Josephson circuits, and demonstrated agreement within several percents for nonlinear couplings and modal Hamiltonian parameters, spanning five-orders of magnitude in energy, across a dozen samples. Here, in this package, all routines of the EPR approach are fully automated. 
+[arXiv:2010.00620](https://arxiv.org/abs/2010.00620)
+
 
 ## Documentation
 
 [Read the docs here.](https://pyepr-docs.readthedocs.io)
-
-#### Legacy users
-Warning: pyEPR organization was significnatly improved in v0.8-dev (starting 2020; current branch: master \[to be made stable soon\]). If you used a previous version, you will find that all key classes have been renamed. Please, see the tutorials and docs.  In the meantime, if you cannot switch yet, revert to use the stable v0.7.
 
 ## Who uses pyEPR?
 * Yale University, Michel Devoret lab [QLab](https://qulab.eng.yale.edu/), CT, USA
 * Yale University, Rob Schoelkopf lab [RSL](https://rsl.yale.edu/), CT, USA
 * [IBM Quantum](https://www.ibm.com/quantum-computing/)
 * [QUANTIC](https://team.inria.fr/quantic/people.html#) (QUANTUM INFORMATION CIRCUITS), PARISINRIA, ENS, MINES PARISTECH, UPMC, CNRS. Groups of Zaki Leghtas and team. France
-* [Quantum Circuit Group](http://www.physinfo.fr/) Emanuel Flurin, Benjamin Huard, Ecole Normale Supérieure de Lyon, France
+* [Quantum Circuit Group](http://www.physinfo.fr/) Benjamin Huard, Ecole Normale Supérieure de Lyon, France
+* Emanuel Flurin, CEA Saclay, France
+* Ioan Pop group, KIT Physikalisches Institut, Germany 
 * UC Berkeley, [Quantum Nanoelectronics Laboratory](https://physics.berkeley.edu/quantum-nanoelectronics-laboratory), Irfan Siddiqi, CA, USA
 * [Quantum Circuits, Inc.](https://quantumcircuits.com/), CT, USA
 * [Seeqc](https://seeqc.com/) (spin-out of Hypres) Digital Quantum Computing, USA
@@ -48,13 +51,19 @@ Warning: pyEPR organization was significnatly improved in v0.8-dev (starting 202
 * Bhabha Atomic Research Centre, India
 * Quantum Computing UK
 * Alice&Bob, France
+* Centre for Quantum Technologies / Qcrew
+* Quantum Device Lab ETHZ; Andreas Wallraff
 * ... and many more! (Please e-mail `zlatko.minev@aya.yale.edu` with updates.)
 
 
 ## How do I cite `pyEPR` when I publish?
-Cite the following and/or e-mail [`zlatko.minev@aya.yale.edu`](https://www.zlatko-minev.com/) or [`zaki leghtas`](http://cas.ensmp.fr/~leghtas/)
-* [arXiv:1902.10355](https://arxiv.org/abs/1902.10355) Z.K. Minev, Ph.D. Dissertation, Yale University (2018), Chapter 4.
-* Z.K. Minev, Z. Leghtas, _et al._ (to appear soon on arXiv) (2020)
+Cite the following:
+* Z.K. Minev, Z. Leghtas, _et al._ ([arXiv:2010.00620](https://arxiv.org/abs/2010.00620)) (2020)
+or the earlier
+* Z.K. Minev, Ph.D. Dissertation, Yale University (2018), Chapter 4. ([arXiv:1902.10355](https://arxiv.org/abs/1902.10355))  (2018) [when using this, use the arXiv id]
+
+You can additionally drop us an e-mail [`zlatko.minev@aya.yale.edu`](https://www.zlatko-minev.com/) or [`zaki leghtas`](http://cas.ensmp.fr/~leghtas/)
+
 
 
 <br>
@@ -76,7 +85,7 @@ Cite the following and/or e-mail [`zlatko.minev@aya.yale.edu`](https://www.zlatk
 2. **Clone** :point_down: your forked repository locally. ([How to clone a GitHub repo?](https://help.github.com/en/articles/cloning-a-repository)). Setup the `pyEPR` python code by following [Installation and Python Setup](#installation-of-pyepr).
 3. **Tutorials**  Learn how to use using the [jupyter notebook tutorials](https://github.com/zlatko-minev/pyEPR/tree/master/_tutorial_notebooks)
 4. **Stay up to date** Enjoy and make sure to git add the master remote branch  `git remote add MASTER_MINEV git://github.com/zlatko-minev/pyEPR.git` [(help?)](https://stackoverflow.com/questions/11266478/git-add-remote-branch).
-5. **Cite `pyEPR`** [arXiv:1902.10355](https://arxiv.org/abs/1902.10355)  and enjoy! :birthday:
+5. **Cite `pyEPR`**  [arXiv:2010.00620](https://arxiv.org/abs/2010.00620) / [arXiv:1902.10355](https://arxiv.org/abs/1902.10355)  and enjoy! :birthday:
 
 #### Start-up example
 
@@ -204,6 +213,10 @@ Follow the same instructions above. You shouldn't have to install mingw or modif
 
 
 
+#### Legacy users
+Warning: pyEPR organization was significnatly improved in v0.8-dev (starting 2020; current branch: master \[to be made stable soon\]). If you used a previous version, you will find that all key classes have been renamed. Please, see the tutorials and docs.  In the meantime, if you cannot switch yet, revert to use the stable v0.7.
+
+
 # HFSS Project Setup for `pyEPR`
 -------------
 #### Eigenmode Design --- How to set up junctions
@@ -296,7 +309,7 @@ This problem is due to pandas 0.20.1, update to 0.20.3 or better solves this iss
 This error happens when trying to read in an hdf file with numpy version 1.16, see [git issue here](https://github.com/numpy/numpy/issues/12791). A solution is to downgrade numpy to 1.15.4 or upgrade to newer versions of hdf and numpy.
 
 # Authors and Contributors
-* _Authors:_ [Zlatko Minev](https://www.zlatko-minev.com/) & [Zaki Leghtas](http://cas.ensmp.fr/~leghtas/), with contributions from many friends and colleagues.
+* _Authors:_ [Zlatko Minev](https://www.zlatko-minev.com/) & [Zaki Leghtas](http://cas.ensmp.fr/~leghtas/), with contributions from many friends and colleagues. ([arXiv:2010.00620](https://arxiv.org/abs/2010.00620))
 * 2015 - present.
 * Contributors: [Phil Rheinhold](https://github.com/PhilReinhold), Lysander Christakis, [Devin Cody](https://github.com/devincody), ...
 Original versions of pyHFSS.py and pyNumericalDiagonalization.py contributed by [Phil Rheinhold](https://github.com/PhilReinhold), excellent original [repo](https://github.com/PhilReinhold/pyHFSS).

@@ -33,9 +33,9 @@ automated.
 References
 ~~~~~~~~~~
 
+-  Z.K. Minev, Z. Leghtas, *et al.* (2020) (`arXiv:2010.00620 <https://arxiv.org/abs/2010.00620>`_). 
 -  Z.K. Minev, Ph.D. Dissertation, Yale University (2018), see Chapter
-   4. `arXiv:1902.10355`_
--  Z.K. Minev, Z. Leghtas, *et al.* (to appear soon on arXiv) (2019)
+   4. (`arXiv:1902.10355 <https://arxiv.org/abs/1902.10355>`_)
 
 .. _`arXiv:1902.10355`: https://arxiv.org/abs/1902.10355
 
