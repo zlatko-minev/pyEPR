@@ -807,11 +807,11 @@ class QuantumAnalysis(object):
         ############################################################################
         ### Axis: Frequencies
         f0 = self.results.get_frequencies_HFSS(
-            variations=variations, vs=swp_variable).transpose()
+            variations=variations, vs=swp_variable).transpose().sort_index(key=lambda x : x.astype(int))
         f1 = self.results.get_frequencies_O1(
-            variations=variations, vs=swp_variable).transpose()
+            variations=variations, vs=swp_variable).transpose().sort_index(key=lambda x : x.astype(int))
         f_ND = self.results.get_frequencies_ND(
-            variations=variations, vs=swp_variable).transpose()
+            variations=variations, vs=swp_variable).transpose().sort_index(key=lambda x : x.astype(int))
         # changed by Asaf from f0 as not all modes are always analyzed
         mode_idx = list(f1.columns)
         n_modes = len(mode_idx)
@@ -842,7 +842,7 @@ class QuantumAnalysis(object):
         # Axis: Quality factors'
         Qs = self.get_quality_factors(swp_variable=swp_variable)
         Qs = Qs if variations is None else Qs[variations]
-        Qs = Qs.transpose()
+        Qs = Qs.transpose().sort_index(key=lambda x : x.astype(int))
 
         ax = axs[1, 0]
         ax.set_title('Quality factors')
