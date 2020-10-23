@@ -587,6 +587,18 @@ class HfssDesign(COMWrapper):
                                    self._boundaries, self._mesh)
         self.optimetrics = Optimetrics(self)
 
+    def add_message(self, message:str, severity:int=0):
+        """
+        Add a message to HFSS log with severity and context to message window.
+
+        Keyword Args:
+            severity (int) : 0 = Informational, 1 = Warning, 2 = Error, 3 = Fatal..
+        """
+        project = self.parent
+        desktop = project.parent
+        oDesktop = desktop._desktop
+        oDesktop.AddMessage(project.name, self.name, severity, message)
+
     def rename_design(self, name):
         old_name = self._design.GetName()
         self._design.RenameDesignInstance(old_name, name)
@@ -1880,14 +1892,33 @@ class HfssModeler(COMWrapper):
         return Box(name, self, pos, size)
 
     def draw_box_center(self, pos, size, **kwargs):
+        """
+        Creates a 3-D box centered at pos [x0, y0, z0], with width
+        size [xwidth, ywidth, zwidth] along each respective direction.
+
+        Args:
+            pos (list): Coordinates of center of box, [x0, y0, z0]
+            size (list): Width of box along each direction, [xwidth, ywidth, zwidth]
+        """
         corner_pos = [var(p) - var(s)/2 for p, s in zip(pos, size)]
         return self.draw_box_corner(corner_pos, size, **kwargs)
 
     def draw_polyline(self, points, closed=True, **kwargs):
         """
-            Draws a closed or open polyline.
-            If closed = True, then will make into a sheet.
-            points : need to be in the correct units
+        Draws a closed or open polyline.
+        If closed = True, then will make into a sheet.
+        points : need to be in the correct units
+
+        For optional arguments, see _attributes_array; these include:
+        ```
+            nonmodel=False,
+            wireframe=False,
+            color=None,
+            transparency=0.9,
+            material=None,  # str
+            solve_inside=None,  # bool
+            coordinate_system="Global"
+        ```
         """
         pointsStr = ["NAME:PolylinePoints"]
         indexsStr = ["NAME:PolylineSegments"]
@@ -1946,6 +1977,18 @@ class HfssModeler(COMWrapper):
         return Rect(name, self, pos, size)
 
     def draw_rect_center(self, pos, x_size=0, y_size=0, z_size=0, **kwargs):
+        """
+        Creates a rectangle centered at pos [x0, y0, z0].
+        It is assumed that the rectangle lies parallel to the xy, yz, or xz plane.
+        User inputs 2 of 3 of the following: x_size, y_size, and z_size
+        depending on how the rectangle is oriented.
+
+        Args:
+            pos (list): Coordinates of rectangle center, [x0, y0, z0]
+            x_size (int, optional): Width along the x direction. Defaults to 0.
+            y_size (int, optional):  Width along the y direction. Defaults to 0.
+            z_size (int, optional):  Width along the z direction]. Defaults to 0.
+        """
         corner_pos = [var(p) - var(s)/2. for p,
                       s in zip(pos, [x_size, y_size, z_size])]
         return self.draw_rect_corner(corner_pos, x_size, y_size, z_size,  **kwargs)
@@ -2114,10 +2157,13 @@ class HfssModeler(COMWrapper):
 
         return objs
 
-    def assign_perfect_E(self, obj, name='PerfE'):
+    def assign_perfect_E(self, obj:List[str], name:str='PerfE'):
         '''
-            Takes a name of an object or a list of object names.
-            If `name` is not specified `PerfE` is appended to object name for the name.
+        Assign a boundary condition to a list of objects.
+
+        Arg:
+            objs (List[str]): Takes a name of an object or a list of object names.
+            name(str): If `name` is not specified `PerfE` is appended to object name for the name.
         '''
         if not isinstance(obj, list):
             obj = [obj]
@@ -2291,6 +2337,15 @@ class HfssModeler(COMWrapper):
                                "Setback:=", "0mm"]])
 
     def _sweep_along_path(self, to_sweep, path_obj):
+        """
+        Adds thickness to path_obj by extending to a new dimension.
+        to_sweep acts as a putty knife that determines the thickness.
+
+        Args:
+            to_sweep (polyline): Small polyline running perpendicular to path_obj
+                                    whose length is the desired resulting thickness
+            path_obj (polyline): Original polyline; want to broaden this
+        """
         self.rename_obj(path_obj, str(path_obj)+'_path')
         new_name = self.rename_obj(to_sweep, path_obj)
         names = [path_obj, str(path_obj)+'_path']
@@ -2410,7 +2465,7 @@ class Rect(ModelEntity):
 
 class Polyline(ModelEntity):
     '''
-        Assume closed polyline, which creates a polygon.
+    Assume closed polyline, which creates a polygon.
     '''
 
     model_command = "CreatePolyline"
@@ -2471,8 +2526,8 @@ class Polyline(ModelEntity):
 
     def rename(self, new_name):
         '''
-            Warning: The  increment_name only works if the sheet has not been stracted or used as a tool elsewher.
-            These names are not checked - They require modifying get_objects_in_group
+            Warning: The increment_name only works if the sheet has not been stracted or used as a tool elsewhere.
+            These names are not checked; they require modifying get_objects_in_group.
 
         '''
         new_name = increment_name(new_name, self.modeler.get_objects_in_group(
