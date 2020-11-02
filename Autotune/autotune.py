@@ -38,126 +38,53 @@ def _timestamp_name(name):
 
 
 class Autotune():
-    """ 
-    
-    pinfo = ProjectInfo("D:/Jules/HFSS_Jules/jules_project",
-                        project_name='jules_project', 
-                        design_name='autotune', 
-                        setup_name='Setup1')
-    ### The names used here ('transmon',..) must be exactly the same as thoses in 
-    ### target_freqs etc...
-    pinfo.junctions['transmon'] = {'rect' : 'ind_JJind_rect',
-                                                          'line' : 'ind_JJ_junction_line',
-                                                          'Lj_variable' : 'Lj'}
-    ### The names used here ('memory',..) must be exactly the same as thoses in 
-    ### target_freqs etc...
-    pinfo.resonators['memory'] = {'line' : 'mem_line'}
-    pinfo.resonators['readout'] = {'line' : 'ro_line'}
-    pinfo.resonators['purcell'] = {'line' : 'pur_line'}
-    
-    pinfo.ports['port50ohm'] = {'rect':'port_50_purcell_track',
-                                                 'line': 'port_50_purcell_line',
-                                                 'R': 50}
-    
-    
-    ### Must be the same names as in the pinfo.resonators and pinfo.junctions
-    target_Qs = {'readout' : 30000, 'purcell' : 300}
-    target_freqs = {'transmon' : 5500,  'readout' : 6500, 'purcell' : 6500, 'memory' : 8000}
-    target_kers = {'transmon' : 200}
-    target_chis = {('transmon', 'memory') : 2, ('transmon', 'readout') : 0.2}
-    
-    var_name = ['Lj', 'trm_length', 'capa_mem_length', 'capa_ro_length',
-                  'shift_capa_mem_trm_Y', 'coupling_dist', 'connector_coupling',
-                  'tune_ro']
-    
-    x = np.array([[7.18123456, 0.4778, 190, 170, 2500, 13, 520, 1.1],
-                  [8.18123456, 0.4668, 190, 175, 2460, 13, 540, 1.1]])
-    
-    a = Autotune(pinfo, target_freqs, target_Qs, 
-                     target_kers, target_chis, var_name)
-    
-    
-    The main functions you may use are : 
-        sorted_FQK = get_sorted_modes(x)
-        cost = cost_function(x)
-        x0 = optimize(args (not finished yet))
-
-    
+    """
+    Class made to autotune a chip
+    See autotune_test_optimizatoin for an example of use
+    Steps : 
+        1) Create a HFSS design. Make sure to add a line on each resonator you
+           wish to tune. Make sure to run the HFSS setup once.
+           
+        2) Inquire the project_info but add the resonators too: 
+            pinfo.resonators['resonator1'] = {'line' : 'line_res1'}
+        
+        If you just want to get HFSS modes, follow steps a.
+        If you want to autotune your chip, follow steps b.
+        
+        3.a) Inquire target_Qs, target_freqs... to tell which hfss modes 
+             you wish to get. (see init for syntax)
+        
+        4.a) Inquire var_name and x that will contain the names of the HFSS 
+             variables that you wish to set to the value x.
+             
+        5.a) Launch auto = Autotune(pinfo, target_freqs, target_Qs, 
+                 target_kers, target_chis, var_name) and do :
+                                    
+             auto.get_sorted_modes(x)
+             
+        3.b) Inquire target_Qs, target_freqs... to tell which hfss modes 
+             you wish to optimize. (see init for syntax)
+        
+        4.b) Inquire var_name that will contain the names of the variables that
+             will be tuned. Try to limit yourself to 4 variables max because
+             optimizing more than 4 parameters if very long and unprecise. 
+             You should probably optimize your parameters 3 by 3.
+             
+        5.b) Launch auto = Autotune(pinfo, target_freqs, target_Qs, 
+                 target_kers, target_chis, var_name)
+        
+        6.b) Inquire bounds that will set the bounds for the variables and 
+             make sure that bounds.keys are the same as var_name.
+        
+        7.b) Do auto.optimize(bounds)
+                                    
     """
     
-    
-    # """Class that contains the necessary functions to autotune a chip.
-    #     A cost function should be written using thoses classe's instances.
-    #     The parameters are X0, target and hfss_info
-        
-    #     var_name = ['Lj', 'trm_length', 'capa_mem_length', 'capa_ro_length',
-    #                 'shift_capa_mem_trm_Y', 'coupling_dist',
-    #                 'connector_coupling', 'tune_ro']
-        
-    #     x = 
-        
-    #     x0 = {} is the dictionnary of the pysical parameters of the chip, make sure
-    #     to give the same names and units as the hfss's ones
-        
-    #     x0 = {'Lj': '8.5nH', 'trm_length': '0.48mm', 'capa_mem_length' : '190um',
-    #           'capa_ro_length' : '170um', 'shift_capa_mem_trm_Y' : '2500um',
-    #           'coupling_dist' : '13um', 'connector_coupling' : '520um',
-    #           'tune_ro' : '1.1mm'}
-
-        
-    #     target = {'Freqs' :{}, 'Qs' : {}, 'Kers' : {}, 'Chis' : {}}
-    #     (must contain those 4 keys written like that)
-    #     is the dictionnary containing the values of frequencies, QS, Kers
-    #     and Chis you are aiming to tune. (Kers and the self-anharmonicity 
-    #     frequencies and Chis are the cross terms). The name of the resonators 
-    #     and transmons is very important. If you name a resonator 'memory' for 
-    #     instance, you must keep using 'memory' for this one in hfss_info.
-        
-    #     target = {'Freqs' :{'transmon' : 5500, 
-    #                         'readout' : 6500,
-    #                         'purcell' : 6500,
-    #                         'memory' : 8000},
-    #               'Qs' : {'readout' : 30000,
-    #                       'purcell' : 300},
-    #               'Kers' : {'transmon' : 200},
-    #               'Chis' : {('transmon', 'memory') : 2,
-    #                         ('transmon', 'readout') : 0.2}
-    #               }
-        
-    #     hfss_info = {'hfss_project_path' : "", 'project_name' : '',
-    #                  'design_name' : '','setup_name' : 'Setup1',
-    #                  'resonators' : {}, 'junctions' : {}, 'ports' : {}}
-    #     (must contain those 8 keys written like that)
-    #     is the dictionnary providing all the necessary information 
-    #     for HFSS to load your project in the right way. The name given to the 
-    #     resonators and junctions must be the same here and in target.
-        
-    #     hfss_info = {'hfss_project_path' : "D:/Jules/HFSS_Jules/jules_project",
-    #                  'project_name' : 'jules_project',
-    #                  'design_name' : 'autotune',
-    #                  'setup_name' : 'Setup1',
-    #                  'resonators' : {'memory' : {'line' : 'mem_line'},
-    #                                  'readout' : {'line' : 'ro_line'},
-    #                                  'purcell' : {'line' : 'pur_line'},
-    #                                 },
-    #                  'junctions' : {'transmon' : {'rect' : 'ind_JJind_rect',
-    #                                                   'line' : 'ind_JJ_junction_line',
-    #                                                   'Lj_variable' : 'Lj'}
-    #                                 }, 
-                                    
-    #                  'ports' : {'readout' : {'rect':'port_50_purcell_track',
-    #                                          'line': 'port_50_purcell_line',
-    #                                          'R': 50}}
-    #                  }
-               
-        
-    #     """
     
     
     
     ### TODO il y a toujours un bug qui fait que si on a pas lancé de variation
     ### avant sur HFSS directement et bah epr_hfss n'a pas de fields
-    ### TODO : init
 
     def __init__(self, project_info, target_freqs, target_Qs, target_kers,
                  target_chis, var_name,
@@ -465,7 +392,7 @@ class Autotune():
             self._sorted_chis[var]  = {}
             
             ### Participation matrix of the resonators
-            Pm_res = self.epr_hfss.results[var]['Pr']  
+            Pm_res = self.epr_hfss.resiults[var]['Pr']  
         
             ### TODO Ces if/else pourraient être évités si on avait récupéré les matrices
             # de participation dans 'getFQK'
@@ -522,16 +449,16 @@ class Autotune():
             
        
     def cost_function(self, x) : 
-        """ This is the cost_function that you want to optimize, it should
-            return 0 when the FQK from HFSS are the same as the FQK from 
-            target. 
-            It takes x as an arg 
-            if your optimizer can only optimize a certain type of objects, 
-            (arrays for instance), you should call it in the following way :
-
-            def realcostfun(x) : 
-                x0 = {}...
-                return Autotune.cost_function(x0)
+        """ This is the cost_function that you want to optimize
+            Args : 
+            x : see run_HFSS
+            
+            Returns : 
+                the cost that should be 0 when your chip is optimimized.
+                (when the FQK from HFSS are the same as the FQK from 
+                target)
+            
+         
         """
         self.get_sorted_modes(x)
 
@@ -540,46 +467,83 @@ class Autotune():
                    
     
     
+    
+        
+    
     def optimize(self, bounds, cost_function = None, niter = 20,
                  method = 'Bayesian'):
-        if cost_function == None : 
-            cost_function = self.cost_function 
+        """
+        This function should optimize your chip
 
+        Parameters
+        ----------
+        bounds : dict
+            The keys must be the same strings as the HFSS variables contained
+            in var_name. The values are tuples (x,y) where x is the min bound
+            associated to the key and y is the max bound.
             
-        
+        cost_function : function, optional
+            The default is a mean square method. You should better change 
+            cost_fn instead of cost_function (see __init__)
             
-        if method == 'Bayesian' :
+        niter : int, optional
+            Number of passes. The default is 20. I should probably find another
+            criteria such as the tolerance.
             
-            
-                        
-            bounds_transformer = SequentialDomainReductionTransformer()
-            optimizer = BayesianOptimization(f = cost_function, pbounds=xybounds, verbose=2, 
-                        random_state=1, bounds_transformer = bounds_transformer)
-            
-            suggested_points = []
-            targets = []
-            
-            for i in range(niter) : 
-                optimizer = BayesianOptimization(f = cost_function, pbounds=xybounds, verbose=2, 
-                        random_state=1, bounds_transformer = bounds_transformer)
-                if suggested_points is not [] :
-                    optimizer.register(suggested_points[-1], targets[-1])
-                utility = UtilityFunction(kind="ucb", xi=0.0)
-                suggested_points.append(optimizer.suggest(utility))
-                targets.append(cost_function(suggested_points[-1]))
-                
-            
-            
-            
-            
-            
-            bounds_transformer = SequentialDomainReductionTransformer()
-            opti = BayesianOptimization(f = cost_function, pbounds=bounds, verbose=2, 
-                        random_state=1, bounds_transformer = bounds_transformer)
+        method : string, optional
+            Optimization method, for the moment, there is only the
+            Bayesian Optimization.
+
+        Returns
+        -------
+        A dictionnary containing as keys : 
+            target : the best cost
+            params : a dict containing the parameters that gave this cost
+        """
     
-            opti.maximize(int(niter/4), 3*int(niter/4)) 
-            return(opti.max)
-        
+    
+        if method == 'Bayesian' :
+            def bayesian_cost(**kwargs):
+                x = np.array([kwargs[name] for name in self.var_name ])
+                return -self.cost_function(x)
+     
+    
+            bounds_transformer = SequentialDomainReductionTransformer()
+            self.optimizer = BayesianOptimization(f = bayesian_cost, pbounds=bounds)
+            
+            
+            self.optimizer.maximize(int(niter/3), int(2*niter/3))
+            
+            self.x0 = self.optimizer.max
+            
+            return self.x0
+            
+            # Work in progress for parrallelizing the optimization
+         
+            # guess = {}
+            # for key, val in bounds.items() : 
+            #     guess[key] = (val[1]-val[0])/3
+            
+            # self.suggested_points = []
+            # self.targets = []
+            # next_point = []
+            
+            
+            # for i in range(niter) : 
+            #     utility = UtilityFunction(kind="ucb", kappa = 2.576, xi=0.0)
+                
+            #     next_point = optimizer.suggest(utility)
+            #     self.suggested_points.append(next_point)
+            #     self.targets.append(bayesian_cost(**next_point))
+                
+            #     optimizer.register(next_point, self.targets[-1])
+            #     if i == 0 : 
+            #         optimizer.register(guess, bayesian_cost(**guess))
+            
+            #     next_point = []
+
+            # return(targets, suggested_points)      
+            
          
         
 def mean_square(sorted_FQK, var_list, args):
@@ -605,22 +569,27 @@ def mean_square(sorted_FQK, var_list, args):
     '''
     target = args[0]
     weight = args[1]
-    cost = 0
+    costs = []
     ### TODO C'est degeu ce if else 
     if weight.freqs == weight.Qs == weight.kers == weight.chis == None : 
         for var in var_list :
+            cost = 0
             for i in range(4) : 
                 for key in target[i].keys() : 
                     cost += ((target[i][key] - sorted_FQK[i][var][key])/target[i][key])**2
-    
+            costs.append(cost)
     else : 
         for var in var_list :
+            cost = 0
             for i in range(4) : 
                 for key in target[i].keys() : 
                     cost += weight[i][key]*((target[i][key] - sorted_FQK[i][var][key])/target[i][key])**2
-
+            costs.append(cost)
                 
-    return cost
+    if len(costs) == 1 :
+        return costs[0]
+    else : 
+        return costs
     
         
         
