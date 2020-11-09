@@ -78,8 +78,19 @@ class Autotune():
         
         7.b) Do auto.optimize(bounds)
                                     
+    Tips !
+    When various functinos are used, he Autotune library might contain some
+    methods and variables that might be usefull. Here is a non exhaustive list
+    of them : 
+        - self.epr_hfss = DsitributedAnalysis
+        - self.epr = QuantumAnalysis
+        - self.project_info = ProjectInfo
+        - self.unsorted_FQK
+        - self.sorted_FQK
+        - self.var_list
+        - self.var_name
+                                    
     """
-    
     
     
     
@@ -298,15 +309,15 @@ class Autotune():
         if self.target.chis or self.target.kers: # There is at least 1 junction
             print('There should be at least one junction')
             self.epr_hfss.do_EPR_analysis(self.var_list)
-            epr = QuantumAnalysis(self.epr_hfss.data_filename,self.var_list)
-            epr.analyze_all_variations(self.var_list)
+            self.epr = QuantumAnalysis(self.epr_hfss.data_filename,self.var_list)
+            self.epr.analyze_all_variations(self.var_list)
             
             ###Get the Chis
-            unsorted_chis = epr.results.get_chi_O1()
+            unsorted_chis = self.epr.results.get_chi_O1()
             ### Get the frequencies after the quantum analysis
-            unsorted_freqs = epr.get_frequencies()
+            unsorted_freqs = self.epr.get_frequencies()
             ### Get the Qs, if there are no losses, Q = inf
-            unsorted_Qs = epr.Qs
+            unsorted_Qs = self.epr.Qs
            
            
         else : # There is no junction
@@ -392,7 +403,7 @@ class Autotune():
             self._sorted_chis[var]  = {}
             
             ### Participation matrix of the resonators
-            Pm_res = self.epr_hfss.resiults[var]['Pr']  
+            Pm_res = self.epr_hfss.results[var]['Pr']  
         
             ### TODO Ces if/else pourraient être évités si on avait récupéré les matrices
             # de participation dans 'getFQK'
