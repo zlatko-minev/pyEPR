@@ -29,7 +29,7 @@ with open(here / "requirements.txt", encoding="utf-8") as f:
 
 doclines = __doc__.split('\n')
 
-setup(name='pyEPR',
+setup(name='pyEPR-quantum',
       version='0.8',
       description = doclines[0],
       long_description=long_description,
