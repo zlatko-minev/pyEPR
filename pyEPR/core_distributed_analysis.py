@@ -1376,8 +1376,8 @@ class DistributedAnalysis(object):
                             dielectric, mode, variation, self.U_E))
 
                 # get Q surface
-                if self.pinfo.dissipative['resistive_surfaces']:
-                    if self.pinfo.dissipative['resistive_surfaces'] == 'all':
+                if self.pinfo.dissipative['dielectric_surfaces']:
+                    if self.pinfo.dissipative['dielectric_surfaces'] == 'all':
                         sol = sol.append(
                             self.get_Qsurface_all(mode, variation, self.U_E))
                     else:
