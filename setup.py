@@ -29,8 +29,8 @@ with open(here / "requirements.txt", encoding="utf-8") as f:
 
 doclines = __doc__.split('\n')
 
-setup(name='pyEPR',
-      version='0.8',
+setup(name='pyEPR-quantum',
+      version='0.8.4',
       description = doclines[0],
       long_description=long_description,
       long_description_content_type="text/markdown",
