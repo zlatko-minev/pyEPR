@@ -637,6 +637,31 @@ class HfssDesign(COMWrapper):
             return HfssDMSetup(self, name)
         elif self.solution_type == "Q3D":
             return AnsysQ3DSetup(self, name)
+    
+    def create_q3d_setup(self, freq_ghz=5., name="Setup", save_fields=False, enabled=True,
+                         max_passes=15, min_passes=2, min_converged_passes=2, percent_error=0.5,
+                         percent_refinement=30, auto_increase_solution_order=True, solution_order="High",
+                         solver_type='Iterative'):
+        name = increment_name(name, self.get_setup_names())
+        self._setup_module.InsertSetup(
+            "Matrix", [
+                f"NAME:{name}",
+                "AdaptiveFreq:=", f"{freq_ghz}GHz",
+                "SaveFields:=", save_fields,
+                "Enabled:=", enabled,
+                [
+                    "NAME:Cap",
+                    "MaxPass:=", max_passes,
+                    "MinPass:=", min_passes,
+                    "MinConvPass:=", min_converged_passes,
+                    "PerError:=", percent_error,
+                    "PerRefine:=", percent_refinement,
+                    "AutoIncreaseSolutionOrder:=", auto_increase_solution_order,
+                    "SolutionOrder:=", solution_order,
+                    "Solver Type:=", solver_type
+                ]
+            ])
+        return AnsysQ3DSetup(self, name)
 
     def create_dm_setup(self, freq_ghz=1, name="Setup", max_delta_s=0.1, max_passes=10,
                         min_passes=1, min_converged=1, pct_refinement=30,
@@ -877,7 +902,7 @@ class HfssSetup(HfssPropertyObject):
     min_freq = make_float_prop("Min Freq")
     basis_order = make_str_prop("Basis Order")
 
-    def __init__(self, design, setup):
+    def __init__(self, design, setup:str):
         """
         :type design: HfssDesign
         :type setup: Dispatch
@@ -1196,7 +1221,7 @@ class AnsysQ3DSetup(HfssSetup):
     """
     prop_tab = "CG"
     max_pass = make_int_prop("Max. Number of Passes")
-    max_pass = make_int_prop("Min. Number of Passes")
+    min_pass = make_int_prop("Min. Number of Passes")
     pct_error = make_int_prop("Percent Error")
     frequency = make_str_prop("Adaptive Freq", 'General')  # e.g., '5GHz'
     n_modes = 0  # for compatability with eigenmode
@@ -1257,7 +1282,7 @@ class AnsysQ3DSetup(HfssSetup):
         return df_cmat, user_units, (df_cond, units_cond), design_variation
 
     @staticmethod
-    def _readin_Q3D_matrix(path):
+    def _readin_Q3D_matrix(path:str):
         """
         Read in the txt file created from q3d export
         and output the capacitance matrix
@@ -1321,7 +1346,9 @@ class AnsysQ3DSetup(HfssSetup):
         if len(var) <1: # didnt find
             var = re.findall(r'Design Variation:(.*?)\n', text)
             if len(var) <1: # didnt find
-                logger.error(f'Failed to parse Q3D matrix Design Variation:\nFile:{path}\nText:{text}')
+                # May not be present if there are no design variations to begin 
+                # with and no variables in the design. 
+                pass #logger.error(f'Failed to parse Q3D matrix Design Variation:\nFile:{path}\nText:{text}')
 
                 var = ['']
         design_variation = var[0]
