@@ -2231,7 +2231,7 @@ class HfssModeler(COMWrapper):
                                    "AlignmentGroup:=", 0,
                                    "RenormImp:=", "50ohm"]],
                    "ShowReporterFilter:=", False, "ReporterFilter:=", [True],
-                   "FullResistance:=", "50ohm", "FullReactance:=", "0ohm"]
+                   "FullResistance:=", z0, "FullReactance:=", "0ohm"]
 
         self._boundaries.AssignLumpedPort(params)
 
