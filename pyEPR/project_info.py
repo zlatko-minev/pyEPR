@@ -220,23 +220,43 @@ class ProjectInfo(object):
             ports=pd.DataFrame(self.ports),
         )
 
-    def connect(self):
-        """
-        Do establihs connection to Ansys desktop.
+    def connect_project(self):
+        """Sets 
+        self.app
+        self.desktop
+        self.project
+        self.project_name
+        self.project_path 
         """
         logger.info('Connecting to Ansys Desktop API...')
 
         self.app, self.desktop, self.project = ansys.load_ansys_project(
             self.project_name, self.project_path)
-        self.project_name = self.project.name
-        self.project_path = self.project.get_path()
+        
+        self.project_name = self.project.name # TODO: should be property?
+        self.project_path = self.project.get_path()  # TODO: should be property?
 
-        # Design
+
+    def connect_design(self, design_name: str = None):
+        """Sets
+        self.design
+        self.design_name
+        """
+        if  not(design_name is None):
+
+            self.design_name = design_name
+
         if self.design_name is None:
-            self.design = self.project.get_active_design()
-            self.design_name = self.design.name
-            logger.info(f'\tOpened active design\n\
-\tDesign:    {self.design_name} [Solution type: {self.design.solution_type}]')
+            #TODO: What if there is no active design?
+            try:
+                self.design = self.project.get_active_design()
+                self.design_name = self.design.name
+                logger.info(f'\tOpened active design\n'\
+                    '\tDesign:    {self.design_name} [Solution type: {self.design.solution_type}]')
+            except Exception as e:
+                self.design = None
+                self.design_name = None
+                logger.info(f'No active design found (or error getting active design). Note: {e}')
         else:
 
             try:
@@ -250,35 +270,58 @@ class ProjectInfo(object):
                 raise(Exception(' Did you provide the correct design name?\
                     Failed to pull up design. \N{loudly crying face}').with_traceback(_traceback))
 
+
+    def connect_setup(self): 
+        """Connect to the first avaialbe setup or create a new in eigenmode and driven modal
+
+        Raises:
+            Exception: [description]
+        """
         # Setup
-        try:
-            setup_names = self.design.get_setup_names()
+        if self.design is not None:
+            try:
+                setup_names = self.design.get_setup_names()
 
-            if len(setup_names) == 0:
-                logger.warning('\tNo design setup detected.')
-                if self.design.solution_type == 'Eigenmode':
-                    logger.warning('\tCreating eigenmode default setup one.')
-                    setup = self.design.create_em_setup()
-                    self.setup_name = setup.name
-                elif self.design.solution_type == 'DrivenModal':
-                    setup = self.design.create_dm_setup()  # adding a driven modal design
-                    self.setup_name = setup.name
-            else:
-                self.setup_name = setup_names[0]
+                if len(setup_names) == 0:
+                    logger.warning('\tNo design setup detected.')
+                    if self.design.solution_type == 'Eigenmode':
+                        logger.warning('\tCreating eigenmode default setup one.')
+                        setup = self.design.create_em_setup()
+                        self.setup_name = setup.name
+                    elif self.design.solution_type == 'DrivenModal':
+                        setup = self.design.create_dm_setup()  # adding a driven modal design
+                        self.setup_name = setup.name
+                else:
+                    self.setup_name = setup_names[0]
 
-            # get the actual setup if there is one
-            self.get_setup(self.setup_name)
+                # get the actual setup if there is one
+                self.get_setup(self.setup_name)
 
-        except Exception as e:
+            except Exception as e:
 
-            _traceback = sys.exc_info()[2]
-            logger.error(f"Original error \N{loudly crying face}: {e}\n")
-            raise Exception(' Did you provide the correct setup name?\
-                        Failed to pull up setup. \N{loudly crying face}').with_traceback(_traceback)
+                _traceback = sys.exc_info()[2]
+                logger.error(f"Original error \N{loudly crying face}: {e}\n")
+                raise Exception(' Did you provide the correct setup name?\
+                            Failed to pull up setup. \N{loudly crying face}').with_traceback(_traceback)
+
+        else:
+            self.setup = None
+            self.setup_name = None
+
+    def connect(self):
+        """
+        Do establish connection to Ansys desktop.
+        Connects to project and then get design and setup
+        """
+        self.connect_project()
+        self.connect_design()
+        self.connect_setup()
 
         # Finalize
-        self.project_name = self.project.name
-        self.design_name = self.design.name
+        if  self.project:
+            self.project_name = self.project.name
+        if self.design:
+            self.design_name = self.design.name
 
         logger.info(
             '\tConnection to Ansys established successfully. \N{grinning face} \n')
@@ -382,4 +425,4 @@ class ProjectInfo(object):
   
     def __del__(self):
         logger.info('Disconnected from Ansys HFSS')
-        self.disconnect()
+        # self.disconnect()

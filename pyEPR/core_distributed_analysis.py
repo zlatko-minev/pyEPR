@@ -835,7 +835,7 @@ class DistributedAnalysis(object):
         """
 
         if U_H is None:
-            U_H = self.calc_energy_(variation)
+            U_H = self.calc_energy_magnetic(variation)
 
         self.solutions.set_mode(mode+1, 0)
         self.fields = self.setup.get_fields()

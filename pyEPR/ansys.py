@@ -544,10 +544,20 @@ class HfssProject(COMWrapper):
             raise EnvironmentError("No Design Active")
         return HfssDesign(self, d)
 
-    def new_dm_design(self, name):
+    def new_dm_design(self, name:str):
+        """Create a new driven model design
+
+        Args:
+            name (str): Name of driven modal design
+        """
         return self.new_design(name, "DrivenModal")
 
-    def new_em_design(self, name):
+    def new_em_design(self, name:str):
+        """Create a new eigenmode design
+
+        Args:
+            name (str): Name of eigenmode design
+        """
         return self.new_design(name, "Eigenmode")
 
     @property  # v2016
@@ -598,6 +608,28 @@ class HfssDesign(COMWrapper):
         desktop = project.parent
         oDesktop = desktop._desktop
         oDesktop.AddMessage(project.name, self.name, severity, message)
+
+    def save_screenshot(self, path:str=None, show:bool=True):
+        if not path:
+            path = Path().absolute() / 'ansys.png' # TODOL find better
+        self._modeler.ExportModelImageToFile(str(path),
+                                            0,0, # can be 0 For the default, use 0, 0. For higher resolution, set desired <width> and <height>, for example for 8k export as: 7680, 4320. 
+            [
+                "NAME:SaveImageParams",
+                "ShowAxis:="		, "True",
+                "ShowGrid:="		, "True",
+                "ShowRuler:="		, "True",
+                "ShowRegion:="		, "Default",
+                "Selections:="		, "",
+                "Orientation:="		, ""
+            ])
+
+        if show:
+            from IPython.display import display, Image
+            display(Image(str(path)))
+
+        return path
+
 
     def rename_design(self, name):
         old_name = self._design.GetName()
