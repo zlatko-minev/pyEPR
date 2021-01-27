@@ -6,6 +6,7 @@ name: Publish Python 🐍 distributions 📦 to PyPI
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
   push:
+    tags: [ '*' ]
     branches: [ master ]
 
   # Allows you to run this workflow manually from the Actions tab
