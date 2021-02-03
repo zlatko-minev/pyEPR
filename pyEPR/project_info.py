@@ -241,7 +241,7 @@ class ProjectInfo(object):
         self.app, self.desktop, self.project = ansys.load_ansys_project(
             self.project_name, self.project_path)
 
-        if self.project:
+        if project:
             # TODO: should be property?
             self.project_name = self.project.name
             self.project_path = self.project.get_path()
@@ -353,12 +353,12 @@ class ProjectInfo(object):
 
         if not self.project:
             logger.info(
-                '\tConnection to project within Ansys not established. Is there a project in your desktop app? \N{thinking face} \n'
+                '\t Project not detected in Ansys. Is there a project in your desktop app? \N{thinking face} \n'
             )
 
         if not self.design:
             logger.info(
-                '\tConnection to design within Ansys not established. Is there a design in your project? \N{thinking face} \n'
+                '\t Design not detected in project. Is there a design in your project? \N{thinking face} \n'
             )
 
         return self
