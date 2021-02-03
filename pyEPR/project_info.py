@@ -21,8 +21,10 @@ import pandas as pd
 from . import Dict, ansys, config, logger
 from .toolbox.pythonic import get_instance_vars
 
+diss_opt = [
+    'dielectrics_bulk', 'dielectric_surfaces', 'resistive_surfaces', 'seams'
+]
 
-diss_opt = ['dielectrics_bulk', 'dielectric_surfaces', 'resistive_surfaces', 'seams']
 
 class ProjectInfo(object):
     """
@@ -104,7 +106,6 @@ class ProjectInfo(object):
         http://google.github.io/styleguide/pyguide.html
 
     """
-
     class _Dissipative:
         """
         Deprecating the _Dissipative class and turning it into a dictionary.
@@ -138,7 +139,8 @@ class ProjectInfo(object):
 
         def __setattr__(self, attr, value):
             logger.warning(
-                f"DEPRECATED!! use pinfo.dissipative['{attr}'] = {value} instead!")
+                f"DEPRECATED!! use pinfo.dissipative['{attr}'] = {value} instead!"
+            )
             self[attr] = value
 
         def __getattr__(self, attr):
@@ -158,8 +160,12 @@ class ProjectInfo(object):
             """Return dissipatvie as dictionary"""
             return {str(opt): self[opt] for opt in diss_opt}
 
-    def __init__(self, project_path: str = None, project_name: str = None, design_name: str = None,
-                 setup_name: str = None, do_connect: bool = True):
+    def __init__(self,
+                 project_path: str = None,
+                 project_name: str = None,
+                 design_name: str = None,
+                 setup_name: str = None,
+                 do_connect: bool = True):
         """
         Keyword Arguments:
 
@@ -205,8 +211,10 @@ class ProjectInfo(object):
             self.connect()
             self.dissipative['pinfo'] = self
 
-    _Forbidden = ['app', 'design', 'desktop', 'project',
-                  'dissipative', 'setup', '_Forbidden', 'junctions']
+    _Forbidden = [
+        'app', 'design', 'desktop', 'project', 'dissipative', 'setup',
+        '_Forbidden', 'junctions'
+    ]
 
     def save(self):
         '''
@@ -232,22 +240,28 @@ class ProjectInfo(object):
 
         self.app, self.desktop, self.project = ansys.load_ansys_project(
             self.project_name, self.project_path)
-        
-        self.project_name = self.project.name # TODO: should be property?
-        self.project_path = self.project.get_path()  # TODO: should be property?
 
+        if self.project:
+            # TODO: should be property?
+            self.project_name = self.project.name
+            self.project_path = self.project.get_path()
 
     def connect_design(self, design_name: str = None):
         """Sets
         self.design
         self.design_name
         """
-        if  not(design_name is None):
+        if not (design_name is None):
 
             self.design_name = design_name
 
+        #TODO: What if there is no active design?
+        designs_in_project = self.project.get_designs()
+        if not designs_in_project:
+            self.design = None
+            return
+
         if self.design_name is None:
-            #TODO: What if there is no active design?
             try:
                 self.design = self.project.get_active_design()
                 self.design_name = self.design.name
@@ -256,7 +270,9 @@ class ProjectInfo(object):
             except Exception as e:
                 self.design = None
                 self.design_name = None
-                logger.info(f'No active design found (or error getting active design). Note: {e}')
+                logger.info(
+                    f'No active design found (or error getting active design). Note: {e}'
+                )
         else:
 
             try:
@@ -267,11 +283,11 @@ class ProjectInfo(object):
             except Exception as e:
                 _traceback = sys.exc_info()[2]
                 logger.error(f"Original error \N{loudly crying face}: {e}\n")
-                raise(Exception(' Did you provide the correct design name?\
-                    Failed to pull up design. \N{loudly crying face}').with_traceback(_traceback))
+                raise (Exception(' Did you provide the correct design name?\
+                    Failed to pull up design. \N{loudly crying face}').
+                       with_traceback(_traceback))
 
-
-    def connect_setup(self): 
+    def connect_setup(self):
         """Connect to the first avaialbe setup or create a new in eigenmode and driven modal
 
         Raises:
@@ -285,11 +301,13 @@ class ProjectInfo(object):
                 if len(setup_names) == 0:
                     logger.warning('\tNo design setup detected.')
                     if self.design.solution_type == 'Eigenmode':
-                        logger.warning('\tCreating eigenmode default setup one.')
+                        logger.warning(
+                            '\tCreating eigenmode default setup one.')
                         setup = self.design.create_em_setup()
                         self.setup_name = setup.name
                     elif self.design.solution_type == 'DrivenModal':
-                        setup = self.design.create_dm_setup()  # adding a driven modal design
+                        setup = self.design.create_dm_setup(
+                        )  # adding a driven modal design
                         self.setup_name = setup.name
                 else:
                     self.setup_name = setup_names[0]
@@ -302,7 +320,8 @@ class ProjectInfo(object):
                 _traceback = sys.exc_info()[2]
                 logger.error(f"Original error \N{loudly crying face}: {e}\n")
                 raise Exception(' Did you provide the correct setup name?\
-                            Failed to pull up setup. \N{loudly crying face}').with_traceback(_traceback)
+                            Failed to pull up setup. \N{loudly crying face}'
+                                ).with_traceback(_traceback)
 
         else:
             self.setup = None
@@ -313,18 +332,34 @@ class ProjectInfo(object):
         Do establish connection to Ansys desktop.
         Connects to project and then get design and setup
         """
+
         self.connect_project()
-        self.connect_design()
+        if not self.project:
+            logger.info('\tConnection to Ansys NOT established.  \n')
+        if self.project:
+            self.connect_design()
         self.connect_setup()
 
         # Finalize
-        if  self.project:
+        if self.project:
             self.project_name = self.project.name
         if self.design:
             self.design_name = self.design.name
 
-        logger.info(
-            '\tConnection to Ansys established successfully. \N{grinning face} \n')
+        if self.project and self.design:
+            logger.info(
+                '\tConnection to Ansys established successfully. \N{grinning face} \n'
+            )
+
+        if not self.project:
+            logger.info(
+                '\t Project not detected in Ansys. Is there a project in your desktop app? \N{thinking face} \n'
+            )
+
+        if not self.design:
+            logger.info(
+                '\t Design not detected in project. Is there a design in your project? \N{thinking face} \n'
+            )
 
         return self
 
@@ -370,6 +405,7 @@ class ProjectInfo(object):
         assert self.check_connected() is True,\
             "It does not appear that you have connected to HFSS yet.\
             Use the connect()  method. \N{nauseated face}"
+
         self.project.release()
         self.desktop.release()
         self.app.release()
@@ -390,7 +426,8 @@ class ProjectInfo(object):
 
     def get_all_variables_names(self):
         """Returns array of all project and local design names."""
-        return self.project.get_variable_names() + self.design.get_variable_names()
+        return self.project.get_variable_names(
+        ) + self.design.get_variable_names()
 
     def get_all_object_names(self):
         """Returns array of strings"""
@@ -422,7 +459,7 @@ class ProjectInfo(object):
                     """pyEPR ProjectInfo user error found \N{face with medical mask}:
                     Seems like for junction `%s` you specified a %s that does not exist
                     in HFSS by the name: `%s` """ % (jjnm, name, jj[name])
-  
+
     def __del__(self):
         logger.info('Disconnected from Ansys HFSS')
         # self.disconnect()
