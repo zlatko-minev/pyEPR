@@ -251,23 +251,27 @@ class ProjectInfo(object):
         self.design
         self.design_name
         """
-        if not (design_name is None):
-
+        if design_name is not None:
             self.design_name = design_name
 
-        #TODO: What if there is no active design?
         designs_in_project = self.project.get_designs()
         if not designs_in_project:
             self.design = None
+            logger.info(
+                f'No active design found (or error getting active design).'
+            )
             return
 
         if self.design_name is None:
+            # Look for the active design
             try:
                 self.design = self.project.get_active_design()
                 self.design_name = self.design.name
-                logger.info(f'\tOpened active design\n'\
-                    '\tDesign:    {self.design_name} [Solution type: {self.design.solution_type}]')
+                logger.info(
+                    '\tOpened active design\n'
+                    f'\tDesign:    {self.design_name} [Solution type: {self.design.solution_type}]')
             except Exception as e:
+                # No active design
                 self.design = None
                 self.design_name = None
                 logger.info(
@@ -277,8 +281,9 @@ class ProjectInfo(object):
 
             try:
                 self.design = self.project.get_design(self.design_name)
-                logger.info(f'\tOpened active design\n\
-\tDesign:    {self.design_name} [Solution type: {self.design.solution_type}]')
+                logger.info(
+                    '\tOpened active design\n'
+                    f'\tDesign:    {self.design_name} [Solution type: {self.design.solution_type}]')
 
             except Exception as e:
                 _traceback = sys.exc_info()[2]
@@ -288,7 +293,7 @@ class ProjectInfo(object):
                        with_traceback(_traceback))
 
     def connect_setup(self):
-        """Connect to the first avaialbe setup or create a new in eigenmode and driven modal
+        """Connect to the first available setup or create a new in eigenmode and driven modal
 
         Raises:
             Exception: [description]
