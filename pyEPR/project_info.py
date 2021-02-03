@@ -241,7 +241,7 @@ class ProjectInfo(object):
         self.app, self.desktop, self.project = ansys.load_ansys_project(
             self.project_name, self.project_path)
 
-        if project:
+        if self.project:
             # TODO: should be property?
             self.project_name = self.project.name
             self.project_path = self.project.get_path()
