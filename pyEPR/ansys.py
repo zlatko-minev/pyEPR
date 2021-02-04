@@ -606,10 +606,8 @@ class HfssProject(COMWrapper):
         name = increment_name(
             name, [d.GetName() for d in self._project.GetDesigns()])
 
-        hold_it = HfssDesign(
+        return HfssDesign(
             self, self._project.InsertDesign("Q3D Extractor", name, "", ""))
-
-        return hold_it
 
     @property  # v2016
     def name(self):
