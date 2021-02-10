@@ -375,14 +375,15 @@ class ProjectInfo(object):
 
         Args:
             name (str): Name of the setup.
-            If the setup does not exist, then throws a loggger error.
+            If the setup does not exist, then throws a logger error.
             Defaults to ``None``, in which case returns None
 
         """
+        print('hello!')
         if name is None:
             return None
         else:
-            self.setup = self.design.get_setup(name=self.setup_name)
+            self.setup = self.design.get_setup(name=self.setup_name if not name else name)
             if self.setup is None:
                 logger.error(f"Could not retrieve setup: {self.setup_name}\n \
                                Did you give the right name? Does it exist?")
