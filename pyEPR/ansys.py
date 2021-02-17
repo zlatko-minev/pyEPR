@@ -566,11 +566,11 @@ class HfssProject(COMWrapper):
             raise Exception('''Error: HFSS Project does not have a path.
         Either there is no HFSS project open, or it is not saved.''')
 
-    def new_design(self, name, type):
-        name = increment_name(
-            name, [d.GetName() for d in self._project.GetDesigns()])
+    def new_design(self, design_name, solution_type, design_type="HFSS"):
+        design_name = increment_name(
+            design_name, [d.GetName() for d in self._project.GetDesigns()])
         return HfssDesign(self,
-                          self._project.InsertDesign("HFSS", name, type, ""))
+                          self._project.InsertDesign(design_type, design_name, solution_type, ""))
 
     def get_design(self, name):
         return HfssDesign(self, self._project.GetDesign(name))
@@ -603,11 +603,7 @@ class HfssProject(COMWrapper):
         Args:
             name (str): Name of Q3D design
         """
-        name = increment_name(
-            name, [d.GetName() for d in self._project.GetDesigns()])
-
-        return HfssDesign(
-            self, self._project.InsertDesign("Q3D Extractor", name, "", ""))
+        return self.new_design(name, "Q3D", "Q3D Extractor")
 
     @property  # v2016
     def name(self):
