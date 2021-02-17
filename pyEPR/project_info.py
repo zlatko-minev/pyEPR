@@ -307,12 +307,18 @@ class ProjectInfo(object):
                     logger.warning('\tNo design setup detected.')
                     if self.design.solution_type == 'Eigenmode':
                         logger.warning(
-                            '\tCreating eigenmode default setup one.')
+                            '\tCreating eigenmode default setup.')
                         setup = self.design.create_em_setup()
                         self.setup_name = setup.name
                     elif self.design.solution_type == 'DrivenModal':
-                        setup = self.design.create_dm_setup(
-                        )  # adding a driven modal design
+                        logger.warning(
+                            '\tCreating drivenmodal default setup.')
+                        setup = self.design.create_dm_setup()
+                        self.setup_name = setup.name
+                    elif self.design.solution_type == 'Q3D':
+                        logger.warning(
+                            '\tCreating Q3D default setup.')
+                        setup = self.design.create_q3d_setup()
                         self.setup_name = setup.name
                 else:
                     self.setup_name = setup_names[0]
@@ -375,7 +381,7 @@ class ProjectInfo(object):
 
         Args:
             name (str): Name of the setup.
-            If the setup does not exist, then throws a loggger error.
+            If the setup does not exist, then throws a logger error.
             Defaults to ``None``, in which case returns None
 
         """
