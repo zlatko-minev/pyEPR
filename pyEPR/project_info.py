@@ -246,10 +246,12 @@ class ProjectInfo(object):
             self.project_name = self.project.name
             self.project_path = self.project.get_path()
 
-    def connect_design(self, design_name: str = None):
+    def connect_design(self, design_name: str = None, get_existing=false):
         """Sets
         self.design
         self.design_name
+        get_existing (bool):When false, append incremented integer to name and insert a new design.
+                            When true, if the design is found in project, use the existing design without appending integer.
         """
         if design_name is not None:
             self.design_name = design_name
@@ -258,8 +260,7 @@ class ProjectInfo(object):
         if not designs_in_project:
             self.design = None
             logger.info(
-                f'No active design found (or error getting active design).'
-            )
+                f'No active design found (or error getting active design).')
             return
 
         if self.design_name is None:
@@ -269,7 +270,8 @@ class ProjectInfo(object):
                 self.design_name = self.design.name
                 logger.info(
                     '\tOpened active design\n'
-                    f'\tDesign:    {self.design_name} [Solution type: {self.design.solution_type}]')
+                    f'\tDesign:    {self.design_name} [Solution type: {self.design.solution_type}]'
+                )
             except Exception as e:
                 # No active design
                 self.design = None
@@ -280,10 +282,12 @@ class ProjectInfo(object):
         else:
 
             try:
-                self.design = self.project.get_design(self.design_name)
+                self.design = self.project.get_design(
+                    self.design_name, get_existing=get_existing)
                 logger.info(
                     '\tOpened active design\n'
-                    f'\tDesign:    {self.design_name} [Solution type: {self.design.solution_type}]')
+                    f'\tDesign:    {self.design_name} [Solution type: {self.design.solution_type}]'
+                )
 
             except Exception as e:
                 _traceback = sys.exc_info()[2]

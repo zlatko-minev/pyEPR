@@ -567,8 +567,8 @@ class HfssProject(COMWrapper):
         Either there is no HFSS project open, or it is not saved.''')
 
     def new_design(self, name, type):
-        name = increment_name(
-            name, [d.GetName() for d in self._project.GetDesigns()])
+        names_in_design = [d.GetName() for d in self._project.GetDesigns()]
+        name = increment_name(name, names_in_design)
         return HfssDesign(self,
                           self._project.InsertDesign("HFSS", name, type, ""))
 
@@ -581,33 +581,50 @@ class HfssProject(COMWrapper):
             raise EnvironmentError("No Design Active")
         return HfssDesign(self, d)
 
-    def new_dm_design(self, name: str):
+    def new_dm_design(self, name: str, get_existing=False):
         """Create a new driven model design
 
         Args:
             name (str): Name of driven modal design
+            get_existing (bool):When false, append incremented integer to name and insert a new design.
+                                When true, if the design is found in project, use the existing design without appending integer.
         """
-        return self.new_design(name, "DrivenModal")
+        names_in_design = [d.GetName() for d in self._project.GetDesigns()]
+        if name in names_in_design and get_existing:
+            return self.get_design(name)
+        else:
+            return self.new_design(name, "DrivenModal")
 
-    def new_em_design(self, name: str):
+    def new_em_design(self, name: str, get_existing=False):
         """Create a new eigenmode design
 
         Args:
             name (str): Name of eigenmode design
+            get_existing (bool):When false, append incremented integer to name and insert a new design.
+                                When true, if the design is found in project, use the existing design without appending integer.
         """
-        return self.new_design(name, "Eigenmode")
+        names_in_design = [d.GetName() for d in self._project.GetDesigns()]
+        if name in names_in_design and get_existing:
+            return self.get_design(name)
+        else:
+            return self.new_design(name, "Eigenmode")
 
-    def new_q3d_design(self, name: str):
+    def new_q3d_design(self, name: str, get_existing=False):
         """Create a new Q3D design.
 
         Args:
             name (str): Name of Q3D design
+            get_existing (bool):When false, append incremented integer to name and insert a new design.
+                                When true, if the design is found in project, use the existing design without appending integer.
         """
-        name = increment_name(
-            name, [d.GetName() for d in self._project.GetDesigns()])
-
-        return HfssDesign(
-            self, self._project.InsertDesign("Q3D Extractor", name, "", ""))
+        names_in_design = [d.GetName() for d in self._project.GetDesigns()]
+        if name in names_in_design and get_existing:
+            return self.get_design(name)
+        else:
+            name = increment_name(name, names_in_design)
+            return HfssDesign(
+                self, self._project.InsertDesign("Q3D Extractor", name, "",
+                                                 ""))
 
     @property  # v2016
     def name(self):
