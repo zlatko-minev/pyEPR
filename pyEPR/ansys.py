@@ -2383,7 +2383,10 @@ class HfssModeler(COMWrapper):
         One of  <materialName>, <assignmentName>, "Non Model",
                 "Solids", "Unclassi­fied", "Sheets", "Lines"
         """
-        return list(self._modeler.GetObjectsInGroup(group))
+        if self._modeler:
+            return list(self._modeler.GetObjectsInGroup(group))
+        else:
+            return list()
 
     def set_working_coordinate_system(self, cs_name="Global"):
         """
