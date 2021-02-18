@@ -165,7 +165,8 @@ class ProjectInfo(object):
                  project_name: str = None,
                  design_name: str = None,
                  setup_name: str = None,
-                 do_connect: bool = True):
+                 do_connect: bool = True,
+                 get_existing=False):
         """
         Keyword Arguments:
 
@@ -181,6 +182,9 @@ class ProjectInfo(object):
                 Defaults to ``None``, which will get the current active one.
 
             do_connect (bool) [additional]: Do create connection to Ansys or not? Defaults to ``True``.
+
+            get_existing (bool):When false, append incremented integer to name and insert a new design.
+                                When true, if the design is found in project, use the existing design without appending integer.
 
         """
 
@@ -208,7 +212,7 @@ class ProjectInfo(object):
         self.setup = None
 
         if do_connect:
-            self.connect()
+            self.connect(get_existing=get_existing)
             self.dissipative['pinfo'] = self
 
     _Forbidden = [
@@ -246,7 +250,7 @@ class ProjectInfo(object):
             self.project_name = self.project.name
             self.project_path = self.project.get_path()
 
-    def connect_design(self, design_name: str = None, get_existing=false):
+    def connect_design(self, design_name: str = None, get_existing=False):
         """Sets
         self.design
         self.design_name
@@ -310,18 +314,15 @@ class ProjectInfo(object):
                 if len(setup_names) == 0:
                     logger.warning('\tNo design setup detected.')
                     if self.design.solution_type == 'Eigenmode':
-                        logger.warning(
-                            '\tCreating eigenmode default setup.')
+                        logger.warning('\tCreating eigenmode default setup.')
                         setup = self.design.create_em_setup()
                         self.setup_name = setup.name
                     elif self.design.solution_type == 'DrivenModal':
-                        logger.warning(
-                            '\tCreating drivenmodal default setup.')
+                        logger.warning('\tCreating drivenmodal default setup.')
                         setup = self.design.create_dm_setup()
                         self.setup_name = setup.name
                     elif self.design.solution_type == 'Q3D':
-                        logger.warning(
-                            '\tCreating Q3D default setup.')
+                        logger.warning('\tCreating Q3D default setup.')
                         setup = self.design.create_q3d_setup()
                         self.setup_name = setup.name
                 else:
@@ -342,17 +343,20 @@ class ProjectInfo(object):
             self.setup = None
             self.setup_name = None
 
-    def connect(self):
+    def connect(self, get_existing=False):
         """
         Do establish connection to Ansys desktop.
         Connects to project and then get design and setup
+
+        get_existing (bool):When false, append incremented integer to name and insert a new design.
+                                When true, if the design is found in project, use the existing design without appending integer.
         """
 
         self.connect_project()
         if not self.project:
             logger.info('\tConnection to Ansys NOT established.  \n')
         if self.project:
-            self.connect_design()
+            self.connect_design(get_existing=get_existing)
         self.connect_setup()
 
         # Finalize
