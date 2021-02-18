@@ -566,11 +566,13 @@ class HfssProject(COMWrapper):
             raise Exception('''Error: HFSS Project does not have a path.
         Either there is no HFSS project open, or it is not saved.''')
 
-    def new_design(self, name, type):
-        names_in_design = [d.GetName() for d in self._project.GetDesigns()]
-        name = increment_name(name, names_in_design)
-        return HfssDesign(self,
-                          self._project.InsertDesign("HFSS", name, type, ""))
+    def new_design(self, design_name, solution_type, design_type="HFSS"):
+        design_name_int = increment_name(
+            design_name, [d.GetName() for d in self._project.GetDesigns()])
+        return HfssDesign(
+            self,
+            self._project.InsertDesign(design_type, design_name_int,
+                                       solution_type, ""))
 
     def get_design(self, name):
         return HfssDesign(self, self._project.GetDesign(name))
@@ -611,7 +613,7 @@ class HfssProject(COMWrapper):
 
     def new_q3d_design(self, name: str, get_existing=False):
         """Create a new Q3D design.
-
+        
         Args:
             name (str): Name of Q3D design
             get_existing (bool):When false, append incremented integer to name and insert a new design.
@@ -621,10 +623,7 @@ class HfssProject(COMWrapper):
         if name in names_in_design and get_existing:
             return self.get_design(name)
         else:
-            name = increment_name(name, names_in_design)
-            return HfssDesign(
-                self, self._project.InsertDesign("Q3D Extractor", name, "",
-                                                 ""))
+            return self.new_design(name, "Q3D", "Q3D Extractor")
 
     @property  # v2016
     def name(self):
@@ -2404,7 +2403,10 @@ class HfssModeler(COMWrapper):
         One of  <materialName>, <assignmentName>, "Non Model",
                 "Solids", "Unclassi­fied", "Sheets", "Lines"
         """
-        return list(self._modeler.GetObjectsInGroup(group))
+        if self._modeler:
+            return list(self._modeler.GetObjectsInGroup(group))
+        else:
+            return list()
 
     def set_working_coordinate_system(self, cs_name="Global"):
         """
