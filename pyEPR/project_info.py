@@ -250,12 +250,10 @@ class ProjectInfo(object):
             self.project_name = self.project.name
             self.project_path = self.project.get_path()
 
-    def connect_design(self, design_name: str = None, get_existing=False):
+    def connect_design(self, design_name: str = None):
         """Sets
         self.design
         self.design_name
-        get_existing (bool):When false, append incremented integer to name and insert a new design.
-                            When true, if the design is found in project, use the existing design without appending integer.
         """
         if design_name is not None:
             self.design_name = design_name
@@ -286,8 +284,7 @@ class ProjectInfo(object):
         else:
 
             try:
-                self.design = self.project.get_design(
-                    self.design_name, get_existing=get_existing)
+                self.design = self.project.get_design(self.design_name)
                 logger.info(
                     '\tOpened active design\n'
                     f'\tDesign:    {self.design_name} [Solution type: {self.design.solution_type}]'
@@ -356,7 +353,7 @@ class ProjectInfo(object):
         if not self.project:
             logger.info('\tConnection to Ansys NOT established.  \n')
         if self.project:
-            self.connect_design(get_existing=get_existing)
+            self.connect_design()
         self.connect_setup()
 
         # Finalize
