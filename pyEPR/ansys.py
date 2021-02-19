@@ -586,47 +586,30 @@ class HfssProject(COMWrapper):
             raise EnvironmentError("No Design Active")
         return HfssDesign(self, d)
 
-    def new_dm_design(self, name: str, get_existing=False):
+    def new_dm_design(self, name: str):
         """Create a new driven model design
 
         Args:
             name (str): Name of driven modal design
-            get_existing (bool):When false, append incremented integer to name and insert a new design.
-                                When true, if the design is found in project, use the existing design without appending integer.
+            
         """
-        names_in_design = [d.GetName() for d in self._project.GetDesigns()]
-        if name in names_in_design and get_existing:
-            return self.get_design(name)
-        else:
-            return self.new_design(name, "DrivenModal")
+       return self.new_design(name, "DrivenModal")
 
-    def new_em_design(self, name: str, get_existing=False):
+    def new_em_design(self, name: str):
         """Create a new eigenmode design
 
         Args:
             name (str): Name of eigenmode design
-            get_existing (bool):When false, append incremented integer to name and insert a new design.
-                                When true, if the design is found in project, use the existing design without appending integer.
         """
-        names_in_design = [d.GetName() for d in self._project.GetDesigns()]
-        if name in names_in_design and get_existing:
-            return self.get_design(name)
-        else:
-            return self.new_design(name, "Eigenmode")
+       return self.new_design(name, "Eigenmode")
 
-    def new_q3d_design(self, name: str, get_existing=False):
+    def new_q3d_design(self, name: str):
         """Create a new Q3D design.
         
         Args:
             name (str): Name of Q3D design
-            get_existing (bool):When false, append incremented integer to name and insert a new design.
-                                When true, if the design is found in project, use the existing design without appending integer.
         """
-        names_in_design = [d.GetName() for d in self._project.GetDesigns()]
-        if name in names_in_design and get_existing:
-            return self.get_design(name)
-        else:
-            return self.new_design(name, "Q3D", "Q3D Extractor")
+        return self.new_design(name, "Q3D", "Q3D Extractor")
 
     @property  # v2016
     def name(self):
