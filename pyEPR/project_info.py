@@ -379,7 +379,6 @@ class ProjectInfo(object):
             Defaults to ``None``, in which case returns None
 
         """
-        print('hello!')
         if name is None:
             return None
         else:
