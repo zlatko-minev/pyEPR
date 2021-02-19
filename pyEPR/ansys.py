@@ -501,6 +501,9 @@ class HfssProject(COMWrapper):
     def get_designs(self):
         return [HfssDesign(self, d) for d in self._project.GetDesigns()]
 
+    def get_design_names(self):
+        return [d.GetName() for d in self._project.GetDesigns()]
+
     def save(self, path=None):
         if path is None:
             self._project.Save()
@@ -567,10 +570,12 @@ class HfssProject(COMWrapper):
         Either there is no HFSS project open, or it is not saved.''')
 
     def new_design(self, design_name, solution_type, design_type="HFSS"):
-        design_name = increment_name(
+        design_name_int = increment_name(
             design_name, [d.GetName() for d in self._project.GetDesigns()])
-        return HfssDesign(self,
-                          self._project.InsertDesign(design_type, design_name, solution_type, ""))
+        return HfssDesign(
+            self,
+            self._project.InsertDesign(design_type, design_name_int,
+                                       solution_type, ""))
 
     def get_design(self, name):
         return HfssDesign(self, self._project.GetDesign(name))
@@ -585,7 +590,7 @@ class HfssProject(COMWrapper):
         """Create a new driven model design
 
         Args:
-            name (str): Name of driven modal design
+            name (str): Name of driven modal design    
         """
         return self.new_design(name, "DrivenModal")
 
@@ -599,7 +604,6 @@ class HfssProject(COMWrapper):
 
     def new_q3d_design(self, name: str):
         """Create a new Q3D design.
-
         Args:
             name (str): Name of Q3D design
         """

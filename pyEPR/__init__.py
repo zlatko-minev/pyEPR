@@ -31,7 +31,6 @@
 #    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
-
 """
 **pyEPR**
 
@@ -60,7 +59,7 @@ Automated analysis of lumped and distributed circuits is provided.
 @author: Zlatko Minev, Zaki Leghas, ... and the pyEPR team
 @site: https://github.com/zlatko-minev/pyEPR
 @license: "BSD-3-Clause"
-@version: 0.8.4.4
+@version: 0.8.4.5
 @maintainer: Zlatko K. Minev and  Asaf Diringer
 @email: zlatko.minev@aya.yale.edu
 @url: https://github.com/zlatko-minev/pyEPR
@@ -88,10 +87,12 @@ except (ImportError, ModuleNotFoundError):
 
 __author__ = "Zlatko Minev, Zaki Leghas, and the pyEPR team"
 __copyright__ = "Copyright 2015-2020, pyEPR team"
-__credits__ = ["Zlatko Minev", "Zaki Leghtas,", "Phil Rheinhold",
-               "Asaf Diringer", "Will Livingston", "Steven Touzard"]
+__credits__ = [
+    "Zlatko Minev", "Zaki Leghtas,", "Phil Rheinhold", "Asaf Diringer",
+    "Will Livingston", "Steven Touzard"
+]
 __license__ = "BSD-3-Clause"
-__version__ = "0.8.4.4"
+__version__ = "0.8.4.5"
 __maintainer__ = "Zlatko K. Minev and  Asaf Diringer"
 __email__ = "zlatko.minev@aya.yale.edu"
 __url__ = r'https://github.com/zlatko-minev/pyEPR'
@@ -102,7 +103,6 @@ __status__ = "Dev-Production"
 from ._config_default import get_config
 config = get_config()
 
-
 ##############################################################################
 # Set up logging -- only on first loading of module, not on reloading.
 logger = logging.getLogger('pyEPR')  # singleton
@@ -111,21 +111,19 @@ if not len(logger.handlers):
     set_up_logger(logger)
     del set_up_logger
 
-
-
 ##############################################################################
 #
 # Check that required packages are available. If not raise log warning.
 
 try:
     import pandas as pd
-    warnings.filterwarnings('ignore', category=pd.io.pytables.PerformanceWarning)
+    warnings.filterwarnings('ignore',
+                            category=pd.io.pytables.PerformanceWarning)
     del pd
 except (ImportError, ModuleNotFoundError):
     if config.internal.warn_missing_import:
         logger.warning("IMPORT WARNING: `pandas` python package not found. %s",
                        config.internal.error_msg_missing_import)
-
 
 # Check for a few usually troublesome packages
 if config.internal.warn_missing_import:
@@ -135,7 +133,8 @@ if config.internal.warn_missing_import:
         import qutip
         del qutip
     except (ImportError, ModuleNotFoundError):
-        logger.warning("""IMPORT WARNING: `qutip` package not found.
+        logger.warning(
+            """IMPORT WARNING: `qutip` package not found.
         Numerical diagonalization will not work. Please install, e.g.:
             $ conda  install -c conda-forge qutip
         %s""", config.internal.error_msg_missing_import)
@@ -144,7 +143,8 @@ if config.internal.warn_missing_import:
         import pythoncom
         del pythoncom
     except (ImportError, ModuleNotFoundError):
-        logger.warning("""IMPORT WARNING:
+        logger.warning(
+            """IMPORT WARNING:
         Python package 'pythoncom' could not be loaded
         It is used in communicting with HFSS on PCs. If you wish to do this, please set it up.
         For Linux, check the HFSS python linux files for the com module used. It is equivalent,
@@ -156,18 +156,20 @@ if config.internal.warn_missing_import:
         del Dispatch
         del CDispatch
     except (ImportError, ModuleNotFoundError):
-        logger.warning("""IMPORT WARNING: Could not load from 'win32com.client'.
+        logger.warning(
+            """IMPORT WARNING: Could not load from 'win32com.client'.
         The communication to hfss won't work. If you want to use it, you need to set it up.
         %s""", config.internal.error_msg_missing_import)
 
     try:
-        import pint # units
+        import pint  # units
         del pint
     except (ImportError, ModuleNotFoundError):
-        logger.error("""IMPORT ERROR:
+        logger.error(
+            """IMPORT ERROR:
         Python package 'pint' could not be loaded. It is used in communicting with HFSS. Try:
-            $ conda install -c conda-forge pint \n%s""", config.internal.error_msg_missing_import)
-
+            $ conda install -c conda-forge pint \n%s""",
+            config.internal.error_msg_missing_import)
 
 # remove unused
 del Path, warnings, logging
@@ -184,12 +186,22 @@ from .ansys import parse_units, parse_units_user, parse_entry
 from .core import ProjectInfo, DistributedAnalysis, QuantumAnalysis,\
                   Project_Info, pyEPR_HFSSAnalysis, pyEPR_Analysis # names to be depricated
 
-
-__all__ = ['logger', 'config',
-           'toolbox', 'calcs', 'ansys', 'core',
-           'ProjectInfo',  'DistributedAnalysis', 'QuantumAnalysis',
-           'Project_Info', 'pyEPR_HFSSAnalysis','pyEPR_Analysis', # names to be depricated
-           'parse_units', 'parse_units_user', 'parse_entry'
-           ]
+__all__ = [
+    'logger',
+    'config',
+    'toolbox',
+    'calcs',
+    'ansys',
+    'core',
+    'ProjectInfo',
+    'DistributedAnalysis',
+    'QuantumAnalysis',
+    'Project_Info',
+    'pyEPR_HFSSAnalysis',
+    'pyEPR_Analysis',  # names to be depricated
+    'parse_units',
+    'parse_units_user',
+    'parse_entry'
+]
 
 # TODO: Add "about" method. Add to tutorial
