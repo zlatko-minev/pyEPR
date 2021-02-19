@@ -501,6 +501,9 @@ class HfssProject(COMWrapper):
     def get_designs(self):
         return [HfssDesign(self, d) for d in self._project.GetDesigns()]
 
+    def get_design_names(self):
+        return [d.GetName() for d in self._project.GetDesigns()]
+
     def save(self, path=None):
         if path is None:
             self._project.Save()
