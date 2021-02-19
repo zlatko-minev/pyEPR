@@ -181,7 +181,7 @@ class ProjectInfo(object):
                 Defaults to ``None``, which will get the current active one.
 
             do_connect (bool) [additional]: Do create connection to Ansys or not? Defaults to ``True``.
-
+        
         """
 
         # Path: format path correctly to system convention
@@ -258,8 +258,7 @@ class ProjectInfo(object):
         if not designs_in_project:
             self.design = None
             logger.info(
-                f'No active design found (or error getting active design).'
-            )
+                f'No active design found (or error getting active design).')
             return
 
         if self.design_name is None:
@@ -269,7 +268,8 @@ class ProjectInfo(object):
                 self.design_name = self.design.name
                 logger.info(
                     '\tOpened active design\n'
-                    f'\tDesign:    {self.design_name} [Solution type: {self.design.solution_type}]')
+                    f'\tDesign:    {self.design_name} [Solution type: {self.design.solution_type}]'
+                )
             except Exception as e:
                 # No active design
                 self.design = None
@@ -283,7 +283,8 @@ class ProjectInfo(object):
                 self.design = self.project.get_design(self.design_name)
                 logger.info(
                     '\tOpened active design\n'
-                    f'\tDesign:    {self.design_name} [Solution type: {self.design.solution_type}]')
+                    f'\tDesign:    {self.design_name} [Solution type: {self.design.solution_type}]'
+                )
 
             except Exception as e:
                 _traceback = sys.exc_info()[2]
@@ -306,13 +307,16 @@ class ProjectInfo(object):
                 if len(setup_names) == 0:
                     logger.warning('\tNo design setup detected.')
                     if self.design.solution_type == 'Eigenmode':
-                        logger.warning(
-                            '\tCreating eigenmode default setup one.')
+                        logger.warning('\tCreating eigenmode default setup.')
                         setup = self.design.create_em_setup()
                         self.setup_name = setup.name
                     elif self.design.solution_type == 'DrivenModal':
-                        setup = self.design.create_dm_setup(
-                        )  # adding a driven modal design
+                        logger.warning('\tCreating drivenmodal default setup.')
+                        setup = self.design.create_dm_setup()
+                        self.setup_name = setup.name
+                    elif self.design.solution_type == 'Q3D':
+                        logger.warning('\tCreating Q3D default setup.')
+                        setup = self.design.create_q3d_setup()
                         self.setup_name = setup.name
                 else:
                     self.setup_name = setup_names[0]
