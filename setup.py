@@ -29,8 +29,9 @@ with open(here / "requirements.txt", encoding="utf-8") as f:
 
 doclines = __doc__.split('\n')
 
+# yapf: disable
 setup(name='pyEPR-quantum',
-      version='0.8.4.4',
+      version='0.8.4.5',
       description = doclines[0],
       long_description=long_description,
       long_description_content_type="text/markdown",
@@ -58,3 +59,4 @@ setup(name='pyEPR-quantum',
       # install_requires=['numpy','pandas','pint','matplotlib','attrdict','sympy','IPython'],
       install_requires=requirements
       )
+# yapf: enable
