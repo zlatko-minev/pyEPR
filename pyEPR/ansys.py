@@ -590,8 +590,7 @@ class HfssProject(COMWrapper):
         """Create a new driven model design
 
         Args:
-            name (str): Name of driven modal design
-            
+            name (str): Name of driven modal design    
         """
         return self.new_design(name, "DrivenModal")
 
@@ -605,7 +604,6 @@ class HfssProject(COMWrapper):
 
     def new_q3d_design(self, name: str):
         """Create a new Q3D design.
-        
         Args:
             name (str): Name of Q3D design
         """

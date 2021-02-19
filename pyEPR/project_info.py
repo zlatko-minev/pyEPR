@@ -181,6 +181,7 @@ class ProjectInfo(object):
                 Defaults to ``None``, which will get the current active one.
 
             do_connect (bool) [additional]: Do create connection to Ansys or not? Defaults to ``True``.
+        
         """
 
         # Path: format path correctly to system convention
