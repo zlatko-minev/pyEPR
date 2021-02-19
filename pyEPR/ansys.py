@@ -593,7 +593,7 @@ class HfssProject(COMWrapper):
             name (str): Name of driven modal design
             
         """
-       return self.new_design(name, "DrivenModal")
+        return self.new_design(name, "DrivenModal")
 
     def new_em_design(self, name: str):
         """Create a new eigenmode design
@@ -601,7 +601,7 @@ class HfssProject(COMWrapper):
         Args:
             name (str): Name of eigenmode design
         """
-       return self.new_design(name, "Eigenmode")
+        return self.new_design(name, "Eigenmode")
 
     def new_q3d_design(self, name: str):
         """Create a new Q3D design.

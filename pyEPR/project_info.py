@@ -165,8 +165,7 @@ class ProjectInfo(object):
                  project_name: str = None,
                  design_name: str = None,
                  setup_name: str = None,
-                 do_connect: bool = True,
-                 get_existing=False):
+                 do_connect: bool = True):
         """
         Keyword Arguments:
 
@@ -182,10 +181,6 @@ class ProjectInfo(object):
                 Defaults to ``None``, which will get the current active one.
 
             do_connect (bool) [additional]: Do create connection to Ansys or not? Defaults to ``True``.
-
-            get_existing (bool):When false, append incremented integer to name and insert a new design.
-                                When true, if the design is found in project, use the existing design without appending integer.
-
         """
 
         # Path: format path correctly to system convention
@@ -212,7 +207,7 @@ class ProjectInfo(object):
         self.setup = None
 
         if do_connect:
-            self.connect(get_existing=get_existing)
+            self.connect()
             self.dissipative['pinfo'] = self
 
     _Forbidden = [
@@ -340,13 +335,10 @@ class ProjectInfo(object):
             self.setup = None
             self.setup_name = None
 
-    def connect(self, get_existing=False):
+    def connect(self):
         """
         Do establish connection to Ansys desktop.
         Connects to project and then get design and setup
-
-        get_existing (bool):When false, append incremented integer to name and insert a new design.
-                                When true, if the design is found in project, use the existing design without appending integer.
         """
 
         self.connect_project()
