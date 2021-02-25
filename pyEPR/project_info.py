@@ -357,7 +357,7 @@ class ProjectInfo(object):
 
         if self.project and self.design:
             logger.info(
-                '\tConnection to Ansys established successfully. \N{grinning face} \n'
+                f'\tConnected to project \"{self.project_name}\" and design \"{self.design_name}\" \N{grinning face} \n'
             )
 
         if not self.project:
@@ -367,7 +367,7 @@ class ProjectInfo(object):
 
         if not self.design:
             logger.info(
-                '\t Design not detected in project. Is there a design in your project? \N{thinking face} \n'
+                f'\t Connected to project \"{self.project_name}\". No design detected'
             )
 
         return self
@@ -385,16 +385,16 @@ class ProjectInfo(object):
         """
         if name is None:
             return None
-        else:
-            self.setup = self.design.get_setup(name=self.setup_name)
-            if self.setup is None:
-                logger.error(f"Could not retrieve setup: {self.setup_name}\n \
-                               Did you give the right name? Does it exist?")
 
-            self.setup_name = self.setup.name
-            logger.info(
-                f'\tOpened setup `{self.setup_name}`  ({type(self.setup)})')
-            return self.setup
+        self.setup = self.design.get_setup(name=name)
+        if self.setup is None:
+            logger.error(f"Could not retrieve setup: {name}\n \
+                        Did you give the right name? Does it exist?")
+
+        self.setup_name = self.setup.name
+        logger.info(
+            f'\tOpened setup `{self.setup_name}`  ({type(self.setup)})')
+        return self.setup
 
     def check_connected(self):
         """
@@ -409,7 +409,7 @@ class ProjectInfo(object):
 
     def disconnect(self):
         '''
-        Disconnect from existing HFSS design.
+        Disconnect from existing Ansys Desktop API.
         '''
         assert self.check_connected() is True,\
             "It does not appear that you have connected to HFSS yet.\
