@@ -385,7 +385,6 @@ class ProjectInfo(object):
         """
         if name is None:
             return None
-
         self.setup = self.design.get_setup(name=name)
         if self.setup is None:
             logger.error(f"Could not retrieve setup: {name}\n \

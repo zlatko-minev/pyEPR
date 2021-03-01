@@ -1758,7 +1758,6 @@ class HfssFrequencySweep(COMWrapper):
 
         for f in formats:
             fmts_lists[f[0]].append((int(f[1]), int(f[2])))
-
         ret = [None] * len(formats)
         freq = None
 
@@ -1775,11 +1774,13 @@ class HfssFrequencySweep(COMWrapper):
                 # WARNING for python 3 probably need to use genfromtxt
                 if freq is None:
                     freq = array[:, 0]
+                # TODO: If Ansys version is 2019, use 'Real' and 'Imag'
+                # in place of 'Re' and 'Im
                 for i, j in list:
-                    real_idx = colnames.index("%s[%d,%d]_Real" %
-                                              (data_type, i, j))
-                    imag_idx = colnames.index("%s[%d,%d]_Imag" %
-                                              (data_type, i, j))
+                    real_idx = colnames.index("%s[%d,%d]_Re" %
+                                            (data_type, i, j))
+                    imag_idx = colnames.index("%s[%d,%d]_Im" %
+                                            (data_type, i, j))
                     c_arr = array[:, real_idx] + 1j * array[:, imag_idx]
                     ret[formats.index("%s%d%d" % (data_type, i, j))] = c_arr
 
