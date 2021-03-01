@@ -255,19 +255,19 @@ def _add_release_fn(fn):
 
 def release():
     '''
-    Release COM connection to HFSS.
+    Release COM connection to Ansys.
     '''
     global _release_fns
     for fn in _release_fns:
         fn()
     time.sleep(0.1)
 
-    # Note that _GetInterfaceCount is a memeber
+    # Note that _GetInterfaceCount is a member
     refcount = pythoncom._GetInterfaceCount()  # pylint: disable=no-member
 
     if refcount > 0:
         print("Warning! %d COM references still alive" % (refcount))
-        print("HFSS will likely refuse to shut down")
+        print("Ansys will likely refuse to shut down")
 
 
 class COMWrapper(object):
@@ -403,7 +403,8 @@ class HfssDesktop(COMWrapper):
         self._desktop.CloseAllWindows()
 
     def project_count(self):
-        return self._desktop.Count()
+        count = len(self._desktop.GetProjects())
+        return count
 
     def get_active_project(self):
         return HfssProject(self, self._desktop.GetActiveProject())
@@ -1080,17 +1081,12 @@ class HfssSetup(HfssPropertyObject):
         name = increment_name(name, self.get_sweep_names())
         params = [
             "NAME:" + name,
-            "IsEnabled:=",
-            True,
-            "Type:=",
-            type,
-            "SaveFields:=",
-            save_fields,
-            "SaveRadFields:=",
-            False,
+            "IsEnabled:=",     True,
+            "Type:=",          type,
+            "SaveFields:=",    save_fields,
+            "SaveRadFields:=", False,
             # "GenerateFieldsForAllFreqs:="
-            "ExtrapToDC:=",
-            False,
+            "ExtrapToDC:=",    False,
         ]
 
         # not sure hwen extacyl this changed between 2016 and 2019
@@ -1404,6 +1400,11 @@ class AnsysQ3DSetup(HfssSetup):
         # <FileName>, <SolnType>, <DesignVariationKey>, <Solution>, <Matrix>, <ResUnit>,
         # <IndUnit>, <CapUnit>, <CondUnit>, <Frequency>, <MatrixType>, <PassNumber>,
         # <ACPlusDCResistance>
+        logger.info(f'Exporting matrix data to ({path}, {soln_type}, {variation}, '
+                                             f'{self.name}:{solution_kind}, '
+                                             '"Original", "ohm", "nH", "fF", '
+                                             f'"mSie", {frequency}, {MatrixType}, '
+                                             f'{pass_number}, {ACPlusDCResistance}')
         self.parent._design.ExportMatrixData(path, soln_type, variation,
                                              f'{self.name}:{solution_kind}',
                                              "Original", "ohm", "nH", "fF",
