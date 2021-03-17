@@ -9,12 +9,11 @@ Welcome to pyEPR :beers:! &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(see [arXiv:2010.00620](
 
 ### Automated Python module for the design and quantization of Josephson quantum circuits
 
-<br>
 
-## Documentation
+### Documentation
 
 [Read the docs here.](https://pyepr-docs.readthedocs.io)
-
+<br>
 
 ## Scientific work:
 * Minev, Z. K., Leghtas, Z., Mudhada, S. O., Reinhold, P., Diringer, A., & Devoret, M. H. (2018). [pyEPR: The energy-participation-ratio (EPR) open-source framework for quantum device design.](https://github.com/zlatko-minev/pyEPR/blob/master/pyEPR.bib) 
