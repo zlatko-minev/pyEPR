@@ -19,10 +19,12 @@ Welcome to pyEPR :beers:! &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(see [arXiv:2010.00620](
 
 <br>
 
-#### Abstract
+### Relevant work:
+* Minev, Z. K., Leghtas, Z., Mudhada, S. O., Reinhold, P., Diringer, A., & Devoret, M. H. (2018). [pyEPR: The energy-participation-ratio (EPR) open-source framework for quantum device design.](https://github.com/zlatko-minev/pyEPR/blob/master/pyEPR.bib) 
+* Minev, Z. K., Leghtas, Z., Mundhada, S. O., Christakis, L., Pop, I. M., & Devoret, M. H. (2020). Energy-participation quantization of Josephson circuits. ArXiv. Retrieved from http://arxiv.org/abs/2010.00620 (2020)
+* Z.K. Minev, Ph.D. Dissertation, Yale University (2018), Chapter 4. ([arXiv:1902.10355](https://arxiv.org/abs/1902.10355))  (2018) 
 
-Superconducting microwave circuits incorporating nonlinear devices, such as Josephson junctions, are one of the leading platforms for emerging quantum technologies. Increasing circuit complexity further requires efficient methods for the calculation and optimization of the spectrum, nonlinear interactions, and dissipation in multi-mode distributed quantum circuits. Here, we present a method based on the energy-participation ratio (EPR) of a dissipative or nonlinear element in an electromagnetic mode. The EPR, a number between zero and one, quantifies how much of the energy of a mode is stored in each element. It obeys universal constraints---valid regardless of the circuit topology and nature of the nonlinear elements. The EPR of the elements are calculated from a unique, efficient electromagnetic eigenmode simulation of the linearized circuit, including lossy elements. Their set is the key input to the determination of the quantum Hamiltonian of the system. The method provides an intuitive and simple-to-use tool to quantize multi-junction circuits. It is especially well-suited for finding the Hamiltonian and dissipative parameters of weakly anharmonic systems, such as transmon qubits coupled to resonators, or Josephson transmission lines. We experimentally tested this method on a variety of Josephson circuits, and demonstrated agreement within several percents for nonlinear couplings and modal Hamiltonian parameters, spanning five-orders of magnitude in energy, across a dozen samples. Here, in this package, all routines of the EPR approach are fully automated. 
-[arXiv:2010.00620](https://arxiv.org/abs/2010.00620)
+
 
 
 ## Documentation
@@ -58,16 +60,6 @@ Superconducting microwave circuits incorporating nonlinear devices, such as Jose
 * ... and many more! (Please e-mail `zlatko.minev@aya.yale.edu` with updates.)
 
 
-## How do I cite `pyEPR` when I publish?
-Cite the following:
-* Z.K. Minev, Z. Leghtas, _et al._ ([arXiv:2010.00620](https://arxiv.org/abs/2010.00620)) (2020)
-or the earlier
-* Z.K. Minev, Ph.D. Dissertation, Yale University (2018), Chapter 4. ([arXiv:1902.10355](https://arxiv.org/abs/1902.10355))  (2018) [when using this, use the arXiv id]
-
-You can additionally drop us an e-mail [`zlatko.minev@aya.yale.edu`](https://www.zlatko-minev.com/) or [`zaki leghtas`](http://cas.ensmp.fr/~leghtas/)
-
-
-
 <br>
 
 # Contents:
@@ -88,6 +80,8 @@ You can additionally drop us an e-mail [`zlatko.minev@aya.yale.edu`](https://www
 3. **Tutorials**  Learn how to use using the [jupyter notebook tutorials](https://github.com/zlatko-minev/pyEPR/tree/master/_tutorial_notebooks)
 4. **Stay up to date** Enjoy and make sure to git add the master remote branch  `git remote add MASTER_MINEV git://github.com/zlatko-minev/pyEPR.git` [(help?)](https://stackoverflow.com/questions/11266478/git-add-remote-branch).
 5. **Cite `pyEPR`**  [arXiv:2010.00620](https://arxiv.org/abs/2010.00620) / [arXiv:1902.10355](https://arxiv.org/abs/1902.10355)  and enjoy! :birthday:
+
+
 
 #### Start-up example
 
@@ -317,6 +311,10 @@ This error happens when trying to read in an hdf file with numpy version 1.16, s
 Original versions of pyHFSS.py and pyNumericalDiagonalization.py contributed by [Phil Rheinhold](https://github.com/PhilReinhold), excellent original [repo](https://github.com/PhilReinhold/pyHFSS).
 * Terms of use: Use freely and kindly cite the paper (arXiv link to be posted here) and/or this package.
 * How can I contribute? Contact [Z. Minev](https://www.zlatko-minev.com/) or [Z. Leghtas](http://cas.ensmp.fr/~leghtas/).
+
+## How do I cite `pyEPR`?
+Use this [bibtex](https://github.com/zlatko-minev/pyEPR/blob/master/pyEPR.bib) for `pyEPR` and for the method use the energy-participation-ratio paper [arXiv:2010.00620](https://arxiv.org/abs/2010.00620). 
+
 
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/zlatko-minev/pyEPR/graphs/commit-activity)
 
