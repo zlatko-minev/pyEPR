@@ -2936,6 +2936,30 @@ class CalcObject(COMWrapper):
     def integrate_line(self, name):
         return self._integrate(name, "EnterLine")
 
+    def normal2surface(self, name):
+        ''' return the part normal to surface.
+            Complex Vector. '''
+        stack = self.stack + [("EnterSurf", name),
+                                ("CalcOp",    "Normal")]
+        stack.append(("CalcOp", "Dot"))
+        stack.append(("EnterSurf", name))
+        stack.append(("CalcOp",    "Normal"))
+        stack.append(("CalcOp", "*"))
+        return CalcObject(stack, self.setup)
+
+    def tangent2surface(self, name):
+        ''' return the part tangent to surface.
+            Complex Vector. '''
+        stack = self.stack + [("EnterSurf", name),
+                                ("CalcOp",    "Normal")]
+        stack.append(("CalcOp", "Dot"))
+        stack.append(("EnterSurf", name))
+        stack.append(("CalcOp",    "Normal"))
+        stack.append(("CalcOp", "*"))
+        stack = self.stack + stack
+        stack.append(("CalcOp", "-"))
+        return CalcObject(stack, self.setup)
+
     def integrate_line_tangent(self, name):
         ''' integrate line tangent to vector expression \n
             name = of line to integrate over '''
