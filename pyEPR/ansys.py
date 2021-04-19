@@ -41,14 +41,14 @@ from . import logger
 try:
     import pythoncom
 except (ImportError, ModuleNotFoundError):
-    pass
+    raise NameError ("pythoncom module not installed. Please install.")
 
 try:
     # TODO: Replace `win32com` with Linux compatible package.
     # See Ansys python files in IronPython internal.
     from win32com.client import Dispatch, CDispatch
 except (ImportError, ModuleNotFoundError):
-    pass
+    raise NameError ("win32com module not installed. Please install.")
 
 try:
     from pint import UnitRegistry
