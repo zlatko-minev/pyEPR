@@ -55,7 +55,8 @@ try:
     ureg = UnitRegistry()
     Q = ureg.Quantity
 except (ImportError, ModuleNotFoundError):
-    ureg = "Pint module not installed. Please install."
+    raise NameError ("Pint module not installed. Please install.")
+
 
 ##############################################################################
 ###
