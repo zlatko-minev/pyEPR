@@ -151,14 +151,14 @@ class DistributedAnalysis(object):
         # Modes and variations - the following get updated in update_variation_information
         self.n_modes = int(1)  # : Number of eigenmodes
         self.modes = None
-        #: List of variation indecies, which are strings of ints, such as ['0', '1']
+        #: List of variation indices, which are strings of ints, such as ['0', '1']
         self.variations = []
-        self.variations_analyzed = []  # : List of analyzed variations. List of indecies
+        self.variations_analyzed = []  # : List of analyzed variations. List of indices
 
         # String identifier of variables, such as  "Cj='2fF' Lj='12.5nH'"
         self._nominal_variation = ''
         self._list_variations = ("",)  # tuple set of variables
-        # container for eBBQ list of varibles; basically the same as _list_variations
+        # container for eBBQ list of variables; basically the same as _list_variations
         self._hfss_variables = Dict()
 
         self._previously_analyzed = set()  # previously analyzed variations
@@ -356,7 +356,6 @@ class DistributedAnalysis(object):
 
                 ['Lj1:=','13nH', 'QubitGap:=','100um']
         '''
-
         if variation is None:
             lv = self._nominal_variation  # "Cj='2fF' Lj='12.5nH'"
             lv = self._parse_listvariations(lv)
@@ -369,7 +368,7 @@ class DistributedAnalysis(object):
 
     @property
     def n_variations(self):
-        """ Number of **solved** variaitons, corresponding to the
+        """ Number of **solved** variations, corresponding to the
         selected Setup. """
         return len(self._list_variations)
 
@@ -477,7 +476,6 @@ class DistributedAnalysis(object):
             n_modes, _list_variations, nominal_variation, n_variations
 
         '''
-
         # from oDesign
         self._nominal_variation = self.design.get_nominal_variation()
 
@@ -888,7 +886,7 @@ class DistributedAnalysis(object):
 
     def get_Qsurface_all(self, mode, variation, U_E=None):
         '''
-        caculate the contribution to Q of a dieletric layer of dirt on all surfaces
+        calculate the contribution to Q of a dielectric layer of dirt on all surfaces
         set the dirt thickness and loss tangent in the config file
         ref: http://arxiv.org/pdf/1509.01854.pdf
         '''
@@ -1027,10 +1025,10 @@ class DistributedAnalysis(object):
             #print('\tV_peak=', V_peak)
 
         # ------------------------------------------------------------
-        # Calcualte participations from the peak voltage and currents
+        # Calculate participation from the peak voltage and currents
         #
 
-        # All junction capactive and inductive lumped energies - all peak
+        # All junction capacitive and inductive lumped energies - all peak
         U_J_inds = {j_name: 0.5*Ljs[j_name] * I_peak_[j_name]
                     ** 2 for j_name in self.pinfo.junctions}
         U_J_caps = {j_name: 0.5*Cjs[j_name] * V_peak_[j_name]
@@ -1423,7 +1421,7 @@ class DistributedAnalysis(object):
             pickle.dump(to_save, handle)  # , protocol=pickle.HIGHEST_PROTOCOL)
 
     def load(self, filepath=None):
-        """Utility function to load reuslts file
+        """Utility function to load results file
 
         Keyword Arguments:
             filepath {[type]} -- [description] (default: {None})

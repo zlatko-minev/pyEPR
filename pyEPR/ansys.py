@@ -41,21 +41,22 @@ from . import logger
 try:
     import pythoncom
 except (ImportError, ModuleNotFoundError):
-    pass
+    pass #raise NameError ("pythoncom module not installed. Please install.")
 
 try:
     # TODO: Replace `win32com` with Linux compatible package.
     # See Ansys python files in IronPython internal.
     from win32com.client import Dispatch, CDispatch
 except (ImportError, ModuleNotFoundError):
-    pass
+    pass #raise NameError ("win32com module not installed. Please install.")
 
 try:
     from pint import UnitRegistry
     ureg = UnitRegistry()
     Q = ureg.Quantity
 except (ImportError, ModuleNotFoundError):
-    ureg = "Pint module not installed. Please install."
+    pass # raise NameError ("Pint module not installed. Please install.")
+
 
 ##############################################################################
 ###
@@ -2935,6 +2936,30 @@ class CalcObject(COMWrapper):
 
     def integrate_line(self, name):
         return self._integrate(name, "EnterLine")
+
+    def normal2surface(self, name):
+        ''' return the part normal to surface.
+            Complex Vector. '''
+        stack = self.stack + [("EnterSurf", name),
+                                ("CalcOp",    "Normal")]
+        stack.append(("CalcOp", "Dot"))
+        stack.append(("EnterSurf", name))
+        stack.append(("CalcOp",    "Normal"))
+        stack.append(("CalcOp", "*"))
+        return CalcObject(stack, self.setup)
+
+    def tangent2surface(self, name):
+        ''' return the part tangent to surface.
+            Complex Vector. '''
+        stack = self.stack + [("EnterSurf", name),
+                                ("CalcOp",    "Normal")]
+        stack.append(("CalcOp", "Dot"))
+        stack.append(("EnterSurf", name))
+        stack.append(("CalcOp",    "Normal"))
+        stack.append(("CalcOp", "*"))
+        stack = self.stack + stack
+        stack.append(("CalcOp", "-"))
+        return CalcObject(stack, self.setup)
 
     def integrate_line_tangent(self, name):
         ''' integrate line tangent to vector expression \n
