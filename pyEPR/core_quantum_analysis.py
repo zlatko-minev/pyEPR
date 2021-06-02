@@ -605,7 +605,7 @@ class QuantumAnalysis(object):
                           print_result: bool = True,
                           junctions: List = None,
                           modes: List = None):
-        # TODO avoide analyzing a previously analyzed variation
+        # TODO avoid analyzing a previously analyzed variation
         '''
         Core analysis function to call!
 
@@ -620,10 +620,10 @@ class QuantumAnalysis(object):
         ----------------
             f_0 [MHz]    : Eigenmode frequencies computed by HFSS; i.e., linear freq returned in GHz
             f_1 [MHz]    : Dressed mode frequencies (by the non-linearity; e.g., Lamb shift, etc. ).
-                           If numerical diagonalizaiton is run, then we return the numerically diagonalizaed
-                           frequencies, otherwise, use 1st order pertuirbation theory on the 4th order
+                           If numerical diagonalization is run, then we return the numerically diagonalized
+                           frequencies, otherwise, use 1st order perturbation theory on the 4th order
                            expansion of the cosine.
-            f_ND [MHz]   : Numerical diagonalizaiton
+            f_ND [MHz]   : Numerical diagonalization
             chi_O1 [MHz] : Analytic expression for the chis based on a cos trunc to 4th order, and using 1st
                            order perturbation theory. Diag is anharmonicity, off diag is full cross-Kerr.
             chi_ND [MHz] : Numerically diagonalized chi matrix. Diag is anharmonicity, off diag is full
@@ -1004,7 +1004,7 @@ class QuantumAnalysis(object):
             index: eigenmode label
             columns: variation label
         """
-        label = 'f_1' if numeric else 'f_ND'
+        label = 'f_ND' if numeric else 'f_1'
         return self.results.vs_variations(label, vs=swp_variable, to_dataframe=True, variations=variations)
 
     def get_quality_factors(self, swp_variable='variation', variations: list = None):
