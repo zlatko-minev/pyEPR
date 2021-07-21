@@ -52,11 +52,11 @@ class HamiltonianResultsContainer(OrderedDict):
 
     def __init__(self, dict_file=None, data_dir=None):
         """ input:
-           dict file - 1. ethier None to create an empty results hamilitoninan as
+           dict file - 1. ethier None to create an empty results hamiltonian as
                        as was done in the original code
 
                        2. or a string with the name of the file where the file of the
-                       previously saved HamiltonianResultsContainer instatnce we wish
+                       previously saved HamiltonianResultsContainer instance we wish
                        to load
 
                        3. or an existing instance of a dict class which will be
@@ -834,7 +834,7 @@ class QuantumAnalysis(object):
         """Plot results versus variation
 
         Keyword Arguments:
-            swp_variable {str} -- Variable against which we swept. If noen, then just
+            swp_variable {str} -- Variable against which we swept. If none, then just
                                     take the variation index (default: {None})
             variations {list} -- [description] (default: {None})
             fig {[type]} -- [description] (default: {None})
@@ -842,7 +842,6 @@ class QuantumAnalysis(object):
         Returns:
             fig, axs
         """
-
         x_label = x_label or swp_variable
 
         # Create figure and axes
@@ -852,7 +851,7 @@ class QuantumAnalysis(object):
             axs = fig.axs
 
         ############################################################################
-        ### Axis: Frequencies
+        # Axis: Frequencies
         f0 = self.results.get_frequencies_HFSS(
             variations=variations, vs=swp_variable).transpose()
         f1 = self.results.get_frequencies_O1(
@@ -866,7 +865,7 @@ class QuantumAnalysis(object):
         ax = axs[0, 0]
         ax.set_title('Modal frequencies (MHz)')
 
-        # TODO: shouldmove these kwargs to the config
+        # TODO: should move these kwargs to the config
         cmap = cmap_discrete(n_modes)
         kw = dict(ax=ax, color=cmap, legend=False, lw=0, ms=0)
 
@@ -886,7 +885,7 @@ class QuantumAnalysis(object):
         plt_me_line.plot(**{**kw, **dict(lw=1, alpha=0.6, color='grey')})
 
         ############################################################################
-        # Axis: Quality factors'
+        # Axis: Quality factors
         Qs = self.get_quality_factors(swp_variable=swp_variable)
         Qs = Qs if variations is None else Qs[variations]
         Qs = Qs.transpose()
@@ -899,14 +898,14 @@ class QuantumAnalysis(object):
         ax.set_yscale('log')
 
         ############################################################################
-        ### Axis: Alpha and chi
+        # Axis: Alpha and chi
 
         axs[0][1].set_title('Anharmonicities (MHz)')
         axs[1][1].set_title('Cross-Kerr frequencies (MHz)')
 
         def plot_chi_alpha(chi, primary):
             """
-            Intenral function to plot chi and then also to plot alpha
+            Internal function to plot chi and then also to plot alpha
             """
             idx = pd.IndexSlice
             kw1 = dict(lw=0, ms=4,  marker='o' if primary else 'x')
@@ -930,13 +929,11 @@ class QuantumAnalysis(object):
                         chi_element = chi.loc[idx[:, mode], mode2].unstack(1)
                         chi_element.plot(
                             ax=ax, label=f"{mode},{mode2}", color=cmap[i], **kw1)
-
                         if primary:
                             chi_element.plot(ax=ax, **kw2)
 
         def do_legends():
-            legend_translucent(axs[0][1],  leg_kw=dict(
-                fontsize=7, title='Mode'))
+            legend_translucent(axs[0][1],  leg_kw=dict(fontsize=7, title='Mode'))
             legend_translucent(axs[1][1],  leg_kw=dict(fontsize=7))
 
         chiO1 = self.get_chis(variations=variations,
