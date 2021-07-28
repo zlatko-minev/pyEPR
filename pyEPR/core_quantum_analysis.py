@@ -447,7 +447,7 @@ class QuantumAnalysis(object):
         --------------------
             variations : None returns all_variations otherwise this is a list with number
                          as strings ['0', '1']
-            nalyze_previous :set to true if you wish to overwrite previous analysis
+            analyze_previous :set to true if you wish to overwrite previous analysis
         '''
 
         result = OrderedDict()
@@ -460,6 +460,7 @@ class QuantumAnalysis(object):
                 result[variation] = self.results[variation]
             else:
                 result[variation] = self.analyze_variation(variation, **kwargs)
+
 
         self.results.save()
 
@@ -637,10 +638,9 @@ class QuantumAnalysis(object):
             modes = list(range(self.n_modes))
         
         tmp_n_modes = self.n_modes
-        tmp_modes =self.modes[variation]
+        tmp_modes = self.modes[variation]
         self.n_modes = len(modes)
-        self.modes[variation]= modes
-    
+        self.modes[variation] = modes
 
         if (fock_trunc is None) or (cos_trunc is None):
             fock_trunc = cos_trunc = None
@@ -668,10 +668,10 @@ class QuantumAnalysis(object):
 
         if modes is not None:
             freqs_hfss = freqs_hfss[range(len(self.modes[variation])), ]
-            PJ = PJ[modes, :]
-            SJ = SJ[modes, :]
-            Om = Om[modes, :][:, modes]
-            PHI_zpf = PHI_zpf[modes, :]
+            PJ = PJ[range(len(modes)), :]
+            SJ = SJ[range(len(modes)), :]
+            Om = Om[range(len(modes)), :][:, range(len(modes))]
+            PHI_zpf = PHI_zpf[range(len(modes)), :]
             PJ_cap = PJ_cap[:, junctions]
 
         # Analytic 4-th order
@@ -691,8 +691,7 @@ class QuantumAnalysis(object):
             f1_ND, CHI_ND = None, None
 
         result = OrderedDict()
-        result['f_0'] = self.freqs_hfss[variation][modes] * \
-            1E3  # MHz - obtained directly from HFSS
+        result['f_0'] = self.freqs_hfss[variation][modes] * 1E3  # MHz - obtained directly from HFSS
         result['f_1'] = pd.Series(f1s)*1E3     # MHz
         result['f_ND'] = pd.Series(f1_ND)*1E-6  # MHz
         result['chi_O1'] = pd.DataFrame(CHI_O1)
@@ -731,18 +730,19 @@ class QuantumAnalysis(object):
             self.print_variation(variation)
             self.print_result(result)
     
-        self.n_modes = tmp_n_modes #TODO is this smart should consider defining the modes of intrest in the initilazaition of the quantum object
+        self.n_modes = tmp_n_modes # TODO is this smart should consider defining the modes of intrest in the initilazaition of the quantum object
         self.modes[variation]=tmp_modes 
         return result
+
     def full_report_variations(self, var_list: list=None):
         """see full_variation_report"""
         if var_list is None: var_list =self.variations
         for variation in var_list: 
             self.full_variation_report(variation)
     
-    def full_variation_report(self,variation):
+    def full_variation_report(self, variation):
         """
-        prints the results and paramters of a specific variation
+        prints the results and parameters of a specific variation
 
         Parameters
         ----------
@@ -757,8 +757,7 @@ class QuantumAnalysis(object):
         self.print_variation(variation)
         
         self.print_result(variation)
-        
-        
+
     def print_variation(self, variation):
         """
         Utility reporting function
@@ -782,7 +781,7 @@ class QuantumAnalysis(object):
         """
         if type(result) is str or type(result) is int: result = self.results[str(result)]
 
-        # TODO: actually make into dataframe with mode labela and junction labels
+        # TODO: actually make into dataframe with mode labels and junction labels
         pritm = lambda x, frmt="{:9.2g}": print_matrix(x, frmt=frmt)
 
         print('*** P (participation matrix, normalized.)')
@@ -915,6 +914,7 @@ class QuantumAnalysis(object):
             ax = axs[0, 1]
             for i, mode in enumerate(mode_idx):  # mode index number, mode index
                 alpha = chi.loc[idx[:, mode], mode].unstack(1)
+                alpha.columns = [mode]
                 alpha.plot(ax=ax, label=mode, color=cmap[i], **kw1)
                 if primary:
                     alpha.plot(ax=ax, **kw2)
@@ -927,8 +927,7 @@ class QuantumAnalysis(object):
                 for i, mode2 in enumerate(mode_idx):
                     if int(mode2) > int(mode):
                         chi_element = chi.loc[idx[:, mode], mode2].unstack(1)
-                        chi_element.plot(
-                            ax=ax, label=f"{mode},{mode2}", color=cmap[i], **kw1)
+                        chi_element.plot(ax=ax, label=f"{mode},{mode2}", color=cmap[i], **kw1)
                         if primary:
                             chi_element.plot(ax=ax, **kw2)
 

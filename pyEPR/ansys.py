@@ -1223,7 +1223,7 @@ class HfssSetup(HfssPropertyObject):
             df = pd.read_csv(io.StringIO(text2[3].strip()),
                              sep='|',
                              skipinitialspace=True,
-                             index_col=0).drop('Unnamed: 3', 1)
+                             index_col=0).drop('Unnamed: 3', axis=1)
         else:
             logger.error(f'ERROR IN reading in {temp}:\n{text}')
             df = None
@@ -1248,7 +1248,7 @@ class HfssSetup(HfssPropertyObject):
                              skipfooter=1,
                              skip_blank_lines=True,
                              engine='python')
-            df = df.drop('Unnamed: 9', 1)
+            df = df.drop('Unnamed: 9', axis=1)
         except Exception as e:
             print("ERROR in MESH reading operation.")
             print(e)
