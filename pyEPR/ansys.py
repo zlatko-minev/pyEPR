@@ -988,6 +988,9 @@ class HfssDesign(COMWrapper):
     def Clear_Field_Clac_Stack(self):
         self._fields_calc.CalcStack("Clear")
 
+    def clean_up_solutions(self):
+        self._design.DeleteFullVariation('All', True)  # Delete existing solutions
+
 
 class HfssSetup(HfssPropertyObject):
     prop_tab = "HfssTab"

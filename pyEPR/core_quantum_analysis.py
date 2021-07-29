@@ -157,7 +157,7 @@ class HamiltonianResultsContainer(OrderedDict):
 
         QUANTITIES:
             `f_0`  : HFSS Frequencies
-            `f_1`  : Analyutical first order PT on the p=4 term of the cosine
+            `f_1`  : Analytical first order PT on the p=4 term of the cosine
             `f_ND` : Numerically diagonalized
             `chi_O1`: chi matrix from 1st order PT
 
@@ -169,7 +169,7 @@ class HamiltonianResultsContainer(OrderedDict):
             vs {str} -- Swept against (default: {'variation'})
             to_dataframe {bool} -- convert or not the result to dataframe.
                          Make sure to call only if it can be converted to a DataFrame or can
-                         be concatinated into a multi-index DataFrame
+                         be concatenated into a multi-index DataFrame
 
         Returns:
             [type] -- [description]
@@ -192,7 +192,7 @@ class HamiltonianResultsContainer(OrderedDict):
             z = sort_df_col(pd.DataFrame(z))
             if self.sort_index:
                 z = self._do_sort_index(z)
-            z.index.name = 'eigenmode'
+            # z.index.name = 'eigenmode'
             z.columns.name = vs
 
         return z
@@ -549,7 +549,7 @@ class QuantumAnalysis(object):
         if np.any(Pm < 0.0):
             print_color("  ! Warning:  Some p_mj was found <= 0. This is probably a numerical error,'\
                 'or a super low-Q mode.  We will take the abs value.  Otherwise, rerun with more precision,'\
-                'inspect, and do due dilligence.)")
+                'inspect, and do due diligence.)")
             print(Pm, '\n')
             Pm = np.abs(Pm)
 
@@ -568,7 +568,7 @@ class QuantumAnalysis(object):
             :Om: Omega_mm matrix (in GHz) (\hbar = 1) Not radians.
             :EJ: E_jj matrix of Josephson energies (in same units as hbar omega matrix)
             :PHI_zpf: ZPFs in units of \phi_0 reduced flux quantum
-            :PJ_cap: capactive particiaption matrix
+            :PJ_cap: capacitive participation matrix
 
             Return all as *np.array*
                 PM, SIGN, Om, EJ, Phi_ZPF
