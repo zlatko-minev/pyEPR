@@ -964,14 +964,13 @@ class DistributedAnalysis(object):
 
 
         Potential errors:  If you dont have a line or rect by the right name you will prob
-        get an erorr o the type:
+        get an error of the type:
         com_error: (-2147352567, 'Exception occurred.', (0, None, None, None, 0, -2147024365), None)
         '''
 
         # ------------------------------------------------------------
-        # Calcualte all peak voltage and currents for all junctions in a given mode
+        # Calculate all peak voltage and currents for all junctions in a given mode
         method = self.pinfo.options.method_calc_P_mj
-
         I_peak_ = {}
         V_peak_ = {}
         Sj = pd.Series({})
@@ -992,12 +991,12 @@ class DistributedAnalysis(object):
                     variation, line_name, Lj, Cj)
 
                 logger.debug(
-                    f'Differnece in I_Peak calculation ala the two methods: {(_I_peak_1,_I_peak_2)}')
+                    f'Difference in I_Peak calculation ala the two methods: {(_I_peak_1,_I_peak_2)}')
 
                 V_peak = _V_peak_2  # make sure this is signed
                 I_peak = _I_peak_1
 
-            elif method == 'line_voltage':  # new preffered method
+            elif method == 'line_voltage':  # new preferred method
 
                 I_peak, V_peak, _ = self.calc_current_using_line_voltage(
                     variation, line_name, Lj, Cj)
@@ -1011,7 +1010,7 @@ class DistributedAnalysis(object):
             V_peak_[j_name] = V_peak
             Sj['s_' + j_name] = _Smj = 1 if V_peak > 0 else - 1
 
-            # REPORT prelimnary
+            # REPORT preliminary
             pmj_ind = 0.5*Ljs[j_name] * I_peak**2 / U_E
             pmj_cap = 0.5*Cjs[j_name] * V_peak**2 / U_E
             #print('\tpmj_ind=',pmj_ind, Ljs[j_name], U_E)
@@ -1155,6 +1154,7 @@ class DistributedAnalysis(object):
             eprd = epr.DistributedAnalysis(pinfo)
             eprd.do_EPR_analysis(append_analysis=False)
         """
+        
         if not modes is None:
             assert max(modes) < self.n_modes, 'Non-existing mode selected. \n'\
                 f'The possible modes are between 0 and {self.n_modes-1}.'
@@ -1175,7 +1175,7 @@ class DistributedAnalysis(object):
         self.pinfo.save()
 
         # Main loop - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        # TODO: Move inside of loop to funciton calle self.analyze_variation
+        # TODO: Move inside of loop to function calle self.analyze_variation
         for ii, variation in enumerate(variations):
             print(f'\nVariation {variation}  [{ii+1}/{len(variations)}]')
 
@@ -1202,7 +1202,7 @@ class DistributedAnalysis(object):
                 # This could fail if more varialbes are added after the simulation is compelted.
                 self.set_variation(variation)
             except Exception as e:
-                print('\tERROR: Could not set the variaiton string.'
+                print('\tERROR: Could not set the variation string.'
                       '\nPossible causes: Did you add a variable after the simulation was already solved? '
                       '\nAttempting to proceed nonetheless, should be just slower ...')
 
