@@ -621,10 +621,10 @@ class QuantumAnalysis(object):
         ----------------
             f_0 [MHz]    : Eigenmode frequencies computed by HFSS; i.e., linear freq returned in GHz
             f_1 [MHz]    : Dressed mode frequencies (by the non-linearity; e.g., Lamb shift, etc. ).
-                           If numerical diagonalization is run, then we return the numerically diagonalized
-                           frequencies, otherwise, use 1st order perturbation theory on the 4th order
+                           Result based on 1st order perturbation theory on the 4th order
                            expansion of the cosine.
-            f_ND [MHz]   : Numerical diagonalization
+            f_ND [MHz]   : Numerical diagonalization result of dressed mode frequencies.
+                           only available if `cos_trunc` and  `fock_trunc` are set (non None).
             chi_O1 [MHz] : Analytic expression for the chis based on a cos trunc to 4th order, and using 1st
                            order perturbation theory. Diag is anharmonicity, off diag is full cross-Kerr.
             chi_ND [MHz] : Numerically diagonalized chi matrix. Diag is anharmonicity, off diag is full
