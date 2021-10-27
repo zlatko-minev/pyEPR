@@ -34,7 +34,7 @@ succinctly plotted.
 
     # 3.  Perform microwave analysis on eigenmode solutions
     eprd = epr.DistributedAnalysis(pinfo)
-    if 1: # automatic reports
+    swp_var = 'Lj_alice' # Sweep variable from optimetric analysis that should be used on the x axis for the frequency plot
     eprd.quick_plot_frequencies(swp_var) # plot the solved frequencies before the analysis
     eprd.hfss_report_full_convergence() # report convergen
     eprd.do_EPR_analysis()
