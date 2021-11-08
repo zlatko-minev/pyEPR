@@ -265,7 +265,7 @@ class QuantumAnalysis(object):
         self.convergence = results['convergence']
         self.convergence_f_pass = results['convergence_f_pass']
 
-        self.n_modes = len(self.modes['0'])
+        self.n_modes = len(self.modes[self.variations[0]])
         self._renorm_pj = config.epr.renorm_pj
 
         # Unique variation params -- make a get function
@@ -600,7 +600,7 @@ class QuantumAnalysis(object):
         return PJ, SJ, Om, EJ, PHI_zpf, PJ_cap, n_zpf                 # All as np.array
 
     def analyze_variation(self,
-                          variation: List[str],
+                          variation: str,
                           cos_trunc: int = None,
                           fock_trunc: int = None,
                           print_result: bool = True,
