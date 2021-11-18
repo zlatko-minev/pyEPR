@@ -43,7 +43,8 @@ def epr_numerical_diagonalization(freqs, Ljs, ϕzpf,
              cos_trunc=8,
              fock_trunc=9,
              use_1st_order=False,
-             return_H=False):
+             return_H=False,
+             non_linear_potential=None):
     '''
     Numerical diagonalizaiton for pyEPR. Ask Zlatko for details.
 
@@ -63,7 +64,8 @@ def epr_numerical_diagonalization(freqs, Ljs, ϕzpf,
            ), "Please input the inductances in Henries. \N{nauseated face}"
 
     Hs = black_box_hamiltonian(freqs * 1E9, Ljs.astype(np.float), fluxQ*ϕzpf,
-                 cos_trunc, fock_trunc, individual=use_1st_order)
+                               cos_trunc, fock_trunc, individual=use_1st_order,
+                               non_linear_potential = non_linear_potential)
     f_ND, χ_ND, _, _ = make_dispersive(
         Hs, fock_trunc, ϕzpf, freqs, use_1st_order=use_1st_order)
     χ_ND = -1*χ_ND * 1E-6  # convert to MHz, and flip sign so that down shift is positive
@@ -73,7 +75,8 @@ def epr_numerical_diagonalization(freqs, Ljs, ϕzpf,
 
 
 
-def black_box_hamiltonian(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual=False):
+def black_box_hamiltonian(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual=False,
+                          non_linear_potential = None):
     r"""
     :param fs: Linearized model, H_lin, normal mode frequencies in Hz, length N
     :param ljs: junction linerized inductances in Henries, length M
@@ -119,10 +122,13 @@ def black_box_hamiltonian(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual=
 
     def cos(x):
         return cos_approx(x, cos_trunc=cos_trunc)
+    
+    if non_linear_potential is None:
+        non_linear_potential = cos
 
     linear_part = dot(fs, mode_ns)
     cos_interiors = [dot(fzpf_row/fluxQ, mode_fields) for fzpf_row in fzpfs]
-    nonlinear_part = dot(-fjs, map(cos, cos_interiors))
+    nonlinear_part = dot(-fjs, map(non_linear_potential, cos_interiors))
     if individual:
         return linear_part, nonlinear_part
     else:
@@ -297,4 +303,4 @@ def black_box_hamiltonian_nq(freqs, zmat, ljs, cos_trunc=6, fock_trunc=8, show_f
     H = black_box_hamiltonian(f0s, ljs, fzpfs, cos_trunc, fock_trunc)
     return make_dispersive(H, fock_trunc, fzpfs, f0s)
 
-black_box_hamiltonian_nq = black_box_hamiltonian_nq
+black_box_hamiltonian_nq = black_box_hamiltonian_nqzZ
