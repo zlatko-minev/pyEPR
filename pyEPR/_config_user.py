@@ -21,7 +21,7 @@ config = Dict( # pylint: disable=invalid-name
 
     # Folder to save result data to.
     # PLEASE CHANGE THIS
-    root_dir=r'C:\data-pyEPR', # Not all machines have a D drive so substituting D with C here
+    root_dir=r'C:\Users\zlp\Documents\data-pyEPR', # Not all machines have a D drive so substituting D with C here
 
     # Loss properties of various materials and surfaces
     dissipation=Dict(
@@ -31,7 +31,8 @@ config = Dict( # pylint: disable=invalid-name
         # refs: https://arxiv.org/abs/1308.1743
         #       http://arxiv.org/pdf/1509.01854.pdf
         tan_delta_sapp=1e-6,  # tan(delta) for bulk surface
-        epsi=10,    # dielectric
+        # epsi=10,    # dielectric
+        epsi=11.1,    # dielectric
 
         ##################################################
         # Surface dielectric
