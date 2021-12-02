@@ -303,4 +303,4 @@ def black_box_hamiltonian_nq(freqs, zmat, ljs, cos_trunc=6, fock_trunc=8, show_f
     H = black_box_hamiltonian(f0s, ljs, fzpfs, cos_trunc, fock_trunc)
     return make_dispersive(H, fock_trunc, fzpfs, f0s)
 
-black_box_hamiltonian_nq = black_box_hamiltonian_nqzZ
+black_box_hamiltonian_nq = black_box_hamiltonian_nq
