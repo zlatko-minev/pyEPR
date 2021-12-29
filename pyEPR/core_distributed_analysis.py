@@ -826,13 +826,13 @@ class DistributedAnalysis(object):
         j_2_norm = self.fields.Vector_Jsurf.norm_2()
         int_j_2 = j_2_norm.integrate_line(seam)
         int_j_2_val = int_j_2.evaluate(lv=lv, phase=90)
-        yseam = int_j_2_val/U_H/self.omega
+        yseam = int_j_2_val/U_H/(self.omega*1e9)
 
         Qseam['Qseam_'+seam+'_' +
               str(mode)] = config.dissipation.gseam/yseam
 
         print('Qseam_' + seam + '_' + str(mode) + str(' = ') +
-              str(config.dissipation.gseam/config.dissipation.yseam))
+              str(config.dissipation.gseam/yseam))
 
         return pd.Series(Qseam)
 
