@@ -1,5 +1,5 @@
 """
-pyEPR constants and convinience definitions.
+pyEPR constants and convenience definitions.
 
 @author: Zlatko Minev
 """

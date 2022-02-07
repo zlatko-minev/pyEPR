@@ -7,7 +7,7 @@ pyEPR interfaces the classical distributed microwave analysis with that of
 quantum structures and Hamiltonians. It is chiefly based on the energy participation
 ratio approach; however, it has since v0.4 extended to cover a broad range of
 design approaches. pyEPR stradels the analysis from Maxwell’s to Schrodinger’s
-equations, and converts the solutions of distributed microwve (typically eignmode
+equations, and converts the solutions of distributed microwave (typically eigenmode
 simulations) to a fully diagonalized spectrum of the energy levels, couplings,
 and key parameters of a many-body quantum Hamiltonian.
 

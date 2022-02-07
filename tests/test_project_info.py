@@ -14,7 +14,7 @@ class TestProjectInfo(unittest.TestCase):
             assert ConnectionError('Failed to connect to HFSS. Opening it manually')
 
     def test_dissipative(self):
-        '''Test change of _Dissipative from a class to a dict with deprecation warninngs'''
+        '''Test change of _Dissipative from a class to a dict with deprecation warnings'''
         self.assertRaises(Exception, self.pinfo.dissipative.__getattr__, 'mot_exist',
                           msg='Failed calling non-existing attr')
         self.assertRaises(Exception, self.pinfo.dissipative.__getitem__, 'not_exist',

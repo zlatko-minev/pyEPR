@@ -7,7 +7,7 @@ def set_up_logger(logger):
     logger.c_handler = logging.StreamHandler()
 
     # Jupyter notebooks already has a stream handler on the default log,
-    # Do not propage upstream to the root logger.
+    # Do not propagate upstream to the root logger.
     # https://stackoverflow.com/questions/31403679/python-logging-module-duplicated-console-output-ipython-notebook-qtconsole
     logger.propagate = False
 
