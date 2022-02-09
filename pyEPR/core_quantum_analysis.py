@@ -895,7 +895,8 @@ class QuantumAnalysis(object):
                 legend=True, zorder=20, color=cmap)
         Qs.plot(ax=ax, lw=1, alpha=0.2, color='grey', legend=False)
         
-        Qs_inf = np.isinf(Qs).values.sum()
+        df_Qs = np.isinf(Qs)
+        Qs_inf = df_Qs.values.sum()
         if not (len(Qs) == 0 or Qs_inf > 0): 
           ax.set_yscale('log')
 
