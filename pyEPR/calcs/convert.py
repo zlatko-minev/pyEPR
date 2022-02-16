@@ -204,7 +204,7 @@ class Convert():
         Returns:
             M x J matrix of reduced ZPF; i.e., scaled by reduced flux quantum.
             type: np.array
-            and a tuple of matricies.
+            and a tuple of matrices.
 
         Example use:
             ϕzpf, (Ωm, Ej, Pmj, Smj) = Convert.ZPF_from_EPR(hfss_freqs, hfss_epr, hfss_signs, hfss_Ljs, to_df=True)

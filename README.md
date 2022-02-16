@@ -208,7 +208,7 @@ Follow the same instructions above. You shouldn't have to install mingw or modif
 
 
 #### Legacy users
-Warning: pyEPR organization was significnatly improved in v0.8-dev (starting 2020; current branch: master \[to be made stable soon\]). If you used a previous version, you will find that all key classes have been renamed. Please, see the tutorials and docs.  In the meantime, if you cannot switch yet, revert to use the stable v0.7.
+Warning: pyEPR organization was significantly improved in v0.8-dev (starting 2020; current branch: master \[to be made stable soon\]). If you used a previous version, you will find that all key classes have been renamed. Please, see the tutorials and docs.  In the meantime, if you cannot switch yet, revert to use the stable v0.7.
 
 
 # HFSS Project Setup for `pyEPR`
@@ -276,7 +276,7 @@ compiler = mingw32
 [build_ext]
 compiler = mingw32
 ```
-Next, let's install qutip. You can choose to use conda intall or pip install, or pull from the git directly  as done here:
+Next, let's install qutip. You can choose to use conda install or pip install, or pull from the git directly  as done here:
 ```sh
 conda install git
 pip install git+https://github.com/qutip/qutip.git

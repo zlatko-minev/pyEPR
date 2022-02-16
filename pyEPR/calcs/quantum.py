@@ -1,6 +1,6 @@
 """
 Implementation of basic quantum operation in numpy,
-to effortleslly remove the need in the `qutip` package.
+to effortlessly remove the need in the `qutip` package.
 """
 
 import numpy as np
@@ -13,7 +13,7 @@ def create(n: int):
     return mat
 
 def destroy(n: int):
-    """Returns matrix representation of an n-dimensional annhilation operator"""
+    """Returns matrix representation of an n-dimensional annihilation operator"""
     diag = np.sqrt(np.arange(1, n))
     mat = np.zeros([n, n])
     np.fill_diagonal(mat[:, 1:], diag)

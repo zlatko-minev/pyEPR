@@ -36,7 +36,7 @@ config = Dict(
         th=3e-9,
 
         # Surface dielectric (dirt) constant
-        # units: relative permitivity
+        # units: relative permittivity
         eps_r=10,
 
         # Surface dielectric (dirt) loss tangent
@@ -58,7 +58,7 @@ config = Dict(
 
     ansys=Dict(
         # method_calc_P_mj sets the method used to calculate the participation ratio in eigenmode.
-        # Valud values:
+        # Valid values:
         # 	'line_voltage' : Uses the line voltage integral
         # 	'J_surf_mag'   : takes the avg. Jsurf over the rect. Make sure you have seeded
         # 					lots of tets here. I recommend starting with 4 across smallest dimension.
@@ -71,7 +71,7 @@ config = Dict(
     ),
 
     plotting=Dict(
-        # Default color map for plottng. Better if made into a string name
+        # Default color map for plotting. Better if made into a string name
         # taken from matplotlib.cm
         default_color_map='viridis',  # pylint: disable=no-member
     ),
