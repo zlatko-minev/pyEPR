@@ -29,14 +29,16 @@ succinctly plotted.
     pinfo.validate_junction_info() # Check that valid names of variables and objects have been supplied.
 
     # 2b. Dissipative elements: specify
-    pinfo.dissipative['dielectrics_bulk']    = ['si_substrate', 'dielectic_object2'] # supply names of hfss objects
+    pinfo.dissipative['dielectrics_bulk']    = ['si_substrate', 'dielectric_object2'] # supply names of hfss objects
     pinfo.dissipative['dielectric_surfaces'] = ['interface1', 'interface2']
+    # Alternatively, these could be specified in ProjectInfo with
+    # pinfo = epr.ProjectInfo(..., dielectrics_bulk = ['si_substrate', 'dielectric_object2'])
 
     # 3.  Perform microwave analysis on eigenmode solutions
     eprd = epr.DistributedAnalysis(pinfo)
     swp_var = 'Lj_alice' # Sweep variable from optimetric analysis that should be used on the x axis for the frequency plot
     eprd.quick_plot_frequencies(swp_var) # plot the solved frequencies before the analysis
-    eprd.hfss_report_full_convergence() # report convergen
+    eprd.hfss_report_full_convergence() # report convergence
     eprd.do_EPR_analysis()
 
     # 4a.  Perform Hamiltonian spectrum post-analysis, building on mw solutions using EPR

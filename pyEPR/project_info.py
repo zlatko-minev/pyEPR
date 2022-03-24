@@ -165,6 +165,10 @@ class ProjectInfo(object):
                  project_name: str = None,
                  design_name: str = None,
                  setup_name: str = None,
+                 dielectrics_bulk: list[str] = None,
+                 dielectric_surfaces: list[str] = None,
+                 resistive_surfaces: list[str] = None,
+                 seams: list[str] = None,
                  do_connect: bool = True):
         """
         Keyword Arguments:
@@ -179,7 +183,14 @@ class ProjectInfo(object):
                 Defaults to ``None``, which will get the current active one.
             setup_name  (str) :  Name of the setup within the design.
                 Defaults to ``None``, which will get the current active one.
-
+            dielectrics_bulk (list(str)) : List of names of dielectric bulk objects.
+                Defaults to ``None``.
+            dielectric_surfaces (list(str)) : List of names of dielectric surfaces.
+                Defaults to ``None``.
+            resistive_surfaces (list(str)) : List of names of resistive surfaces.
+                Defaults to ``None``.
+            seams (list(str)) : List of names of seams.
+                Defaults to ``None``.
             do_connect (bool) [additional]: Do create connection to Ansys or not? Defaults to ``True``.
         
         """
@@ -198,6 +209,8 @@ class ProjectInfo(object):
 
         # Dissipative HFSS volumes and surfaces
         self.dissipative = self._Dissipative()
+        for opt in diss_opt:
+            self.dissipative[opt] = locals()[opt]
         self.options = config.ansys
 
         # Connected to HFSS variable
