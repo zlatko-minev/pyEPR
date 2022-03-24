@@ -70,7 +70,7 @@ class DistributedAnalysis(object):
 
         Use notes:
         -------------------
-            * If you change the setup or number of eignemodes in HFSS, etc.
+            * If you change the setup or number of eigenmodes in HFSS, etc.
               call `update_ansys_info()`
 
 
