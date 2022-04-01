@@ -896,7 +896,19 @@ class DistributedAnalysis(object):
               str(mode)+' = ' + str(p_dielectric))
         return pd.Series(Qdielectric)
 
-    def get_Qsurface_all(self, mode, variation, U_E = None):
+    def get_Qsurface_all(self, mode, variation, U_E = None, name='AllObjects'):
+        '''
+        caculate the contribution to Q of a dieletric layer of dirt on all surfaces
+        set the dirt thickness and loss tangent in the config file
+        ref: http://arxiv.org/pdf/1509.01854.pdf
+        '''
+        Qsurf = self.get_Qsurface(mode, variation,U_E = U_E, name = name)
+
+        return Qsurf
+    
+    def get_Qsurface(self, mode, variation, name='AllObjects', U_E = None,
+                        diss_th=config.dissipation.th, diss_epsr=config.dissipation.eps_r,
+                        diss_tand=config.dissipation.tan_delta_surf):
         '''
         caculate the contribution to Q of a dieletric layer of dirt on all surfaces
         set the dirt thickness and loss tangent in the config file
@@ -906,7 +918,7 @@ class DistributedAnalysis(object):
             U_E = self.calc_energy_electric(variation)
         lv = self._get_lv(variation)
         Qsurf = OrderedDict()
-        print('Calculating Qsurface for mode ' + str(mode) +
+        print(f'Calculating Qsurface on {name} for mode ' + str(mode) +
               ' (' + str(mode) + '/' + str(self.n_modes-1) + ')')
 #        A = self.fields.Mag_E**2
 #        A = A.integrate_vol(name='AllObjects')
@@ -917,12 +929,12 @@ class DistributedAnalysis(object):
         B = vecE.conj()
         A = A.dot(B)
         A = A.real()
-        A = A.integrate_surf(name='AllObjects')
+        A = A.integrate_surf(name=name)
         U_surf = A.evaluate(lv=lv)
-        U_surf *= config.dissipation.th*epsilon_0*config.dissipation.eps_r
+        U_surf *= diss_th*epsilon_0*diss_epsr
         p_surf = U_surf/U_E
-        Qsurf['Qsurf_'+str(mode)] = 1 / \
-            (p_surf*config.dissipation.tan_delta_surf)
+        Qsurf[f'Qsurf_{name}'+str(mode)] = 1 / \
+            (p_surf*diss_tand)
         print('p_surf'+'_'+str(mode)+' = ' + str(p_surf))
         return pd.Series(Qsurf)
 
@@ -1377,7 +1389,7 @@ class DistributedAnalysis(object):
 
                 # get Q surface
                 if self.pinfo.dissipative['dielectric_surfaces']:
-                    if self.pinfo.dissipative['dielectric_surfaces'] == 'all':
+                    if self.pinfo.dissipative['dielectric_surfaces'] == 'AllObjects':
                         sol = sol.append(
                             self.get_Qsurface_all(mode, variation, self.U_E))
                     else:
