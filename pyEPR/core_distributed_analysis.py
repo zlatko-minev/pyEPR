@@ -537,7 +537,7 @@ class DistributedAnalysis(object):
         """
         Get ansys variables
 
-        Return HFSS variable from self.get_ansys_variables() as a
+        Return HFSS variable from :py:func:`self.get_ansys_variables()` as a
         pandas series vs variations.
 
         Args:
@@ -727,14 +727,13 @@ class DistributedAnalysis(object):
         '''
         Peak current I_max for prespecified mode calculating line voltage across junction.
 
-        Make sure that oyu have set the correct variation in hFSS before running this
+        Make sure that you have set the correct variation in HFSS before running this
 
-        Parameters:
-        ------------------------------------------------
+        Args:
             variation: variation number
             junc_line_name: name of the HFSS line spanning the junction
             junc_L_Henries: junction inductance in henries
-            Cj_Farads : junction cap in Farads
+            Cj_Farads: junction cap in Farads
             TODO: Smooth?
         '''
         lv = self._get_lv(variation)
@@ -958,14 +957,13 @@ class DistributedAnalysis(object):
             variation (str): A string identifier of the variation,
             such as '0', '1', ...
 
-        Note:
-        --------------
-            U_E and U_H are the total peak energy. (NOT twice as in U_ and U_H other places)
+        .. note::
+           U_E and U_H are the total peak energy. (NOT twice as in U_ and U_H other places)
 
-
-        Potential errors:  If you dont have a line or rect by the right name you will prob
-        get an error of the type:
-        com_error: (-2147352567, 'Exception occurred.', (0, None, None, None, 0, -2147024365), None)
+        .. warning::
+           Potential errors: If you dont have a line or rect by the right name you will prob
+           get an error of the type: com_error: (-2147352567, 'Exception occurred.', 
+           (0, None, None, None, 0, -2147024365), None)
         '''
 
         # ------------------------------------------------------------
@@ -1115,7 +1113,7 @@ class DistributedAnalysis(object):
 
         Args:
             variation (str): A string identifier of the variation,
-            such as '0', '1', ...
+                such as '0', '1', ...
 
         Optional Parameters:
         ------------------------
@@ -1127,8 +1125,8 @@ class DistributedAnalysis(object):
                 Modes to analyze
                 for example  modes = [0, 2, 3]
 
-            append_analysis (bool) : When we run the ansys analysis, should we redo any variations
-                 that we have already done?
+            append_analysis (bool) : 
+                When we run the Ansys analysis, should we redo any variations that we have already done?
 
         Ansys Notes:
         ------------------------

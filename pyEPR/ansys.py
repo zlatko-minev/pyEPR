@@ -1382,9 +1382,9 @@ class AnsysQ3DSetup(HfssSetup):
         '''
         Arguments:
         -----------
-            variation : an empty string returns nominal variation.
+            variation: an empty string returns nominal variation.
                         Otherwise need the list
-            frequency : in Hz
+            frequency: in Hz
             soln_type = "C", "AC RL" and "DC RL"
             solution_kind = 'LastAdaptive' # AdaptivePass
         Internals:

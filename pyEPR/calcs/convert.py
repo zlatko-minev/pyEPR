@@ -25,13 +25,13 @@ class Convert():
         Static container class for conversions of units and variables.
 
         TEST CONVERSION:
-        ```python
-            from pyEPR.toolbox.conversions import Convert
 
-            Lj_nH, Cs_fF = 11, 60
-            Convert.transmon_print_all_params(Lj_nH, Cs_fF);
+        .. code-block:: python
 
-        ```
+           from pyEPR.toolbox.conversions import Convert
+           
+           Lj_nH, Cs_fF = 11, 60
+           Convert.transmon_print_all_params(Lj_nH, Cs_fF);
     '''
     # Known SI prefixed
     _prefix = {'y': -24,  # yocto
@@ -109,7 +109,7 @@ class Convert():
         Josephson Junction energy from Josephson inductance.
         Returns in MHz
 
-        $E_j = \phi_0^2 / L_J$
+        :math:`E_j = \phi_0^2 / L_J`
         '''
         return Convert._convert_num(
             # Plank to go from Joules to Hz
@@ -122,7 +122,7 @@ class Convert():
         Josephson Junction ind from Josephson energy in MHZ.
         Returns in units of nano Henries by default
 
-        $E_j = \phi_0^2 / L_J$
+        :math:`E_j = \phi_0^2 / L_J`
         '''
         return Convert._convert_num(
             lambda _x: (ϕ0**2.)/(_x*Planck),  # Plank to go from Joules to Hz
@@ -133,7 +133,7 @@ class Convert():
         r'''
         Josephson Junction crit. curr from Josephson inductance.
 
-        $E_j = \phi_0^2 / L_J = \phi_0 I_C $
+        :math:`E_j = \phi_0^2 / L_J = \phi_0 I_C`
         '''
         return Convert._convert_num(
             lambda _x: ϕ0/_x,  # Plank to go from Joules to Hz
@@ -144,7 +144,7 @@ class Convert():
         r'''
         Josephson Junction crit. curr from Josephson inductance.
 
-        $E_j = \phi_0^2 / L_J = \phi_0 I_C $
+        :math:`E_j = \phi_0^2 / L_J = \phi_0 I_C`
         '''
         return Convert._convert_num(
             lambda _x: ϕ0/_x,  # Plank to go from Joules to Hz
@@ -153,10 +153,10 @@ class Convert():
     @staticmethod
     def Ec_from_Cs(Cs,  units_in='fF', units_out='MHz'):
         r'''
-        Charging energy 4Ec n^2, where n=Q/2e
+        Charging energy :math:`4E_c n^2`, where :math:`n=Q/2e`
         Returns in MHz
 
-        $E_{C}=\frac{e^{2}}{2C}J$
+        :math:`E_{C}=\frac{e^{2}}{2C}J`
         '''
         return Convert._convert_num(
             # Plank to go from Joules to Hz
@@ -166,11 +166,11 @@ class Convert():
     @staticmethod
     def Cs_from_Ec(Ec, units_in='MHz', units_out='fF'):
         r'''
-        Charging energy 4Ec n^2, where n=Q/2e
+        Charging energy :math:`4E_c n^2`, where :math:`n=Q/2e`
 
         Returns in SI units, in Farads.
 
-        $E_{C}=\frac{e^{2}}{2C}J$
+        :math:`E_{C}=\frac{e^{2}}{2C}J`
         '''
         return Convert._convert_num(
             # Plank to go from Joules to Hz
