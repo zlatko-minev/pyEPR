@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 # Constants
 from collections import OrderedDict
 from ..calcs.constants import Planck, elementary_charge, epsilon_0, pi, π, ħ, ϕ0, e_el
-
+from .. import Dict
 
 # ==============================================================================
 # Utility functions
@@ -177,8 +177,10 @@ def get_instance_vars(obj, Forbidden=[]):
     for v in dir(obj):
         if not (v.startswith('__') or v.startswith('_')):
             if not callable(getattr(obj, v)):
-                if not (v in Forbidden):
-                    VARS[v] = getattr(obj, v)
+                # Added for using addict.Dict which is not callable. 
+                if not isinstance(getattr(obj, v), Dict):
+                    if not (v in Forbidden):
+                        VARS[v] = getattr(obj, v)
     return VARS
 
 

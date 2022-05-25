@@ -74,13 +74,7 @@ import logging
 import warnings
 from pathlib import Path
 
-try:
-    from attrdict import AttrDict as Dict
-except (ImportError, ModuleNotFoundError):
-    raise ImportError("""Please install python package `AttrDict`.
-    AttrDict is in PyPI, so it can be installed directly
-    (https://github.com/bcj/AttrDict) using:
-        $ pip install attrdict""")
+from addict import Dict
 
 ##############################################################################
 # Python header
