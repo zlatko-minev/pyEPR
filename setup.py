@@ -57,5 +57,5 @@ setup(
         "License :: OSI Approved :: Apache Software License"
     ],
     python_requires=">=3.5, <4",
-    # install_requires=['numpy','pandas','pint','matplotlib','attrdict','sympy','IPython'],
+    # install_requires=['numpy','pandas','pint','matplotlib','addict','sympy','IPython'],
     install_requires=requirements)
