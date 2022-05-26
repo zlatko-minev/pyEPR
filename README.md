@@ -184,11 +184,11 @@ pip install pyEPR-quantum
       $ echo %PATH%
       `
 
- 2. Install the required packages, including [pint](http://pint.readthedocs.io/en/latest/), [qutip](http://qutip.org/), and [attrdict](https://github.com/bcj/AttrDict). In a terminal window
+ 2. Install the required packages, including [pint](http://pint.readthedocs.io/en/latest/), [qutip](http://qutip.org/), and [addict](https://github.com/mewwts/addict). In a terminal window
  ```sh
  conda install -c conda-forge pint
  conda install -c conda-forge qutip
- pip install attrdict
+ pip install addict
  ```
  3. Fork this pyEPR repository on GitHub with your GitHub account. You may clone the fork to your PC and manage it using the [SourceTree](https://www.sourcetreeapp.com/) git-gui manager.
  4. Add the pyEPR repository folder to your python search path. Make sure to add the git remote to the master is set up,  `git remote add MASTER_MINEV git://github.com/zlatko-minev/pyEPR.git`!  [(Help?)](https://stackoverflow.com/questions/11266478/git-add-remote-branch)
