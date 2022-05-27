@@ -161,15 +161,15 @@ class ProjectInfo(object):
             return {str(opt): self[opt] for opt in diss_opt}
 
     def __init__(self,
-                 project_path: str = None,
-                 project_name: str = None,
-                 design_name: str = None,
-                 setup_name: str = None,
-                 dielectrics_bulk: list[str] = None,
-                 dielectric_surfaces: list[str] = None,
-                 resistive_surfaces: list[str] = None,
-                 seams: list[str] = None,
-                 do_connect: bool = True):
+                project_path: str = None,
+                project_name: str = None,
+                design_name: str = None,
+                setup_name: str = None,
+                dielectrics_bulk: list =None,
+                dielectric_surfaces: list = None,
+                resistive_surfaces: list= None,
+                seams: list= None,
+                do_connect: bool = True):
         """
         Keyword Arguments:
 
@@ -194,6 +194,18 @@ class ProjectInfo(object):
             do_connect (bool) [additional]: Do create connection to Ansys or not? Defaults to ``True``.
         
         """
+        if dielectrics_bulk == None:
+            dielectrics_bulk = []
+
+        if dielectric_surfaces == None:
+            dielectric_surfaces = []
+
+        if resistive_surfaces == None:
+            resistive_surfaces = []
+
+        if seams == None:
+            seams = []
+
 
         # Path: format path correctly to system convention
         self.project_path = str(Path(project_path)) \
