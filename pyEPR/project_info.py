@@ -194,18 +194,6 @@ class ProjectInfo(object):
             do_connect (bool) [additional]: Do create connection to Ansys or not? Defaults to ``True``.
         
         """
-        if dielectrics_bulk == None:
-            dielectrics_bulk = []
-
-        if dielectric_surfaces == None:
-            dielectric_surfaces = []
-
-        if resistive_surfaces == None:
-            resistive_surfaces = []
-
-        if seams == None:
-            seams = []
-
 
         # Path: format path correctly to system convention
         self.project_path = str(Path(project_path)) \
