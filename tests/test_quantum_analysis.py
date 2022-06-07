@@ -27,7 +27,7 @@ class TestQuantumAnalysis(unittest.TestCase):
         '''
         results = self.epra.analyze_all_variations(
             cos_trunc=8, fock_trunc=15, print_result=False)['0']  # Variation 0
-        # TODO: Remove start/finish diagnolization messages (back_box_numeric L:153)
+        # TODO: Remove start/finish diagonalization messages (back_box_numeric L:153)
 
         for key, value in results.items():
             if key == 'hfss_variables':  # All numeric-only datatypes
@@ -42,7 +42,7 @@ class TestQuantumAnalysis(unittest.TestCase):
         pass
 
     def test_hamiltonian(self):
-        pass  # TODO: Need to pass **kwargs to epr_num_diag for return_H opption
+        pass  # TODO: Need to pass **kwargs to epr_num_diag for return_H option
 
     def test_properties(self):
         pass

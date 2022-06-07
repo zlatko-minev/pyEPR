@@ -1,7 +1,7 @@
 """
 Hamiltonian and Matrix Operations.
 Hamiltonian operations heavily draw on qutip package.
-This package must be installded for them to work.
+This package must be installed for them to work.
 """
 try:
     import qutip
@@ -18,9 +18,9 @@ class MatrixOps(object):
     @staticmethod
     def cos(op_cos_arg: Qobj):
         """
-        Make cosine opertor matrix from arguemnt  op_cos_arg
+        Make cosine operator matrix from argument  op_cos_arg
 
-            op_cos_arg (qutip.Qobj) : argumetn of the cosine
+            op_cos_arg (qutip.Qobj) : argument of the cosine
         """
 
         return 0.5*((1j*op_cos_arg).expm() + (-1j*op_cos_arg).expm())
@@ -53,7 +53,7 @@ class HamOps(object):
     @staticmethod
     def closest_state_to(s: Qobj, energyMHz, evecs):
         """
-        Returns the enery of the closest state to s
+        Returns the energy of the closest state to s
         """
         def distance(s2):
             return (s.dag() * s2[1]).norm()
@@ -75,7 +75,7 @@ class HamOps(object):
         """
         Return quantum numbers in terms of the undiagonalized eigenbasis.
         """
-        #  to do: need to turn Fock_max into arb algo on each mdoe
+        #  to do: need to turn Fock_max into arb algo on each mode
 
         def fock_state_on(d):
             return HamOps.fock_state_on(d, fock_trunc, N_modes)

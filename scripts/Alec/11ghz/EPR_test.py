@@ -11,7 +11,7 @@ if 0:
     # Specify the HFSS project to be analyzed
     project_info = ProjectInfo(r"C:\Users\awe4\Documents\Backed\hfss_simulations\11ghz\\")
     project_info.project_name  = '11ghz_alec'  # Name of the project file (string). "None" will get the current active one.
-    project_info.design_name   = '11ghz_design1'  # Name of the desgin file (string). "None" will get the current active one.
+    project_info.design_name   = '11ghz_design1'  # Name of the design file (string). "None" will get the current active one.
     project_info.setup_name    = None    # Name of the setup(string). "None" will get the current active one.
 
     project_info.junctions['bot_junc'] = {'rect':'bot_junction',  'line': 'bot_junc_line', 'Lj_variable':'bot_lj', 'length':0.0001}

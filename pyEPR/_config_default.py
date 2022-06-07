@@ -26,7 +26,7 @@ config = Dict( # pylint: disable=invalid-name
 
     ansys=Dict(
         # method_calc_P_mj sets the method used to calculate the participation ratio in eigenmode.
-        # Valud values:
+        # Valid values:
         # 	'line_voltage' : Uses the line voltage integral
         # 	'J_surf_mag'   : takes the avg. Jsurf over the rect. Make sure you have seeded
         # 					lots of tets here. I recommend starting with 4 across smallest dimension.
@@ -42,14 +42,14 @@ config = Dict( # pylint: disable=invalid-name
 
     epr = Dict(
 
-        # Define the participation renomalizaiton method
+        # Define the participation renormalization method
         # False : no extra renormalization to enforce
         #         can be more problematic for large pj, when sim isn't well converged
         # True or 1 : use enforcement of U_J_total to be U_mode-U_H
         #         can be more problematic for small pj, when sim isn't well converged
         # 2     : use enforcement of U_J_total to be U_mode-U_H (i.e., 1)
-        #         only when the total particiaption is above a certain threshold
-        #         preffered method.
+        #         only when the total participation is above a certain threshold
+        #         preferred method.
         renorm_pj = 2,
     ),
 
@@ -72,7 +72,7 @@ config = Dict( # pylint: disable=invalid-name
         th=3e-9,
 
         # Surface dielectric (dirt) constant
-        # units: relative permitivity
+        # units: relative permittivity
         eps_r=10,
 
         # Surface dielectric (dirt) loss tangent
@@ -93,7 +93,7 @@ config = Dict( # pylint: disable=invalid-name
     ),
 
     plotting=Dict(
-        # Default color map for plottng. Better if made into a string name
+        # Default color map for plotting. Better if made into a string name
         # taken from matplotlib.cm
         default_color_map='viridis',  # pylint: disable=no-member
     ),
@@ -147,7 +147,7 @@ def update_recursive(d:collections.abc.Mapping, u:collections.abc.Mapping):
 
     Arguments:
         d {collections.abc.Mapping} -- dict to overwrite
-        u {collections.abc.Mapping} -- dcit used to update
+        u {collections.abc.Mapping} -- dict used to update
 
     Returns:
         same as d; Updated d
@@ -162,11 +162,11 @@ def update_recursive(d:collections.abc.Mapping, u:collections.abc.Mapping):
 def get_config():
     """Returns the config pointer.
 
-    If the config is not yet loaded, it will load the defualt config and then
+    If the config is not yet loaded, it will load the default config and then
     update it with the _config_user.config dictionary.
 
     Else, it will just return the pointer to the above-updated config, which the
-    user could have modified. The modificaitons will be kept.
+    user could have modified. The modifications will be kept.
 
     Returns:
         Dict : the config dictionary

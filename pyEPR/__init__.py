@@ -59,7 +59,7 @@ Automated analysis of lumped and distributed circuits is provided.
 @author: Zlatko Minev, Zaki Leghas, ... and the pyEPR team
 @site: https://github.com/zlatko-minev/pyEPR
 @license: "BSD-3-Clause"
-@version: 0.8.4.6
+@version: 0.8.5.5
 @maintainer: Zlatko K. Minev and  Asaf Diringer
 @email: zlatko.minev@aya.yale.edu
 @url: https://github.com/zlatko-minev/pyEPR
@@ -74,13 +74,7 @@ import logging
 import warnings
 from pathlib import Path
 
-try:
-    from attrdict import AttrDict as Dict
-except (ImportError, ModuleNotFoundError):
-    raise ImportError("""Please install python package `AttrDict`.
-    AttrDict is in PyPI, so it can be installed directly
-    (https://github.com/bcj/AttrDict) using:
-        $ pip install attrdict""")
+from addict import Dict
 
 ##############################################################################
 # Python header
@@ -92,7 +86,7 @@ __credits__ = [
     "Will Livingston", "Steven Touzard"
 ]
 __license__ = "BSD-3-Clause"
-__version__ = "0.8.4.6"
+__version__ = "0.8.5.5"
 __maintainer__ = "Zlatko K. Minev and  Asaf Diringer"
 __email__ = "zlatko.minev@aya.yale.edu"
 __url__ = r'https://github.com/zlatko-minev/pyEPR'
@@ -101,6 +95,7 @@ __status__ = "Dev-Production"
 ##############################################################################
 # Config setup
 from ._config_default import get_config
+
 config = get_config()
 
 ##############################################################################
@@ -146,7 +141,7 @@ if config.internal.warn_missing_import:
         logger.warning(
             """IMPORT WARNING:
         Python package 'pythoncom' could not be loaded
-        It is used in communicting with HFSS on PCs. If you wish to do this, please set it up.
+        It is used in communicating with HFSS on PCs. If you wish to do this, please set it up.
         For Linux, check the HFSS python linux files for the com module used. It is equivalent,
         and can be used just as well.
         %s""", config.internal.error_msg_missing_import)
@@ -167,7 +162,7 @@ if config.internal.warn_missing_import:
     except (ImportError, ModuleNotFoundError):
         logger.error(
             """IMPORT ERROR:
-        Python package 'pint' could not be loaded. It is used in communicting with HFSS. Try:
+        Python package 'pint' could not be loaded. It is used in communicating with HFSS. Try:
             $ conda install -c conda-forge pint \n%s""",
             config.internal.error_msg_missing_import)
 
@@ -184,7 +179,7 @@ from . import core
 
 from .ansys import parse_units, parse_units_user, parse_entry
 from .core import ProjectInfo, DistributedAnalysis, QuantumAnalysis,\
-                  Project_Info, pyEPR_HFSSAnalysis, pyEPR_Analysis # names to be depricated
+                  Project_Info, pyEPR_HFSSAnalysis, pyEPR_Analysis # names to be deprecated
 
 __all__ = [
     'logger',
@@ -198,7 +193,7 @@ __all__ = [
     'QuantumAnalysis',
     'Project_Info',
     'pyEPR_HFSSAnalysis',
-    'pyEPR_Analysis',  # names to be depricated
+    'pyEPR_Analysis',  # names to be deprecated
     'parse_units',
     'parse_units_user',
     'parse_entry'

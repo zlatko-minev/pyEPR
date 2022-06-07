@@ -42,7 +42,7 @@ Installing locally via pip
 In the future, ``pyEPR`` can be installed using the Python package manager `pip <http://www.pip-installer.org/>`_.
 
 
-However, for the moment, we recommend a local develper instalation, which allows for fast upgrades. We are still in active development.
+However, for the moment, we recommend a local developer installation, which allows for fast upgrades. We are still in active development.
 Perform the steps in the :ref:`install-main` section.
 What you could do, once you have the local clone git, is to install pyEPR locally. Navigate to the local root folder of the repo.
 
