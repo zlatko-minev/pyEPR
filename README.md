@@ -104,14 +104,16 @@ pinfo.junctions['jBob']   = {'Lj_variable':'Lj_bob',   'rect':'rect_bob',   'lin
 pinfo.validate_junction_info() # Check that valid names of variables and objects have been supplied.
 
 # 2b. Dissipative elements: specify
-pinfo.dissipative['dielectrics_bulk']    = ['si_substrate', 'dielectic_object2'] # supply names of hfss objects
+pinfo.dissipative['dielectrics_bulk']    = ['si_substrate', 'dielectric_object2'] # supply names of hfss objects
 pinfo.dissipative['dielectric_surfaces'] = ['interface1', 'interface2']
+# Alternatively, these could be specified in ProjectInfo with
+# pinfo = epr.ProjectInfo(..., dielectrics_bulk = ['si_substrate', 'dielectric_object2'])
 
 # 3.  Perform microwave analysis on eigenmode solutions
 eprd = epr.DistributedAnalysis(pinfo)
 if 1: # automatic reports
   eprd.quick_plot_frequencies(swp_var) # plot the solved frequencies before the analysis
-  eprd.hfss_report_full_convergence() # report convergen
+  eprd.hfss_report_full_convergence() # report convergence
 eprd.do_EPR_analysis()
 
 # 4a.  Perform Hamiltonian spectrum post-analysis, building on mw solutions using EPR
@@ -182,11 +184,11 @@ pip install pyEPR-quantum
       $ echo %PATH%
       `
 
- 2. Install the required packages, including [pint](http://pint.readthedocs.io/en/latest/), [qutip](http://qutip.org/), and [attrdict](https://github.com/bcj/AttrDict). In a terminal window
+ 2. Install the required packages, including [pint](http://pint.readthedocs.io/en/latest/), [qutip](http://qutip.org/), and [addict](https://github.com/mewwts/addict). In a terminal window
  ```sh
  conda install -c conda-forge pint
  conda install -c conda-forge qutip
- pip install attrdict
+ pip install addict
  ```
  3. Fork this pyEPR repository on GitHub with your GitHub account. You may clone the fork to your PC and manage it using the [SourceTree](https://www.sourcetreeapp.com/) git-gui manager.
  4. Add the pyEPR repository folder to your python search path. Make sure to add the git remote to the master is set up,  `git remote add MASTER_MINEV git://github.com/zlatko-minev/pyEPR.git`!  [(Help?)](https://stackoverflow.com/questions/11266478/git-add-remote-branch)
@@ -208,7 +210,7 @@ Follow the same instructions above. You shouldn't have to install mingw or modif
 
 
 #### Legacy users
-Warning: pyEPR organization was significnatly improved in v0.8-dev (starting 2020; current branch: master \[to be made stable soon\]). If you used a previous version, you will find that all key classes have been renamed. Please, see the tutorials and docs.  In the meantime, if you cannot switch yet, revert to use the stable v0.7.
+Warning: pyEPR organization was significantly improved in v0.8-dev (starting 2020; current branch: master \[to be made stable soon\]). If you used a previous version, you will find that all key classes have been renamed. Please, see the tutorials and docs.  In the meantime, if you cannot switch yet, revert to use the stable v0.7.
 
 
 # HFSS Project Setup for `pyEPR`
@@ -276,7 +278,7 @@ compiler = mingw32
 [build_ext]
 compiler = mingw32
 ```
-Next, let's install qutip. You can choose to use conda intall or pip install, or pull from the git directly  as done here:
+Next, let's install qutip. You can choose to use conda install or pip install, or pull from the git directly  as done here:
 ```sh
 conda install git
 pip install git+https://github.com/qutip/qutip.git

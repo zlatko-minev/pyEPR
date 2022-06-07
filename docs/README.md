@@ -44,7 +44,7 @@ Notes for developers.
   sphinx-apidoc -f -o source/ ../pyEPR -o source/api --no-toc -M -e
   make html
 ```
-You can alos use this to update the doc tree.
+You can also use this to update the doc tree.
 
 # Updating `readthedocs.org`
 

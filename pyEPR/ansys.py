@@ -140,14 +140,14 @@ def parse_entry(entry, convert_to_unit=LENGTH_UNIT):
 def fix_units(x, unit_assumed=None):
     '''
     Convert all numbers to string and append the assumed units if needed.
-    For an itterable, returns a list
+    For an iterable, returns a list
     '''
     unit_assumed = LENGTH_UNIT_ASSUMED if unit_assumed is None else unit_assumed
     if isinstance(x, str):
         # Check if there are already units defined, assume of form 2.46mm  or 2.0 or 4.
         if x[-1].isdigit() or x[-1] == '.':  # number
             return x + unit_assumed
-        else:  # units are already appleid
+        else:  # units are already applied
             return x
 
     elif isinstance(x, Number):
@@ -187,7 +187,7 @@ def unparse_units(x):
 
 def parse_units_user(x):
     '''
-        Convert from user assuemd units to user assumed units
+        Convert from user assumed units to user assumed units
         [USER UNITS] ----> [USER UNITS]
     '''
     return parse_entry(fix_units(x, LENGTH_UNIT_ASSUMED), LENGTH_UNIT_ASSUMED)
@@ -349,7 +349,7 @@ def set_property(prop_holder,
                  value,
                  prop_args=None):
     '''
-    More general non obj oriented, functionatl verison
+    More general non obj oriented, functional version
     prop_args = [] by default
     '''
     if not isinstance(prop_server, list):
@@ -625,11 +625,11 @@ class HfssDesign(COMWrapper):
         self._ansys_version = self.parent._ansys_version
 
         try:
-            # This funciton does not exist if the desing is not HFSS
+            # This function does not exist if the design is not HFSS
             self.solution_type = design.GetSolutionType()
         except Exception as e:
             logger.debug(
-                f'Exception occured at design.GetSolutionType() {e}. Assuming Q3D design'
+                f'Exception occurred at design.GetSolutionType() {e}. Assuming Q3D design'
             )
             self.solution_type = 'Q3D'
 
@@ -662,7 +662,7 @@ class HfssDesign(COMWrapper):
 
     def save_screenshot(self, path: str = None, show: bool = True):
         if not path:
-            path = Path().absolute() / 'ansys.png'  # TODOL find better
+            path = Path().absolute() / 'ansys.png'  # TODO find better
         self._modeler.ExportModelImageToFile(
             str(path),
             0,
@@ -872,10 +872,10 @@ class HfssDesign(COMWrapper):
 
     def set_variables(self, variation_string: str):
         """
-        Set all variables to match a solved variaiton string.
+        Set all variables to match a solved variation string.
 
         Args:
-            variation_string (str) :  Variaiton string such as
+            variation_string (str) :  Variation string such as
                 "Cj='2fF' Lj='13.5nH'"
         """
         assert isinstance(variation_string, str)
@@ -913,7 +913,7 @@ class HfssDesign(COMWrapper):
             value {str} -- Value, such as '10nH'
 
         Keyword Arguments:
-            postprocessing {bool} -- Postprocessingh variable only or not.
+            postprocessing {bool} -- Postprocessing variable only or not.
                           (default: {False})
 
         Returns:
@@ -1034,7 +1034,7 @@ class HfssSetup(HfssPropertyObject):
         Return Value:    None
         -----------------------------------------------------
 
-        Will block the until the analysis is completly done.
+        Will block the until the analysis is completely done.
         Will raise a com_error if analysis is aborted in HFSS.
         '''
         if name is None:
@@ -1093,7 +1093,7 @@ class HfssSetup(HfssPropertyObject):
             "ExtrapToDC:=",    False,
         ]
 
-        # not sure hwen extacyl this changed between 2016 and 2019
+        # not sure when exactly this changed between 2016 and 2019
         if self._ansys_version >= '2019':
             if count:
                 params.extend([
@@ -1274,7 +1274,7 @@ class HfssSetup(HfssPropertyObject):
                          skipfooter=1,
                          skip_blank_lines=True,
                          engine='python')
-        # just borken down by new lines
+        # just broken down by new lines
         return df
 
     def get_fields(self):
@@ -1353,7 +1353,7 @@ class AnsysQ3DSetup(HfssSetup):
     min_pass = make_int_prop("Min. Number of Passes")
     pct_error = make_int_prop("Percent Error")
     frequency = make_str_prop("Adaptive Freq", 'General')  # e.g., '5GHz'
-    n_modes = 0  # for compatability with eigenmode
+    n_modes = 0  # for compatibility with eigenmode
 
     def get_frequency_Hz(self):
         return int(ureg(self.frequency).to('Hz').magnitude)
@@ -1376,15 +1376,15 @@ class AnsysQ3DSetup(HfssSetup):
             pass_number=0,
             frequency=None,
             MatrixType='Maxwell',
-            solution_kind='LastAdaptive',  # AdpativePass
+            solution_kind='LastAdaptive',  # AdaptivePass
             ACPlusDCResistance=False,
             soln_type="C"):
         '''
         Arguments:
         -----------
-            variation : an empty string returns nominal variation.
+            variation: an empty string returns nominal variation.
                         Otherwise need the list
-            frequency : in Hz
+            frequency: in Hz
             soln_type = "C", "AC RL" and "DC RL"
             solution_kind = 'LastAdaptive' # AdaptivePass
         Internals:
@@ -1464,7 +1464,7 @@ class AnsysQ3DSetup(HfssSetup):
         text = Path(path).read_text()
 
         s1 = text.split('Capacitance Matrix')
-        assert len(s1) == 2, "Copuld not split text to `Capacitance Matrix`"
+        assert len(s1) == 2, "Could not split text to `Capacitance Matrix`"
 
         s2 = s1[1].split('Conductance Matrix')
 
@@ -1484,7 +1484,7 @@ class AnsysQ3DSetup(HfssSetup):
             df_cond = None
 
         var = re.findall(r'DesignVariation:(.*?)\n',
-                         text)  # this changed circe v2020
+                         text)  # this changed circa v2020
         if len(var) < 1:  # didnt find
             var = re.findall(r'Design Variation:(.*?)\n', text)
             if len(var) < 1:  # didnt find
@@ -1499,7 +1499,7 @@ class AnsysQ3DSetup(HfssSetup):
 
     @staticmethod
     def load_q3d_matrix(path, user_units='fF'):
-        """Load Q3D capcitance file exported as Maxwell matrix.
+        """Load Q3D capacitance file exported as Maxwell matrix.
         Exports also conductance conductance.
         Units are read in automatically and converted to user units.
 
@@ -1595,7 +1595,7 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
 
     """
     Export eigenmodes vs pass number
-    Did not figre out how to set pass number in a hurry.
+    Did not figure out how to set pass number in a hurry.
 
 
     import tempfile
@@ -1621,7 +1621,7 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
     soln_name = f'{setup.name} : AdaptivePas'
     available_solns = self._solutions.GetValidISolutionList()
     if not(soln_name in available_solns):
-        logger.error(f'ERROR Tried to export freq vs pass number, but solution  `{soln_name}` was not in avaialbe `{available_solns}`. Returning []')
+        logger.error(f'ERROR Tried to export freq vs pass number, but solution  `{soln_name}` was not in available `{available_solns}`. Returning []')
         #return []
     self._solutions.ExportEigenmodes(soln_name, ['Pass:=5'], fn) # ['Pass:=5'] fails  can do with ''
     """
@@ -1635,7 +1635,7 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
 
         Amplitude is set to 1
 
-        No error is thorwn if a number exceeding number of modes is set
+        No error is thrown if a number exceeding number of modes is set
 
             FieldType -- EigenStoredEnergy or EigenPeakElecticField
         '''
@@ -1681,7 +1681,7 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
         Determine if fields exist for a particular solution.
 
         variation_string : str | None
-            This must the string that describes the variaiton in hFSS, not 0 or 1, but
+            This must the string that describes the variation in hFSS, not 0 or 1, but
             the string of variables, such as
                 "Cj='2fF' Lj='12.75nH'"
             If None, gets the nominal variation
@@ -1704,7 +1704,7 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
 
         Example
         ------------------------------------------------------
-        Exammple plot for a single vareiation all pass converge of mode freq
+        Example plot for a single variation all pass converge of mode freq
         .. code-block python
             ycomp = [f"re(Mode({i}))" for i in range(1,1+epr_hfss.n_modes)]
             params = ["Pass:=", ["All"]]+variation
@@ -2035,7 +2035,7 @@ class HfssModeler(COMWrapper):
         return list(self._mesh.GetOperationNames(kind))
 
     def mesh_get_all_props(self, mesh_name):
-        # TODO: make mesh tis own  class with preperties
+        # TODO: make mesh tis own  class with properties
         prop_tab = 'MeshSetupTab'
         prop_server = f'MeshSetup:{mesh_name}'
         prop_names = self.parent._design.GetProperties('MeshSetupTab',
@@ -2185,12 +2185,12 @@ class HfssModeler(COMWrapper):
                       **kwargs):
         '''
             Args:
-                pos: 2D positon vector  (specify center point)
+                pos: 2D position vector  (specify center point)
                 ori: should be normed
-                z: z postion
+                z: z position
 
             # TODO create Wirebond class
-            psoition is the origin of one point
+            position is the origin of one point
             ori is the orientation vector, which gets normalized
         '''
         p = np.array(pos)
@@ -2261,7 +2261,7 @@ class HfssModeler(COMWrapper):
     def append_PerfE_assignment(self, boundary_name: str, object_names: list):
         '''
             This will create a new boundary if need, and will
-            otherwise append given names to an exisiting boundary
+            otherwise append given names to an existing boundary
         '''
         # enforce
         boundary_name = str(boundary_name)
@@ -2286,7 +2286,7 @@ class HfssModeler(COMWrapper):
                     **kwargs):
         '''
         This will create a new boundary if need, and will
-        otherwise append given names to an exisiting boundary
+        otherwise append given names to an existing boundary
         old_obj = circ._mesh_assign
         '''
         mesh_name = str(mesh_name)
@@ -2326,7 +2326,7 @@ class HfssModeler(COMWrapper):
         params += obj_arr
         params.append([
             "NAME:CurrentLine",
-            # for some reason here it seems to swtich to use the model units, rather than meters
+            # for some reason here it seems to switch to use the model units, rather than meters
             "Start:=",
             fix_units(start, unit_assumed=LENGTH_UNIT),
             "End:=",
@@ -2422,7 +2422,7 @@ class HfssModeler(COMWrapper):
         Modeler>Coordinate System>Create>Relative CS->Rotated
         Modeler>Coordinate System>Create>Relative CS->Both
 
-        Current cooridnate system is set right after this.
+        Current coordinate system is set right after this.
 
         cs_name : name of coord. sys
             If the name already exists, then a new coordinate system with _1 is created.
@@ -2708,9 +2708,9 @@ class Polyline(ModelEntity):
         '''
         new_name = increment_name(
             new_name, self.modeler.get_objects_in_group(
-                "Sheets"))  # this is for a clsoed polyline
+                "Sheets"))  # this is for a closed polyline
 
-        # check to get the actual new name in case there was a suibtracted ibjet with that namae
+        # check to get the actual new name in case there was a substracted object with that name
         face_ids = self.modeler.get_face_ids(str(self))
         self.modeler.rename_obj(self, new_name)  # now rename
         if len(face_ids) > 0:
@@ -2750,7 +2750,7 @@ class OpenPolyline(ModelEntity):  # Assume closed polyline
 
     def fillets(self, radius, do_not_fillet=[]):
         '''
-            do_not_fillet : Index list of verteces to not fillete
+            do_not_fillet : Index list of vertices to not fillete
         '''
         raw_list_vertices = self.modeler.get_vertex_ids(self)
         list_vertices = []
@@ -2816,7 +2816,7 @@ class HfssFieldsCalc(COMWrapper):
 
     def declare_named_expression(self, name):
         """"
-        If a named epression has been created in the fields calculator, this
+        If a named expression has been created in the fields calculator, this
         function can be called to initialize the name to work with the fields object
         """
         self.named_expression[name] = NamedCalcObject(name, self.setup)
@@ -3066,7 +3066,7 @@ def get_active_project():
     except AttributeError:
         is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
     if not is_admin:
-        print('\033[93m WARNING: you are not runnning as an admin! \
+        print('\033[93m WARNING: you are not running as an admin! \
             You need to run as an admin. You will probably get an error next.\
                  \033[0m')
 
@@ -3103,7 +3103,7 @@ def load_ansys_project(proj_name: str,
         # Checks
         assert project_path.is_dir(
         ), "ERROR! project_path is not a valid directory \N{loudly crying face}.\
-            Check the path, and especially \\ charecters."
+            Check the path, and especially \\ characters."
 
         project_path /= project_path / Path(proj_name + extension)
 
