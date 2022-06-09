@@ -1618,7 +1618,7 @@ class DistributedAnalysis(object):
         else:
             return False
 
-    def hfss_report_f_convergence(self, variation='0', save_csv=True):
+    def hfss_report_f_convergence(self, variation='0', save_csv=True, properties=False):
         '''
         Create a report inside HFSS to plot the converge of freq and style it.
 
@@ -1658,14 +1658,15 @@ class DistributedAnalysis(object):
             report_name, "Pass", ycomp, params, pass_name='AdaptivePass')
 
         # Properties of lines
-        curves = [f"{report_name}:re(Mode({i})):Curve1" for i in range(
-            1, 1+self.n_modes)]
-        set_property(report, 'Attributes', curves, 'Line Width', 3)
-        set_property(report, 'Scaling',
-                     f"{report_name}:AxisY1", 'Auto Units', False)
-        set_property(report, 'Scaling', f"{report_name}:AxisY1", 'Units', 'g')
-        set_property(report, 'Legend',
-                     f"{report_name}:Legend", 'Show Solution Name', False)
+        if properties:
+            curves = [f"{report_name}:re(Mode({i})):Curve1" for i in range(
+                1, 1+self.n_modes)]
+            set_property(report, 'Attributes', curves, 'Line Width', 3)
+            set_property(report, 'Scaling',
+                        f"{report_name}:AxisY1", 'Auto Units', False)
+            set_property(report, 'Scaling', f"{report_name}:AxisY1", 'Units', 'g')
+            set_property(report, 'Legend',
+                        f"{report_name}:Legend", 'Show Solution Name', False)
 
         if save_csv:  # Save
             try:
