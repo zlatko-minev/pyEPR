@@ -1952,8 +1952,6 @@ class Optimetrics(COMWrapper):
                     swp_str = f"{swp_params}"
 
                 else:
-                    # all sweeps
-
                     # correct number of inputs
                     assert len(swp_params) == 3, "Incorrect number of sweep parameters."
 
@@ -2014,7 +2012,6 @@ class Optimetrics(COMWrapper):
             			"CopyMesh:="		, copy_mesh,
             			"SolveWithCopiedMeshOnly:=", solve_with_copied_mesh_only,
             		],
-                # can other fields not be touched?
             ])
         else:
             raise NotImplementedError()
