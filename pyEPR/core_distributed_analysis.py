@@ -1609,7 +1609,7 @@ class DistributedAnalysis(object):
         if fig is None:
             fig = plt.figure(figsize=(11, 3.))
 
-        for variation in self.variations:
+        for variation, variation_labels in self.get_variations().items():
             fig.clf()
 
             # Grid spec and axes;    height_ratios=[4, 1], wspace=0.5
@@ -1619,6 +1619,8 @@ class DistributedAnalysis(object):
             logger.info(f'Creating report for variation {variation}')
             convergence_t = self.get_convergence(variation=variation)
             convergence_f = self.hfss_report_f_convergence(variation=variation)
+
+            axs[0].set_ylabel(variation_labels, fontsize='large')  # add variation labels to y-axis of first plot
 
             ax0t = axs[1].twinx()
             plot_convergence_f_vspass(axs[0], convergence_f)
