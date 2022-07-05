@@ -236,7 +236,7 @@ class DistributedAnalysis(object):
     def calc_p_junction_single(self, mode, variation, U_E=None, U_H=None):
         '''
         This function is used in the case of a single junction only.
-        For multiple junctions, see `calc_p_junction`.
+        For multiple junctions, see :func:`~pyEPR.DistributedAnalysis.calc_p_junction`.
 
         Assumes no lumped capacitive elements.
         '''
@@ -389,6 +389,7 @@ class DistributedAnalysis(object):
 
         Returns:
             Returns a list of strings that give the variation labels for HFSS.
+
             .. code-block:: python
 
                 OrderedDict([
@@ -941,13 +942,14 @@ class DistributedAnalysis(object):
     def calc_p_junction(self, variation, U_H, U_E, Ljs, Cjs):
         '''
         For a single specific mode.
-        Expected that you have specified the mode before calling this, `self.set_mode(num)`
+        Expected that you have specified the mode before calling this, :func:`~pyEPR.DistributedAnalysis.set_mode`.
 
-        Expected to precalc U_H and U_E for mode, will return pandas pd.Series object
-            junc_rect = ['junc_rect1', 'junc_rect2'] name of junc rectangles to integrate H over
-            junc_len  = [0.0001]   specify in SI units; i.e., meters
-            LJs       = [8e-09, 8e-09] SI units
-            calc_sign = ['junc_line1', 'junc_line2']
+        Expected to precalc U_H and U_E for mode, will return pandas pd.Series object:
+
+            * junc_rect = ['junc_rect1', 'junc_rect2'] name of junc rectangles to integrate H over
+            * junc_len  = [0.0001]   specify in SI units; i.e., meters
+            * LJs       = [8e-09, 8e-09] SI units
+            * calc_sign = ['junc_line1', 'junc_line2']
 
         WARNING: Cjs is experimental.
 
@@ -1520,8 +1522,8 @@ class DistributedAnalysis(object):
         Determine if fields exist for a particular solution.
         Just calls `self.solutions.has_fields(variation_string)`
 
-        variation (str | None) : String of variation label, such as '0' or '1'
-            If None, gets the nominal variation
+        Args:
+            variation (str): String of variation label, such as '0' or '1'. If None, gets the nominal variation
         '''
         if self.solutions:
             #print('variation=', variation)
@@ -1607,7 +1609,7 @@ class DistributedAnalysis(object):
         if fig is None:
             fig = plt.figure(figsize=(11, 3.))
 
-        for variation in self.variations:
+        for variation, variation_labels in self.get_variations().items():
             fig.clf()
 
             # Grid spec and axes;    height_ratios=[4, 1], wspace=0.5
@@ -1617,6 +1619,8 @@ class DistributedAnalysis(object):
             logger.info(f'Creating report for variation {variation}')
             convergence_t = self.get_convergence(variation=variation)
             convergence_f = self.hfss_report_f_convergence(variation=variation)
+
+            axs[0].set_ylabel(variation_labels, fontsize='large')  # add variation labels to y-axis of first plot
 
             ax0t = axs[1].twinx()
             plot_convergence_f_vspass(axs[0], convergence_f)
