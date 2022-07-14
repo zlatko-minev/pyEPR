@@ -715,6 +715,8 @@ class HfssDesign(COMWrapper):
             return HfssEMSetup(self, name)
         elif self.solution_type == "DrivenModal":
             return HfssDMSetup(self, name)
+        elif self.solution_type == "DrivenTerminal":
+            return HfssDTSetup(self, name)
         elif self.solution_type == "Q3D":
             return AnsysQ3DSetup(self, name)
 
@@ -764,6 +766,26 @@ class HfssDesign(COMWrapper):
             pct_refinement, "IsEnabled:=", True, "BasisOrder:=", basis_order
         ])
         return HfssDMSetup(self, name)
+
+    def create_dt_setup(self,
+                        freq_ghz=1,
+                        name="Setup",
+                        max_delta_s=0.1,
+                        max_passes=10,
+                        min_passes=1,
+                        min_converged=1,
+                        pct_refinement=30,
+                        basis_order=-1):
+
+        name = increment_name(name, self.get_setup_names())
+        self._setup_module.InsertSetup("HfssDriven", [
+            "NAME:" + name, "Frequency:=",
+            str(freq_ghz) + "GHz", "MaxDeltaS:=", max_delta_s,
+            "MaximumPasses:=", max_passes, "MinimumPasses:=", min_passes,
+            "MinimumConvergedPasses:=", min_converged, "PercentRefinement:=",
+            pct_refinement, "IsEnabled:=", True, "BasisOrder:=", basis_order
+        ])
+        return HfssDTSetup(self, name)
 
     def create_em_setup(self,
                         name="Setup",
@@ -1331,6 +1353,11 @@ class HfssDMSetup(HfssSetup):
     def get_solutions(self):
         return HfssDMDesignSolutions(self, self.parent._solutions)
 
+class HfssDTSetup(HfssDMSetup):
+
+    def get_solutions(self):
+        return HfssDTDesignSolutions(self, self.parent._solutions)
+
 
 class HfssEMSetup(HfssSetup):
     """
@@ -1724,6 +1751,8 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
 class HfssDMDesignSolutions(HfssDesignSolutions):
     pass
 
+class HfssDTDesignSolutions(HfssDesignSolutions):
+    pass
 
 class HfssQ3DDesignSolutions(HfssDesignSolutions):
     pass
