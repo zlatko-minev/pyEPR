@@ -32,7 +32,7 @@ Welcome to pyEPR :beers:! &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(see [arXiv:2010.00620](
 ## Who uses pyEPR?
 * Yale University, Michel Devoret lab [QLab](https://qulab.eng.yale.edu/), CT, USA
 * Yale University, Rob Schoelkopf lab [RSL](https://rsl.yale.edu/), CT, USA
-* [IBM Quantum](https://www.ibm.com/quantum-computing/)
+* [IBM Quantum](https://www.ibm.com/quantum-computing/) and IBM's Qiskit Metal
 * [QUANTIC](https://team.inria.fr/quantic/people.html#) (QUANTUM INFORMATION CIRCUITS), PARISINRIA, ENS, MINES PARISTECH, UPMC, CNRS. Groups of Zaki Leghtas and team. France
 * [Quantum Circuit Group](http://www.physinfo.fr/) Benjamin Huard, Ecole Normale Supérieure de Lyon, France
 * Emanuel Flurin, CEA Saclay, France
@@ -55,6 +55,7 @@ Welcome to pyEPR :beers:! &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(see [arXiv:2010.00620](
 * Alice&Bob, France
 * Centre for Quantum Technologies / Qcrew
 * Quantum Device Lab ETHZ; Andreas Wallraff
+* Bleximo
 * ... and many more! (Please e-mail `zlatko.minev@aya.yale.edu` with updates.)
 
 
