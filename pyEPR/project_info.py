@@ -319,18 +319,20 @@ class ProjectInfo(object):
 
                 if len(setup_names) == 0:
                     logger.warning('\tNo design setup detected.')
+                    setup = None
                     if self.design.solution_type == 'Eigenmode':
                         logger.warning('\tCreating eigenmode default setup.')
                         setup = self.design.create_em_setup()
-                        self.setup_name = setup.name
                     elif self.design.solution_type == 'DrivenModal':
-                        logger.warning('\tCreating drivenmodal default setup.')
+                        logger.warning('\tCreating driven modal default setup.')
                         setup = self.design.create_dm_setup()
-                        self.setup_name = setup.name
+                    elif self.design.solution_type == 'DrivenTerminal':
+                        logger.warning('\tCreating driven terminal default setup.')
+                        setup = self.design.create_dt_setup()
                     elif self.design.solution_type == 'Q3D':
                         logger.warning('\tCreating Q3D default setup.')
                         setup = self.design.create_q3d_setup()
-                        self.setup_name = setup.name
+                    self.setup_name = setup.name
                 else:
                     self.setup_name = setup_names[0]
 
