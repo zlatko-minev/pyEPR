@@ -884,10 +884,10 @@ class DistributedAnalysis(object):
               str(mode)+' = ' + str(p_dielectric))
         return pd.Series(Qdielectric)
 
-    def get_Qsurface_all(self, mode, variation, U_E=None):
+    def get_Qsurface(self, mode, variation, name, U_E=None):
         '''
-        calculate the contribution to Q of a dielectric layer of dirt on all surfaces
-        set the dirt thickness and loss tangent in the config file
+        Calculate the contribution to Q of a dielectric layer of dirt on a given surface.
+        Set the dirt thickness and loss tangent in the config file
         ref: http://arxiv.org/pdf/1509.01854.pdf
         '''
         if U_E is None:
@@ -896,16 +896,13 @@ class DistributedAnalysis(object):
         Qsurf = OrderedDict()
         print('Calculating Qsurface for mode ' + str(mode) +
               ' (' + str(mode) + '/' + str(self.n_modes-1) + ')')
-#        A = self.fields.Mag_E**2
-#        A = A.integrate_vol(name='AllObjects')
-#        U_surf = A.evaluate(lv=lv)
         calcobject = CalcObject([], self.setup)
         vecE = calcobject.getQty("E")
         A = vecE
         B = vecE.conj()
         A = A.dot(B)
         A = A.real()
-        A = A.integrate_surf(name='AllObjects')
+        A = A.integrate_surf(name=name)
         U_surf = A.evaluate(lv=lv)
         U_surf *= config.dissipation.th*epsilon_0*config.dissipation.eps_r
         p_surf = U_surf/U_E
@@ -913,6 +910,14 @@ class DistributedAnalysis(object):
             (p_surf*config.dissipation.tan_delta_surf)
         print('p_surf'+'_'+str(mode)+' = ' + str(p_surf))
         return pd.Series(Qsurf)
+
+    def get_Qsurface_all(self, mode, variation, U_E=None):
+        '''
+        Calculate the contribution to Q of a dielectric layer of dirt on all surfaces.
+        Set the dirt thickness and loss tangent in the config file
+        ref: http://arxiv.org/pdf/1509.01854.pdf
+        '''
+        return self.get_Qsurface(mode, variation, name='AllObjects', U_E=U_E)
 
     def calc_Q_external(self, variation, freq_GHz, U_E = None):
         '''
