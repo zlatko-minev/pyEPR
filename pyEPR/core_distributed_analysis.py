@@ -742,7 +742,7 @@ class DistributedAnalysis(object):
             "E").real().integrate_line_tangent(name=junc_line_name)
         v_calc_imag = CalcObject([], self.setup).getQty(
             "E").imag().integrate_line_tangent(name=junc_line_name)
-        V = np.sign(v_calc_real) * np.sqrt(v_calc_real.evaluate(lv=lv)**2 +
+        V = np.sign(v_calc_real.evaluate()) * np.sqrt(v_calc_real.evaluate(lv=lv)**2 +
                     v_calc_imag.evaluate(lv=lv)**2)
 
         # Get frequency
