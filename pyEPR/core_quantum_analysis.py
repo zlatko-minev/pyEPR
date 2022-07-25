@@ -443,11 +443,10 @@ class QuantumAnalysis(object):
         '''
         See analyze_variation for full documentation
 
-        Specific params:
-        --------------------
-            variations : None returns all_variations otherwise this is a list with number
-                         as strings ['0', '1']
-            analyze_previous :set to true if you wish to overwrite previous analysis
+        Args:
+            variations: None returns all_variations otherwise this is a list with number as strings ['0', '1']
+            analyze_previous: set to true if you wish to overwrite previous analysis
+            **kwargs: Keyword arguments passed to :func:`~pyEPR.QuantumAnalysis.analyze_variation`.
         '''
 
         result = OrderedDict()
@@ -611,24 +610,22 @@ class QuantumAnalysis(object):
         Core analysis function to call!
 
         Args:
-        ---------------
             junctions: list or slice of junctions to include in the analysis.
                 None defaults to analysing all junctions
             modes: list or slice of modes to include in the analysis.
                 None defaults to analysing all modes
 
         Returns:
-        ----------------
-            f_0 [MHz]    : Eigenmode frequencies computed by HFSS; i.e., linear freq returned in GHz
-            f_1 [MHz]    : Dressed mode frequencies (by the non-linearity; e.g., Lamb shift, etc. ).
-                           Result based on 1st order perturbation theory on the 4th order
-                           expansion of the cosine.
-            f_ND [MHz]   : Numerical diagonalization result of dressed mode frequencies.
-                           only available if `cos_trunc` and  `fock_trunc` are set (non None).
-            chi_O1 [MHz] : Analytic expression for the chis based on a cos trunc to 4th order, and using 1st
-                           order perturbation theory. Diag is anharmonicity, off diag is full cross-Kerr.
-            chi_ND [MHz] : Numerically diagonalized chi matrix. Diag is anharmonicity, off diag is full
-                           cross-Kerr.
+            dict: Dictionary containing at least the following:
+                * f_0 [MHz]: Eigenmode frequencies computed by HFSS; i.e., linear freq returned in GHz
+                * f_1 [MHz]: Dressed mode frequencies (by the non-linearity; e.g., Lamb shift, etc. ).
+                  Result based on 1st order perturbation theory on the 4th order expansion of the cosine.
+                * f_ND [MHz]: Numerical diagonalization result of dressed mode frequencies.
+                  only available if `cos_trunc` and  `fock_trunc` are set (non None).
+                * chi_O1 [MHz]: Analytic expression for the chis based on a cos trunc to 4th order, and using 1st
+                  order perturbation theory. Diag is anharmonicity, off diag is full cross-Kerr.
+                * chi_ND [MHz]: Numerically diagonalized chi matrix. Diag is anharmonicity, off diag is full
+                  cross-Kerr.
         '''
 
         # ensuring proper matrix dimensionality when slicing

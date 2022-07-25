@@ -59,7 +59,7 @@ Automated analysis of lumped and distributed circuits is provided.
 @author: Zlatko Minev, Zaki Leghas, ... and the pyEPR team
 @site: https://github.com/zlatko-minev/pyEPR
 @license: "BSD-3-Clause"
-@version: 0.8.5.5
+@version: 0.8.5.7
 @maintainer: Zlatko K. Minev and  Asaf Diringer
 @email: zlatko.minev@aya.yale.edu
 @url: https://github.com/zlatko-minev/pyEPR
@@ -86,7 +86,7 @@ __credits__ = [
     "Will Livingston", "Steven Touzard"
 ]
 __license__ = "BSD-3-Clause"
-__version__ = "0.8.5.5"
+__version__ = "0.8.5.7"
 __maintainer__ = "Zlatko K. Minev and  Asaf Diringer"
 __email__ = "zlatko.minev@aya.yale.edu"
 __url__ = r'https://github.com/zlatko-minev/pyEPR'
