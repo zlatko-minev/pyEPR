@@ -236,7 +236,7 @@ class DistributedAnalysis(object):
     def calc_p_junction_single(self, mode, variation, U_E=None, U_H=None):
         '''
         This function is used in the case of a single junction only.
-        For multiple junctions, see `calc_p_junction`.
+        For multiple junctions, see :func:`~pyEPR.DistributedAnalysis.calc_p_junction`.
 
         Assumes no lumped capacitive elements.
         '''
@@ -389,6 +389,7 @@ class DistributedAnalysis(object):
 
         Returns:
             Returns a list of strings that give the variation labels for HFSS.
+
             .. code-block:: python
 
                 OrderedDict([
@@ -741,7 +742,7 @@ class DistributedAnalysis(object):
             "E").real().integrate_line_tangent(name=junc_line_name)
         v_calc_imag = CalcObject([], self.setup).getQty(
             "E").imag().integrate_line_tangent(name=junc_line_name)
-        V = np.sqrt(v_calc_real.evaluate(lv=lv)**2 +
+        V = np.sign(v_calc_real.evaluate(lv=lv)) * np.sqrt(v_calc_real.evaluate(lv=lv)**2 +
                     v_calc_imag.evaluate(lv=lv)**2)
 
         # Get frequency
@@ -883,10 +884,10 @@ class DistributedAnalysis(object):
               str(mode)+' = ' + str(p_dielectric))
         return pd.Series(Qdielectric)
 
-    def get_Qsurface_all(self, mode, variation, U_E=None):
+    def get_Qsurface(self, mode, variation, name, U_E=None):
         '''
-        calculate the contribution to Q of a dielectric layer of dirt on all surfaces
-        set the dirt thickness and loss tangent in the config file
+        Calculate the contribution to Q of a dielectric layer of dirt on a given surface.
+        Set the dirt thickness and loss tangent in the config file
         ref: http://arxiv.org/pdf/1509.01854.pdf
         '''
         if U_E is None:
@@ -895,16 +896,13 @@ class DistributedAnalysis(object):
         Qsurf = OrderedDict()
         print('Calculating Qsurface for mode ' + str(mode) +
               ' (' + str(mode) + '/' + str(self.n_modes-1) + ')')
-#        A = self.fields.Mag_E**2
-#        A = A.integrate_vol(name='AllObjects')
-#        U_surf = A.evaluate(lv=lv)
         calcobject = CalcObject([], self.setup)
         vecE = calcobject.getQty("E")
         A = vecE
         B = vecE.conj()
         A = A.dot(B)
         A = A.real()
-        A = A.integrate_surf(name='AllObjects')
+        A = A.integrate_surf(name=name)
         U_surf = A.evaluate(lv=lv)
         U_surf *= config.dissipation.th*epsilon_0*config.dissipation.eps_r
         p_surf = U_surf/U_E
@@ -912,6 +910,14 @@ class DistributedAnalysis(object):
             (p_surf*config.dissipation.tan_delta_surf)
         print('p_surf'+'_'+str(mode)+' = ' + str(p_surf))
         return pd.Series(Qsurf)
+
+    def get_Qsurface_all(self, mode, variation, U_E=None):
+        '''
+        Calculate the contribution to Q of a dielectric layer of dirt on all surfaces.
+        Set the dirt thickness and loss tangent in the config file
+        ref: http://arxiv.org/pdf/1509.01854.pdf
+        '''
+        return self.get_Qsurface(mode, variation, name='AllObjects', U_E=U_E)
 
     def calc_Q_external(self, variation, freq_GHz, U_E = None):
         '''
@@ -941,13 +947,14 @@ class DistributedAnalysis(object):
     def calc_p_junction(self, variation, U_H, U_E, Ljs, Cjs):
         '''
         For a single specific mode.
-        Expected that you have specified the mode before calling this, `self.set_mode(num)`
+        Expected that you have specified the mode before calling this, :func:`~pyEPR.DistributedAnalysis.set_mode`.
 
-        Expected to precalc U_H and U_E for mode, will return pandas pd.Series object
-            junc_rect = ['junc_rect1', 'junc_rect2'] name of junc rectangles to integrate H over
-            junc_len  = [0.0001]   specify in SI units; i.e., meters
-            LJs       = [8e-09, 8e-09] SI units
-            calc_sign = ['junc_line1', 'junc_line2']
+        Expected to precalc U_H and U_E for mode, will return pandas pd.Series object:
+
+            * junc_rect = ['junc_rect1', 'junc_rect2'] name of junc rectangles to integrate H over
+            * junc_len  = [0.0001]   specify in SI units; i.e., meters
+            * LJs       = [8e-09, 8e-09] SI units
+            * calc_sign = ['junc_line1', 'junc_line2']
 
         WARNING: Cjs is experimental.
 
@@ -1520,8 +1527,8 @@ class DistributedAnalysis(object):
         Determine if fields exist for a particular solution.
         Just calls `self.solutions.has_fields(variation_string)`
 
-        variation (str | None) : String of variation label, such as '0' or '1'
-            If None, gets the nominal variation
+        Args:
+            variation (str): String of variation label, such as '0' or '1'. If None, gets the nominal variation
         '''
         if self.solutions:
             #print('variation=', variation)
@@ -1607,7 +1614,7 @@ class DistributedAnalysis(object):
         if fig is None:
             fig = plt.figure(figsize=(11, 3.))
 
-        for variation in self.variations:
+        for variation, variation_labels in self.get_variations().items():
             fig.clf()
 
             # Grid spec and axes;    height_ratios=[4, 1], wspace=0.5
@@ -1617,6 +1624,8 @@ class DistributedAnalysis(object):
             logger.info(f'Creating report for variation {variation}')
             convergence_t = self.get_convergence(variation=variation)
             convergence_f = self.hfss_report_f_convergence(variation=variation)
+
+            axs[0].set_ylabel(variation_labels, fontsize='large')  # add variation labels to y-axis of first plot
 
             ax0t = axs[1].twinx()
             plot_convergence_f_vspass(axs[0], convergence_f)

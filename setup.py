@@ -31,7 +31,7 @@ doclines = __doc__.split('\n')
 
 setup(
     name='pyEPR-quantum',
-    version='0.8.5.5',
+    version='0.8.5.7',
     description=doclines[0],
     long_description=long_description,
     long_description_content_type="text/markdown",
