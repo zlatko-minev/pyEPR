@@ -1730,9 +1730,11 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
         pass_name: AdaptivePass, LastAdaptive
 
         Example
-        ------------------------------------------------------
+        -------
         Example plot for a single variation all pass converge of mode freq
-        .. code-block python
+
+        .. code-block:: python
+        
             ycomp = [f"re(Mode({i}))" for i in range(1,1+epr_hfss.n_modes)]
             params = ["Pass:=", ["All"]]+variation
             setup.create_report("Freq. vs. pass", "Pass", ycomp, params, pass_name='AdaptivePass')
@@ -1863,11 +1865,13 @@ class Optimetrics(COMWrapper):
     Optimetrics script commands executed by the "Optimetrics" module.
 
     Example use:
-    .. code-block python
-            opti = Optimetrics(pinfo.design)
-            names = opti.get_setup_names()
-            print('Names of optimetrics: ', names)
-            opti.solve_setup(names[0])
+
+    .. code-block:: python
+
+        opti = Optimetrics(pinfo.design)
+        names = opti.get_setup_names()
+        print('Names of optimetrics: ', names)
+        opti.solve_setup(names[0])
 
     Note that running optimetrics requires the license for Optimetrics by Ansys.
     """
