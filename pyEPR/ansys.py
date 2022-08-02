@@ -1734,7 +1734,7 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
         Example plot for a single variation all pass converge of mode freq
 
         .. code-block:: python
-        
+
             ycomp = [f"re(Mode({i}))" for i in range(1,1+epr_hfss.n_modes)]
             params = ["Pass:=", ["All"]]+variation
             setup.create_report("Freq. vs. pass", "Pass", ycomp, params, pass_name='AdaptivePass')
@@ -1914,18 +1914,24 @@ class Optimetrics(COMWrapper):
                      solve_with_copied_mesh_only=True,
                      setup_type='parametric'):
         """
-        Inserts a new parametric setup of one variable. Either with sweep 
+        Inserts a new parametric setup of one variable. Either with sweep
         definition or from file.
+        
+        *Synchronized* sweeps (more than one variable changing at once)
+        can be implemented by giving a list of variables to ``variable``
+        and corresponding lists to ``swp_params`` and ``swp_type``.
+        The lengths of the sweep types should match (excluding single value).
 
         Corresponds to ui access:
-        Right-click the Optimetrics folder in the project tree, and then click 
+        Right-click the Optimetrics folder in the project tree, and then click
         Add> Parametric on the shortcut menu.
 
         Ansys provides six sweep definitions types specified using the swp_type
         variable.
 
         Sweep type definitions:
-        - 'single_value'          	
+
+        - 'single_value'
             Specify a single value for the sweep definition.
         - 'linear_step'
             Specify a linear range of values with a constant step size.
@@ -1936,28 +1942,28 @@ class Optimetrics(COMWrapper):
             Specify a logarithmic (base 10) series of values, and the number of
             values to calculate in each decade.
         - 'octave_count'
-            Specify a logarithmic (base 2) series of values, and the number of 
+            Specify a logarithmic (base 2) series of values, and the number of
             values to calculate in each octave.
         - 'exponential_count'
-            Specify an exponential (base e) series of values, and the number of 
+            Specify an exponential (base e) series of values, and the number of
             values to calculate.
 
         For swp_type='single_value' swp_params is the single value.
 
-        For  swp_type='linear_step' swp_params is start, stop, step:
+        For swp_type='linear_step' swp_params is start, stop, step:
             swp_params = ("12.8nH", "13.6nH", "0.2nH")
         
         All other types swp_params is start, stop, count:
             swp_params = ("12.8nH", "13.6nH", 4)
-            The definition of count varies amongst the available types. 
+            The definition of count varies amongst the available types.
 
         For Decade count and Octave count, the Count value specifies the number
         of points to calculate in every decade or octave. For Exponential count,
-        the Count value is the total number of points. The total number of 
+        the Count value is the total number of points. The total number of
         points includes the start and stop values.
 
         For parametric from file, setup_type='parametric_file', pass in a file
-        name and path to swp_params like "C:\\test.csv" or "C:\\test.txt" for 
+        name and path to swp_params like "C:\\test.csv" or "C:\\test.txt" for
         example.
 
         Example csv formatting:
@@ -1966,7 +1972,7 @@ class Optimetrics(COMWrapper):
         2,9.7nH
         3,10.2nH
 
-        See Ansys documentation for additional formatting instructions. 
+        See Ansys documentation for additional formatting instructions.
         """
         setup_name = setup_name or self.design.get_setup_names()[0]
         print(
@@ -1974,40 +1980,51 @@ class Optimetrics(COMWrapper):
         )
 
         if setup_type == 'parametric':
-            valid_swp_types = ['single_value', 'linear_step', 'linear_count', 
-            'decade_count', 'octave_count', 'exponential_count']
 
-            if swp_type not in valid_swp_types:
+            type_map = {
+                'linear_count': 'LINC',
+                'decade_count': 'DEC',
+                'octave_count': 'OCT',
+                'exponential_count': 'ESTP',
+            }
+            valid_swp_types = {'single_value', 'linear_step'} | set(type_map.keys())
+
+            if isinstance(variable, Iterable) and not isinstance(variable, str):
+                # synchronized sweep, check that data is in correct format
+                assert len(swp_params) == len(swp_type) == len(variable), \
+                    'Incorrect swp_params or swp_type format for synchronised sweep.'
+                synchronize = True
+            else:
+                # convert all to lists as we can reuse same code for synchronized
+                swp_type = [swp_type]
+                swp_params = [swp_params]
+                variable = [variable]
+                synchronize = False
+
+            if any(e not in valid_swp_types for e in swp_type):
                 raise NotImplementedError()
             else:
-                if swp_type == 'single_value':
-                    # Single takes string of single variable no swp_type_name
-                    swp_str = f"{swp_params}"
-
-                else:
-                    # correct number of inputs
-                    assert len(swp_params) == 3, "Incorrect number of sweep parameters."
-
-                    # Not checking for compatible unit types
-                    if swp_type == 'linear_step':
-                        swp_type_name = "LIN"
+                swp_str = list()
+                for i, e in enumerate(swp_type):
+                    if e == 'single_value':
+                        # Single takes string of single variable no swp_type_name
+                        swp_str.append(f"{swp_params[i]}")
                     else:
-                        # counts needs to be an integer number
-                        assert isinstance(swp_params[2], int), "Count must be integer."
+                        # correct number of inputs
+                        assert len(swp_params[i]) == 3, "Incorrect number of sweep parameters."
 
-                        if swp_type == 'linear_count':
-                            swp_type_name = "LINC"
-                        elif swp_type == 'decade_count':
-                            swp_type_name = "DEC"
-                        elif swp_type == 'octave_count':
-                            swp_type_name = "OCT"
-                        elif swp_type == 'exponential_count':
-                            swp_type_name = "ESTP"
+                        # Not checking for compatible unit types
+                        if e == 'linear_step':
+                            swp_type_name = "LIN"
+                        else:
+                            # counts needs to be an integer number
+                            assert isinstance(swp_params[i][2], int), "Count must be integer."
 
-                    # prepare the string to pass to Ansys
-                    swp_str = f"{swp_type_name} {swp_params[0]} {swp_params[1]} {swp_params[2]}"
+                            swp_type_name = type_map[e]
 
-            # talk with Ansys
+                        # prepare the string to pass to Ansys
+                        swp_str.append(f"{swp_type_name} {swp_params[i][0]} {swp_params[i][1]} {swp_params[i][2]}")
+
             self._optimetrics.InsertSetup("OptiParametric", [
                 f"NAME:{name}", "IsEnabled:=", True,
                 [
@@ -2021,14 +2038,14 @@ class Optimetrics(COMWrapper):
                 ], ["NAME:StartingPoint"], "Sim. Setups:=", [setup_name],
                 [
                     "NAME:Sweeps",
-                    [
-                        "NAME:SweepDefinition", "Variable:=", variable, "Data:=",
-                        swp_str, "OffsetF1:=", False, "Synchronize:=", 0
-                    ]
+                    *[[
+                        "NAME:SweepDefinition", "Variable:=", var_name, "Data:=",
+                        swp, "OffsetF1:=", False, "Synchronize:=", int(synchronize)
+                    ] for var_name, swp in zip(variable, swp_str)]
                 ], ["NAME:Sweep Operations"], ["NAME:Goals"]
             ])
         elif setup_type == 'parametric_file':
-            # Uses the file name as the swp_params 
+            # Uses the file name as the swp_params
             filename = swp_params
 
             self._optimetrics.ImportSetup("OptiParametric",
