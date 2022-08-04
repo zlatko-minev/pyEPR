@@ -1025,7 +1025,7 @@ class DistributedAnalysis(object):
             self.Ljs = Ljs
             self.Cjs = Cjs
             print(
-                f'\t{j_name:<15} {pmj_ind:>8.6g}{("(+)"if _Smj else "(-)"):>5s}        {pmj_cap:>8.6g}')
+                f'\t{j_name:<15} {pmj_ind:>8.6g}{("(+)"if _Smj > 0 else "(-)"):>5s}        {pmj_cap:>8.6g}')
             #print('\tV_peak=', V_peak)
 
         # ------------------------------------------------------------
