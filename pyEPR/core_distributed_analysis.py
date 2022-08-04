@@ -657,12 +657,13 @@ class DistributedAnalysis(object):
     def calc_p_electric_volume(self,
                                name_dielectric3D,
                                relative_to='AllObjects',
+                               variation=None,
                                E_total=None
                                ):
         r'''
-        Calculate the dielectric energy-participatio ratio
+        Calculate the dielectric energy-participation ratio
         of a 3D object (one that has volume) relative to the dielectric energy of
-        a list of object objects.
+        a list of objects.
 
         This is as a function relative to another object or all objects.
 
@@ -670,18 +671,17 @@ class DistributedAnalysis(object):
         that might be stored in any lumped elements or lumped capacitors.
 
         Returns:
-        ---------
             ℰ_object/ℰ_total, (ℰ_object, _total)
         '''
 
         if E_total is None:
             logger.debug('Calculating ℰ_total')
-            ℰ_total = self.calc_energy_electric(obj=relative_to)
+            ℰ_total = self.calc_energy_electric(obj=relative_to, variation=variation)
         else:
             ℰ_total = E_total
 
         logger.debug('Calculating ℰ_object')
-        ℰ_object = self.calc_energy_electric(obj=name_dielectric3D)
+        ℰ_object = self.calc_energy_electric(obj=name_dielectric3D, variation=variation)
 
         return ℰ_object/ℰ_total, (ℰ_object, ℰ_total)
 
