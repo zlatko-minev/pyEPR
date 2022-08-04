@@ -662,7 +662,8 @@ class QuantumAnalysis(object):
             EJ = EJ[:, junctions][junctions, :]
             PHI_zpf = PHI_zpf[:, junctions]
             PJ_cap = PJ_cap[:, junctions]
-
+        
+        """ NOTE: modes is never None because of the None-check above
         if modes is not None:
             freqs_hfss = freqs_hfss[range(len(self.modes[variation])), ]
             PJ = PJ[range(len(modes)), :]
@@ -670,6 +671,13 @@ class QuantumAnalysis(object):
             Om = Om[range(len(modes)), :][:, range(len(modes))]
             PHI_zpf = PHI_zpf[range(len(modes)), :]
             PJ_cap = PJ_cap[:, junctions]
+        """
+        freqs_hfss = freqs_hfss[range(len(self.modes[variation])), ]
+        PJ = PJ[modes, :]
+        SJ = SJ[modes, :]
+        Om = Om[modes, :][:, modes]
+        PHI_zpf = PHI_zpf[modes, :]
+        PJ_cap = PJ_cap[:, junctions]
 
         # Analytic 4-th order
         CHI_O1 = 0.25 * Om @ PJ @ inv(EJ) @ PJ.T @ Om * 1000.  # MHz
