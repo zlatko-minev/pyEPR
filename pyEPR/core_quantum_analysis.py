@@ -1014,6 +1014,37 @@ class QuantumAnalysis(object):
         """
         return self.results.vs_variations('Qs', vs=swp_variable, to_dataframe=True, variations=variations)
 
+    def get_coupling_quality(self, swp_variable='variation', variations: list = None, 
+                            mode = None, port = None):
+        """return as multiindex data table
+
+        If you specify the mode integer or label will return the Q coupling of that mode to all ports.
+
+        If you specify only a port will return the Q_port contribution to each mode. 
+        
+        Specifying both port and mode will only give that pair for given variations. 
+        """
+        port_Qname = f"Q_{port}"
+
+        df = pd.concat(self.results.vs_variations(
+            'Q_coupling', vs=swp_variable, variations=variations),
+            names=[swp_variable])
+
+        if mode is not None and port is None:
+            # want all Q_external coupling for a given mode
+            return df.loc[pd.IndexSlice[:,mode], :]
+        
+        elif mode is None and port is not None:
+            # given port all Q_external to the modes
+            return df.loc[pd.IndexSlice[:,:], port_Qname]
+
+        elif mode is not None and port is not None:
+            # One Q_external for one mode
+            return df.loc[pd.IndexSlice[:,mode], port_Qname].unstack(1)[mode]
+        
+        else:
+            return df
+
     def get_participations(self, swp_variable='variation',
                            variations: list = None,
                            inductive=True,
