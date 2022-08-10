@@ -1625,7 +1625,7 @@ class DistributedAnalysis(object):
             convergence_t = self.get_convergence(variation=variation)
             convergence_f = self.hfss_report_f_convergence(variation=variation)
 
-            axs[0].set_ylabel(variation_labels, fontsize='large')  # add variation labels to y-axis of first plot
+            axs[0].set_ylabel(variation_labels.replace(' ', '\n'))  # add variation labels to y-axis of first plot
 
             ax0t = axs[1].twinx()
             plot_convergence_f_vspass(axs[0], convergence_f)
