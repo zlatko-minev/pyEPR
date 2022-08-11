@@ -930,7 +930,7 @@ class DistributedAnalysis(object):
         '''
         if U_E is None:
             U_E = self.calc_energy_electric(variation)
-        Qp = pd.Series({})
+        Qp = pd.Series({}, dtype='float64')
 
         freq = freq_GHz * 1e9  # freq in Hz
         for port_nm, port in self.pinfo.ports.items():
@@ -978,7 +978,7 @@ class DistributedAnalysis(object):
         method = self.pinfo.options.method_calc_P_mj
         I_peak_ = {}
         V_peak_ = {}
-        Sj = pd.Series({})
+        Sj = pd.Series({}, dtype='float64')
         for j_name, j_props in self.pinfo.junctions.items():
             logger.debug(f'Calculating participations for {(j_name, j_props)}')
             Lj = Ljs[j_name]
@@ -1098,8 +1098,8 @@ class DistributedAnalysis(object):
             # for all variations and concat
             raise NotImplementedError()  # TODO
         else:
-            Ljs = pd.Series({})
-            Cjs = pd.Series({})
+            Ljs = pd.Series({}, dtype='float64')
+            Cjs = pd.Series({}, dtype='float64')
 
             for junc_name, val in self.pinfo.junctions.items():  # junction nickname
                 _variables = self._hfss_variables[variation]
@@ -1242,7 +1242,7 @@ class DistributedAnalysis(object):
                 self.set_mode(mode)
 
                 # Get HFSS  solved frequencies
-                _Om = pd.Series({})
+                _Om = pd.Series({}, dtype='float64')
                 temp_freq = freqs_bare_GHz[mode]
                 _Om['freq_GHz'] = temp_freq  # freq
                 Om[mode] = _Om

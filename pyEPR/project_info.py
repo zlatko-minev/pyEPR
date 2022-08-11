@@ -236,7 +236,7 @@ class ProjectInfo(object):
         return dict(
             pinfo=pd.Series(get_instance_vars(self, self._Forbidden)),
             dissip=pd.Series(self.dissipative.data()),
-            options=pd.Series(get_instance_vars(self.options)),
+            options=pd.Series(get_instance_vars(self.options), dtype='object'),
             junctions=pd.DataFrame(self.junctions),
             ports=pd.DataFrame(self.ports),
         )
