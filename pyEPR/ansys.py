@@ -3207,7 +3207,8 @@ def get_report_arrays(name: str):
 
 def load_ansys_project(proj_name: str,
                        project_path: str = None,
-                       extension: str = '.aedt'):
+                       extension: str = '.aedt', 
+                       version = 'AnsoftHfss.HfssScriptInterface'):
     '''
     Utility function to load an Ansys project.
 
@@ -3238,7 +3239,7 @@ def load_ansys_project(proj_name: str,
                 '\t\tFile is locked. \N{fearful face} If connection fails, delete the .lock file.'
             )
 
-    app = HfssApp()
+    app = HfssApp(ProgID = version)
     logger.info("\tOpened Ansys App")
 
     desktop = app.get_app_desktop()

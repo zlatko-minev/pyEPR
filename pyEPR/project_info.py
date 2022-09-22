@@ -169,7 +169,8 @@ class ProjectInfo(object):
                 dielectric_surfaces: list = None,
                 resistive_surfaces: list= None,
                 seams: list= None,
-                do_connect: bool = True):
+                do_connect: bool = True, 
+                version = 'AnsoftHfss.HfssScriptInterface'):
         """
         Keyword Arguments:
 
@@ -201,6 +202,7 @@ class ProjectInfo(object):
         self.project_name = project_name
         self.design_name = design_name
         self.setup_name = setup_name
+        self.version = version
 
         # HFSS design: describe junction parameters
         # TODO: introduce modal labels
@@ -252,7 +254,7 @@ class ProjectInfo(object):
         logger.info('Connecting to Ansys Desktop API...')
 
         self.app, self.desktop, self.project = ansys.load_ansys_project(
-            self.project_name, self.project_path)
+            self.project_name, self.project_path, version = self.version)
 
         if self.project:
             # TODO: should be property?
