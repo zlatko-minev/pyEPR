@@ -76,12 +76,12 @@ import warnings
 from pathlib import Path
 
 try:
-    from attrdict import AttrDict as Dict
+    from metadict import MetaDict as Dict
 except (ImportError, ModuleNotFoundError):
-    raise ImportError("""Please install python package `AttrDict`.
-    AttrDict is in PyPI, so it can be installed directly
-    (https://github.com/bcj/AttrDict) using:
-        $ pip install attrdict""")
+    raise ImportError("""Please install python package `MetaDict`.
+    MetaDict is in PyPI, so it can be installed directly
+    (https://github.com/LarsHill/metadict/) using:
+        $ pip install metadict""")
 
 ##############################################################################
 # Python header

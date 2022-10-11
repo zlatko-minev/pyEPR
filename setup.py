@@ -55,6 +55,6 @@ setup(name='pyEPR',
         "Environment :: Console",
         "License :: OSI Approved :: Apache Software License"],
       python_requires=">=3.5, <4",
-      # install_requires=['numpy','pandas','pint','matplotlib','attrdict','sympy','IPython'],
+      # install_requires=['numpy','pandas','pint','matplotlib','metadict','sympy','IPython'],
       install_requires=requirements
       )

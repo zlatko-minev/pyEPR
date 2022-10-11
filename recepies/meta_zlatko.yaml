@@ -45,11 +45,11 @@ requirements:
     # - qutip
     - ipython>=7.0.0
     - seaborn>=0.10.0
-    # - attrdict
+    # - metadict
     # - pip:
       # works for regular pip packages
-      # - attrdict
-    # WARNING: attrdict, pint, and qutip failed conda 
+      # - metadict
+    # WARNING: metadict, pint, and qutip failed conda
 
 # test:
   # imports:

@@ -19,7 +19,7 @@ requirements:
     - pip
     - setuptools
     - numpy >=1.15
-    - attrdict
+    - metadict
 
 test:
   imports:
