@@ -50,6 +50,22 @@ config = Dict( # pylint: disable=invalid-name
         tan_delta_surf=1e-3,
 
         ##################################################
+        # Surface object specific dielectric properties.
+        # These will override ones above when applicable
+        dielectric_surfaces=Dict(
+            trace=Dict(
+                tan_delta_surf=0.001,
+                th=5e-9,
+                eps_r=10
+            ),
+            gap=Dict(
+                tan_delta_surf=0.001,
+                th=2e-9,
+                eps_r=10
+            )
+        ),
+
+        ##################################################
         # Thin-film surface loss
         # units:  Ohms
         # ref:    https://arxiv.org/abs/1308.1743
