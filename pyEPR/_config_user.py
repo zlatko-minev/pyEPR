@@ -31,7 +31,6 @@ config = Dict( # pylint: disable=invalid-name
         # refs: https://arxiv.org/abs/1308.1743
         #       http://arxiv.org/pdf/1509.01854.pdf
         tan_delta_sapp=1e-6,  # tan(delta) for bulk surface
-        # epsi=10,    # dielectric
         epsi=10,    # dielectric
 
         ##################################################
