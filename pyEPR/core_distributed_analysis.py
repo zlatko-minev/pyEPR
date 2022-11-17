@@ -878,13 +878,11 @@ class DistributedAnalysis(object):
         U_dielectric = self.calc_energy_electric(variation, obj=dielectric)
         p_dielectric = U_dielectric/U_E
         # TODO: Update make p saved sep. and get Q for diff materials, indep. specify in pinfo
-        Qdielectric['Qdielectric_'+dielectric+'_' +
-                    str(mode)] = 1/(p_dielectric*config.dissipation.tan_delta_sapp)
-        print('p_dielectric'+'_'+dielectric+'_' +
-              str(mode)+' = ' + str(p_dielectric))
+        Qdielectric['Qdielectric_' + dielectric] = 1/(p_dielectric*config.dissipation.tan_delta_sapp)
+        print('p_dielectric'+'_'+dielectric+'_' + str(mode) + ' = ' + str(p_dielectric))
         return pd.Series(Qdielectric)
 
-    def get_Qsurface(self, mode, variation, name, U_E=None):
+    def get_Qsurface(self, mode, variation, name, U_E=None, material_properties=None):
         '''
         Calculate the contribution to Q of a dielectric layer of dirt on a given surface.
         Set the dirt thickness and loss tangent in the config file
@@ -892,10 +890,15 @@ class DistributedAnalysis(object):
         '''
         if U_E is None:
             U_E = self.calc_energy_electric(variation)
+        if material_properties is None:
+            material_properties = {}
+        th = material_properties.get('th', config.dissipation.th)
+        eps_r = material_properties.get('eps_r', config.dissipation.eps_r)
+        tan_delta_surf = material_properties.get('tan_delta_surf', config.dissipation.tan_delta_surf)
+
         lv = self._get_lv(variation)
         Qsurf = OrderedDict()
-        print('Calculating Qsurface for mode ' + str(mode) +
-              ' (' + str(mode) + '/' + str(self.n_modes-1) + ')')
+        print(f'Calculating Qsurface {name} for mode ({mode}/{self.n_modes-1})')
         calcobject = CalcObject([], self.setup)
         vecE = calcobject.getQty("E")
         A = vecE
@@ -904,11 +907,10 @@ class DistributedAnalysis(object):
         A = A.real()
         A = A.integrate_surf(name=name)
         U_surf = A.evaluate(lv=lv)
-        U_surf *= config.dissipation.th*epsilon_0*config.dissipation.eps_r
+        U_surf *= th * epsilon_0 * eps_r
         p_surf = U_surf/U_E
-        Qsurf['Qsurf_'+str(mode)] = 1 / \
-            (p_surf*config.dissipation.tan_delta_surf)
-        print('p_surf'+'_'+str(mode)+' = ' + str(p_surf))
+        Qsurf[f'Qsurf_{name}'] = 1 / (p_surf * tan_delta_surf)
+        print(f'p_surf_{name}_{mode} = {p_surf}')
         return pd.Series(Qsurf)
 
     def get_Qsurface_all(self, mode, variation, U_E=None):
@@ -1308,17 +1310,15 @@ class DistributedAnalysis(object):
                             dielectric, mode, variation, self.U_E))
 
                 # get Q surface
-                if self.pinfo.dissipative['resistive_surfaces']:
-                    if self.pinfo.dissipative['resistive_surfaces'] == 'all':
+                if self.pinfo.dissipative['dielectric_surfaces']:
+                    if self.pinfo.dissipative['dielectric_surfaces'] == 'all':
                         sol = sol.append(
                             self.get_Qsurface_all(mode, variation, self.U_E))
                     else:
-                        raise NotImplementedError(
-                            "Join the team, by helping contribute this piece of code.")
-
-                if self.pinfo.dissipative['resistive_surfaces'] is not None:
-                    raise NotImplementedError(
-                        "Join the team, by helping contribute this piece of code.")
+                        for surface, properties in self.pinfo.dissipative['dielectric_surfaces'].items():
+                            sol = sol.append(
+                                self.get_Qsurface(mode, variation, surface, self.U_E, properties)
+                            )
 
                 SOL[mode] = sol
 
@@ -1625,7 +1625,7 @@ class DistributedAnalysis(object):
             convergence_t = self.get_convergence(variation=variation)
             convergence_f = self.hfss_report_f_convergence(variation=variation)
 
-            axs[0].set_ylabel(variation_labels, fontsize='large')  # add variation labels to y-axis of first plot
+            axs[0].set_ylabel(variation_labels.replace(' ', '\n'))  # add variation labels to y-axis of first plot
 
             ax0t = axs[1].twinx()
             plot_convergence_f_vspass(axs[0], convergence_f)
