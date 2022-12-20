@@ -1301,24 +1301,20 @@ class DistributedAnalysis(object):
                 # get seam Q
                 if self.pinfo.dissipative['seams']:
                     for seam in self.pinfo.dissipative['seams']:
-                        sol = sol.append(self.get_Qseam(seam, mode, variation, self.U_H))
+                        sol = pd.concat([sol, self.get_Qseam(seam, mode, variation, self.U_H)])
 
                 # get Q dielectric
                 if self.pinfo.dissipative['dielectrics_bulk']:
                     for dielectric in self.pinfo.dissipative['dielectrics_bulk']:
-                        sol = sol.append(self.get_Qdielectric(
-                            dielectric, mode, variation, self.U_E))
+                        sol = pd.concat([sol, self.get_Qdielectric(dielectric, mode, variation, self.U_E)])
 
                 # get Q surface
                 if self.pinfo.dissipative['dielectric_surfaces']:
                     if self.pinfo.dissipative['dielectric_surfaces'] == 'all':
-                        sol = sol.append(
-                            self.get_Qsurface_all(mode, variation, self.U_E))
+                        sol = pd.concat([sol, self.get_Qsurface_all(mode, variation, self.U_E)])
                     else:
                         for surface, properties in self.pinfo.dissipative['dielectric_surfaces'].items():
-                            sol = sol.append(
-                                self.get_Qsurface(mode, variation, surface, self.U_E, properties)
-                            )
+                            sol = pd.concat([sol, self.get_Qsurface(mode, variation, surface, self.U_E, properties)])
 
                 SOL[mode] = sol
 
