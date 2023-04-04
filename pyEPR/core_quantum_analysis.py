@@ -664,7 +664,6 @@ class QuantumAnalysis(object):
             PJ_cap = PJ_cap[:, junctions]
 
         if modes is not None:
-            freqs_hfss = freqs_hfss[variation].values[(modes)]
             PJ = PJ[modes, :]
             SJ = SJ[modes, :]
             Om = Om[modes, :][:, modes]
