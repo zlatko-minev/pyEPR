@@ -102,6 +102,7 @@ ENV/
 
 # exclude config
 pyEPR/config.py
+pyEPR/_user_config.py
 __src__not_incl/
 pyEPR/.vscode/
 pyEPR/.pylintrc

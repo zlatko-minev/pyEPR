@@ -120,10 +120,12 @@ class ProjectInfo(object):
             # --- check valid inputs ---
             if not (key in diss_opt or key == 'pinfo'):
                 raise ValueError(f"No such parameter {key}")
-            if key != 'pinfo' and (not isinstance(value, list) or \
+            if key != 'pinfo' and (not isinstance(value, (list, dict)) or \
                     not all(isinstance(x, str) for x in value)) and (value != None):
                 raise ValueError(f'dissipative[\'{key}\'] must be a list of strings ' \
-                    'containing names of models in the project!')
+                    'containing names of models in the project or dictionary of strings of models containing ' \
+                    'material loss properties!'
+                )
             if key != 'pinfo' and hasattr(self['pinfo'], 'design'):
                 for x in value:
                     if x not in self['pinfo'].get_all_object_names():
@@ -238,7 +240,7 @@ class ProjectInfo(object):
         return dict(
             pinfo=pd.Series(get_instance_vars(self, self._Forbidden)),
             dissip=pd.Series(self.dissipative.data()),
-            options=pd.Series(get_instance_vars(self.options)),
+            options=pd.Series(get_instance_vars(self.options), dtype='object'),
             junctions=pd.DataFrame(self.junctions),
             ports=pd.DataFrame(self.ports),
         )

@@ -63,7 +63,7 @@ def epr_numerical_diagonalization(freqs, Ljs, ϕzpf,
     assert(all(Ljs < 1E-3)
            ), "Please input the inductances in Henries. \N{nauseated face}"
 
-    Hs = black_box_hamiltonian(freqs * 1E9, Ljs.astype(np.float), fluxQ*ϕzpf,
+    Hs = black_box_hamiltonian(freqs * 1E9, Ljs.astype(float), fluxQ*ϕzpf,
                                cos_trunc, fock_trunc, individual=use_1st_order,
                                non_linear_potential = non_linear_potential)
     f_ND, χ_ND, _, _ = make_dispersive(
