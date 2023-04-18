@@ -17,6 +17,8 @@ from __future__ import print_function  # Python 2.7 and 3 compatibility
 
 from typing import List
 
+import re
+
 import pickle
 import sys
 import time
@@ -401,7 +403,7 @@ class DistributedAnalysis(object):
         """
         return OrderedDict(zip(self.variations, self._list_variations))
 
-    def get_variation_string(self, variation=None):
+    def get_variation_string(self, variation=None, format=False):
         """
         **Solved** variation string identifier.
 
@@ -417,9 +419,55 @@ class DistributedAnalysis(object):
                 "$test='0.25mm' Cj='2fF' Lj='12.5nH'"
         """
         if variation is None:
-            return self._nominal_variation
+            txt = self._nominal_variation
+        else:
+            txt = self._list_variations[ureg(variation)]
 
-        return self._list_variations[ureg(variation)]
+        if format:
+            parts = []
+            pattern = re.compile(r"(?P<value>([+-]?\d*)?(\.\d*)?(?P<exp>e[-]?\d+)?)(?P<unit>[a-zA-Z]{2,})?")
+            for param in txt.split(' '):
+                key, value = param.split('=')
+                
+                m = re.fullmatch(pattern, value[1:-1])  
+                if m is None:
+                    raise ValueError(f"Could not parse '{value}'")
+                clx = m.groupdict()
+
+                value = clx['value']
+                if '.' in clx['value']:
+                    value = f"{float(value):g}"
+                
+                if clx['unit'] is not None:
+                    parts.append(f"{key}=\'{value}{clx['unit']}\'")
+                else:
+                    parts.append(f"{key}=\'{value}\'")               
+            txt = ' '.join(parts)
+
+        return txt
+
+    def get_format_variation_string(data, max_digits=5):
+        metadata = []
+        pattern = re.compile(r"(?P<value>([+-]?\d*)?(\.\d*)?(?P<exp>e[-]?\d+)?)(?P<unit>[a-zA-Z]{2,})?")
+        for param in data.split(' '):
+            key, value = param.split('=')
+            
+            m = re.fullmatch(pattern, value[1:-1])  
+            if m is None:
+                raise ValueError(f"Could not parse '{value}'")
+            clx = m.groupdict()
+
+            value = clx['value']
+            if '.' in clx['value']:
+                value = f"{float(value):g}"
+            
+            if clx['unit'] is not None:
+                metadata.append(f"{key}=\'{value}{clx['unit']}\'")
+            else:
+                metadata.append(f"{key}=\'{value}\'")
+                
+        return ' '.join(metadata)
+
 
     def _parse_listvariations(self, lv):
         """
@@ -1560,12 +1608,11 @@ class DistributedAnalysis(object):
             return None
 
         oDesign = self.design
-        variation = self._get_lv(variation)
         report = oDesign._reporter
 
         # Create report
         ycomp = [f"re(Mode({i}))" for i in range(1, 1+self.n_modes)]
-        params = ["Pass:=", ["All"]]+variation
+        params = ["Pass:=", ["All"]] + self._get_lv(variation)
         report_name = "Freq. vs. pass"
         if report_name in report.GetAllReportNames():
             report.DeleteReports([report_name])
@@ -1573,14 +1620,21 @@ class DistributedAnalysis(object):
             report_name, "Pass", ycomp, params, pass_name='AdaptivePass')
 
         # Properties of lines
-        curves = [f"{report_name}:re(Mode({i})):Curve1" for i in range(
-            1, 1+self.n_modes)]
+        if int(self.pinfo.desktop.get_version().split('.')[0]) >= 2022:
+            curves = [f"{report_name}:re(Mode({i})):{self.get_variation_string(variation, True)} [Curve1]" for i in range(
+                1, 1+self.n_modes)]
+        else:
+            curves = [f"{report_name}:re(Mode({i})):Curve1" for i in range(
+                1, 1+self.n_modes)]
         set_property(report, 'Attributes', curves, 'Line Width', 3)
         set_property(report, 'Scaling',
                      f"{report_name}:AxisY1", 'Auto Units', False)
         set_property(report, 'Scaling', f"{report_name}:AxisY1", 'Units', 'g')
         set_property(report, 'Legend',
                      f"{report_name}:Legend", 'Show Solution Name', False)
+        
+        set_property(report, 'Legend', f"{report_name}:Legend", 'Show Trace Name', True)
+        set_property(report, 'Legend', f"{report_name}:Legend", 'Show Variation Key', False)
 
         if save_csv:  # Save
             try:
