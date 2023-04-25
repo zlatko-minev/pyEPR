@@ -664,11 +664,10 @@ class QuantumAnalysis(object):
             PJ_cap = PJ_cap[:, junctions]
 
         if modes is not None:
-            freqs_hfss = freqs_hfss[range(len(self.modes[variation])), ]
-            PJ = PJ[range(len(modes)), :]
-            SJ = SJ[range(len(modes)), :]
-            Om = Om[range(len(modes)), :][:, range(len(modes))]
-            PHI_zpf = PHI_zpf[range(len(modes)), :]
+            PJ = PJ[modes, :]
+            SJ = SJ[modes, :]
+            Om = Om[modes, :][:, modes]
+            PHI_zpf = PHI_zpf[modes, :]
             PJ_cap = PJ_cap[:, junctions]
 
         # Analytic 4-th order
