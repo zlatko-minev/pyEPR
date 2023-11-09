@@ -43,13 +43,14 @@ def epr_numerical_diagonalization(freqs, Ljs, ϕzpf,
              cos_trunc=8,
              fock_trunc=9,
              use_1st_order=False,
-             return_H=False):
+             return_H=False,
+             non_linear_potential=None):
     '''
-    Numerical diagonalizaiton for pyEPR. Ask Zlatko for details.
+    Numerical diagonalization for pyEPR. Ask Zlatko for details.
 
     :param fs: (GHz, not radians) Linearized model, H_lin, normal mode frequencies in Hz, length M
-    :param ljs: (Henries) junction linerized inductances in Henries, length J
-    :param fzpfs: (reduced) Reduced Zero-point fluctutation of the junction fluxes for each mode
+    :param ljs: (Henries) junction linearized inductances in Henries, length J
+    :param fzpfs: (reduced) Reduced Zero-point fluctuation of the junction fluxes for each mode
                 across each junction, shape MxJ
 
     :return: Hamiltonian mode freq and dispersive shifts. Shifts are in MHz.
@@ -62,8 +63,9 @@ def epr_numerical_diagonalization(freqs, Ljs, ϕzpf,
     assert(all(Ljs < 1E-3)
            ), "Please input the inductances in Henries. \N{nauseated face}"
 
-    Hs = black_box_hamiltonian(freqs * 1E9, Ljs.astype(np.float), fluxQ*ϕzpf,
-                 cos_trunc, fock_trunc, individual=use_1st_order)
+    Hs = black_box_hamiltonian(freqs * 1E9, Ljs.astype(float), fluxQ*ϕzpf,
+                               cos_trunc, fock_trunc, individual=use_1st_order,
+                               non_linear_potential = non_linear_potential)
     f_ND, χ_ND, _, _ = make_dispersive(
         Hs, fock_trunc, ϕzpf, freqs, use_1st_order=use_1st_order)
     χ_ND = -1*χ_ND * 1E-6  # convert to MHz, and flip sign so that down shift is positive
@@ -73,18 +75,19 @@ def epr_numerical_diagonalization(freqs, Ljs, ϕzpf,
 
 
 
-def black_box_hamiltonian(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual=False):
+def black_box_hamiltonian(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual=False,
+                          non_linear_potential = None):
     r"""
     :param fs: Linearized model, H_lin, normal mode frequencies in Hz, length N
-    :param ljs: junction linerized inductances in Henries, length M
-    :param fzpfs: Zero-point fluctutation of the junction fluxes for each mode across each junction,
+    :param ljs: junction linearized inductances in Henries, length M
+    :param fzpfs: Zero-point fluctuation of the junction fluxes for each mode across each junction,
                  shape MxJ
     :return: Hamiltonian in units of Hz (i.e H / h)
     All in SI units. The ZPF fed in are the generalized, not reduced, flux.
 
     Description:
-     Takes the linear mode frequencies, $\omega_m$, and the zero-point fluctuations, ZPFs, and
-     builds the Hamiltonian matrix of $H_full$, assuming cos potential.
+     Takes the linear mode frequencies, :math:`\omega_m`, and the zero-point fluctuations, ZPFs, and
+     builds the Hamiltonian matrix of :math:`H_{full}`, assuming cos potential.
     """
     n_modes = len(fs)
     njuncs = len(ljs)
@@ -119,10 +122,13 @@ def black_box_hamiltonian(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual=
 
     def cos(x):
         return cos_approx(x, cos_trunc=cos_trunc)
+    
+    if non_linear_potential is None:
+        non_linear_potential = cos
 
     linear_part = dot(fs, mode_ns)
     cos_interiors = [dot(fzpf_row/fluxQ, mode_fields) for fzpf_row in fzpfs]
-    nonlinear_part = dot(-fjs, map(cos, cos_interiors))
+    nonlinear_part = dot(-fjs, map(non_linear_potential, cos_interiors))
     if individual:
         return linear_part, nonlinear_part
     else:
@@ -134,13 +140,13 @@ def make_dispersive(H, fock_trunc, fzpfs=None, f0s=None, chi_prime=False,
                     use_1st_order=False):
     r"""
     Input: Hamiltonian Matrix.
-        Optional: phi_zpfs and normal mode frequncies, f0s.
+        Optional: phi_zpfs and normal mode frequencies, f0s.
         use_1st_order : deprecated
     Output:
         Return dressed mode frequencies, chis, chi prime, phi_zpf flux (not reduced), and linear frequencies
     Description:
-        Takes the Hamiltonian matrix `H` from bbq_hmt. It them finds the eigenvalues/eigenvectors and  assigns quantum numbers to them --- i.e., mode excitations,  such as, for instance, for three mode, |0,0,0> or |0,0,1>, which correspond to no excitations in any of the modes or one excitation in the 3rd mode, resp.    The assignment is performed based on the maximum overlap between the eigenvectors of H_full and H_lin.   If this crude explanation is confusing, let me know, I will write a more detailed one :slightly_smiling_face:
-        Based on the assignment of the excitations, the function returns the dressed mode frequencies $\omega_m^\prime$, and the cross-Kerr matrix (including anharmonicities) extracted from the numerical diagonalization, as well as from 1st order perturbation theory.
+        Takes the Hamiltonian matrix `H` from bbq_hmt. It them finds the eigenvalues/eigenvectors and  assigns quantum numbers to them --- i.e., mode excitations,  such as, for instance, for three mode, :math:`|0,0,0\rangle` or :math:`|0,0,1\rangle`, which correspond to no excitations in any of the modes or one excitation in the 3rd mode, resp.    The assignment is performed based on the maximum overlap between the eigenvectors of H_full and H_lin.   If this crude explanation is confusing, let me know, I will write a more detailed one |:slightly_smiling_face:|
+        Based on the assignment of the excitations, the function returns the dressed mode frequencies :math:`\omega_m^\prime`, and the cross-Kerr matrix (including anharmonicities) extracted from the numerical diagonalization, as well as from 1st order perturbation theory.
         Note, the diagonal of the CHI matrix is directly the anharmonicity term.
     """
     if hasattr(H, '__len__'):  # is it an array / list?
@@ -148,7 +154,7 @@ def make_dispersive(H, fock_trunc, fzpfs=None, f0s=None, chi_prime=False,
         H = H_lin + H_nl
     else:  # make sure its a quanutm object
         assert type(
-            H) == qutip.qobj.Qobj, "Please pass in either  a list of Qobjs or Qobj for the Hamiltonian"
+            H) == qutip.qobj.Qobj, "Please pass in either a list of Qobjs or Qobj for the Hamiltonian"
 
     print("Starting the diagonalization")
     evals, evecs = H.eigenstates()
@@ -269,7 +275,7 @@ def black_box_hamiltonian_nq(freqs, zmat, ljs, cos_trunc=6, fock_trunc=8, show_f
     slopes = np.zeros((nj, nz))
     import matplotlib.pyplot as plt
     # Fit a second order polynomial in the region around the zero
-    # Extract the exact location of the zero and the assocated slope
+    # Extract the exact location of the zero and the associated slope
     # If you need better than second order fit, you're not sampling finely enough
     for i, z in enumerate(zeros):
         f0_guess = (freqs[z+1] + freqs[z]) / 2

@@ -26,7 +26,7 @@ default_colormap = lambda: getattr(mpl.cm, config.plotting.default_color_map)
 
 def mpl_dpi(dpi=200):
     '''
-    Set the matpllib resolution for images dots per inch
+    Set the matplotlib resolution for images dots per inch
     '''
     mpl.rcParams['figure.dpi'] = dpi
     mpl.rcParams['savefig.dpi'] = dpi
@@ -36,7 +36,7 @@ def plt_cla(ax: Axes):
     '''
     Clear all plotted objects on an axis
 
-    ax : mapltlib axis
+    ax : matplotlib axis
     '''
     ax = ax if not ax is None else plt.gca()
     for artist in ax.lines + ax.collections + ax.patches + ax.images + ax.texts:
@@ -67,7 +67,7 @@ def legend_translucent(ax: Axes, values=[], loc=0, alpha=0.5, leg_kw={}):
 
 def get_last_color(ax: Axes):
     '''
-    gets the color fothe last plotted line
+    gets the color for the last plotted line
     use:
         datai.plot(label=name, marker='o')
         data.plot(label=name, marker='o', c=get_last_color(plt.gca()))
@@ -141,7 +141,7 @@ def xarr_heatmap(fg, title=None, kwheat={}, fmt=('%.3f', '%.2f'), fig=None):
     '''
     fig = plt.figure() if fig == None else fig
     df = fg.to_pandas()
-    # format indecies
+    # format indices
     df.index = [float(fmt[0] % x) for x in df.index]
     df.columns = [float(fmt[1] % x) for x in df.columns]
     import seaborn as sns
@@ -161,7 +161,7 @@ Jupyter widgets:
 Not seeing widgets: https://github.com/tqdm/tqdm/issues/451
 
     conda update tqdm
-    # This might aleady work, will require a lot of updates, if not then do:
+    # This might already work, will require a lot of updates, if not then do:
     conda install nodejs
     jupyter labextension install @jupyter-widgets/jupyterlab-manager
     jupyter nbextension enable --py widgetsnbextension

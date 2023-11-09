@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 # Constants
 from collections import OrderedDict
 from ..calcs.constants import Planck, elementary_charge, epsilon_0, pi, π, ħ, ϕ0, e_el
-
+from .. import Dict
 
 # ==============================================================================
 # Utility functions
@@ -91,7 +91,7 @@ def df_find_index(s: pd.Series, find, degree=2, ax=False):
 def df_interpolate_value(s: pd.Series, find, ax=False, method='index'):
     """
     Given a Pandas Series such as of freq with index Lj,
-    find the freq that would correspnd to Lj given a value not in the index
+    find the freq that would correspond to Lj given a value not in the index
     """
     z = pd.Series(list(s) + [np.NaN], index=list(s.index.values)+[find])
     z = z.sort_index()
@@ -150,7 +150,7 @@ def sort_df_col(df):
     '''         sort by numerical int order    '''
     return df.sort_index(axis=1)
 
-    # Buggy code, deosnt handles ints as inputs or floats as inpts
+    # Buggy code, doesn't handles ints as inputs or floats as inputs
     col_names = df.columns
     if np.all(col_names.map(isint)):
         return df[col_names.astype(int).sort_values().astype(str)]
@@ -177,14 +177,16 @@ def get_instance_vars(obj, Forbidden=[]):
     for v in dir(obj):
         if not (v.startswith('__') or v.startswith('_')):
             if not callable(getattr(obj, v)):
-                if not (v in Forbidden):
-                    VARS[v] = getattr(obj, v)
+                # Added for using addict.Dict which is not callable. 
+                if not isinstance(getattr(obj, v), Dict):
+                    if not (v in Forbidden):
+                        VARS[v] = getattr(obj, v)
     return VARS
 
 
 def deprecated(func):
     """This is a decorator which can be used to mark functions
-    as deprecated. It will result in a warning being emmitted
+    as deprecated. It will result in a warning being emitted
     when the function is used. See StackExchange"""
     def newFunc(*args, **kwargs):
         warnings.simplefilter('always', DeprecationWarning)  # turn off filter
@@ -268,7 +270,7 @@ class Print_colors:
     '''Colors class:reset all colors with colors.reset; two
     sub classes fg for foreground
     and bg for background; use as colors.subclass.colorname.
-    i.e. colors.fg.red or colors.bg.greenalso, the generic bold, disable,
+    i.e. colors.fg.red or colors.bg.green also, the generic bold, disable,
     underline, reverse, strike through,
     and invisible work with the main class i.e. colors.bold
     https://www.geeksforgeeks.org/print-colors-python-terminal/
@@ -323,7 +325,7 @@ pc = Print_colors
 
 def DataFrame_col_diff(PS, indx=0):
     ''' check weather the columns of a dataframe are equal,
-        returns a T/F series of the row index that specifies which rows are differnt
+        returns a T/F series of the row index that specifies which rows are different
         USE:
             PS[DataFrame_col_diff(PS)]
     '''

@@ -161,7 +161,7 @@ if 0: # update all passes
 def do_plot(RES):
     '''
         Make sure
-            %matplolib qt
+            %matplotlib qt
         TODO: in future just setup once, and then update lines only
     '''
     # live plot https://stackoverflow.com/questions/11874767/how-do-i-plot-in-real-time-in-a-while-loop-using-matplotlib

@@ -10,11 +10,11 @@ if 1:
     project_info.design_name   = '3. sweep both'
     project_info.setup_name    = None
 
-    ## Describe the junctions in the HFSS desgin
+    ## Describe the junctions in the HFSS design
     project_info.junctions['jBright'] = {'rect':'juncV',  'line': 'juncH_line', 'Lj_variable':'LJ1', 'length':0.0001}
     project_info.junctions['jDark']   = {'rect':'juncH',  'line': 'juncV_line', 'Lj_variable':'LJ2', 'length':0.0001}
 
-    # Dissipative elments EPR
+    # Dissipative elements EPR
     project_info.dissipative['dielectric_surfaces'] = None         # supply names here, there are more options in  project_info.dissipative.
 
     # Run analysis

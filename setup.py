@@ -6,8 +6,8 @@ chips based on superconducting quantum circuits, both distributed and lumped.
 pyEPR interfaces the classical distributed microwave analysis with that of
 quantum structures and Hamiltonians. It is chiefly based on the energy participation
 ratio approach; however, it has since v0.4 extended to cover a broad range of
-design approaches. pyEPR stradels the analysis from Maxwell’s to Schrodinger’s
-equations, and converts the solutions of distributed microwve (typically eignmode
+design approaches. pyEPR straddles the analysis from Maxwell’s to Schrodinger’s
+equations, and converts the solutions of distributed microwave (typically eigenmode
 simulations) to a fully diagonalized spectrum of the energy levels, couplings,
 and key parameters of a many-body quantum Hamiltonian.
 
@@ -29,32 +29,33 @@ with open(here / "requirements.txt", encoding="utf-8") as f:
 
 doclines = __doc__.split('\n')
 
-setup(name='pyEPR',
-      version='0.8',
-      description = doclines[0],
-      long_description=long_description,
-      long_description_content_type="text/markdown",
-      author='Zlatko K. Minev',
-      packages=find_packages(),
-      author_email='zlatko.minev@aya.yale.edu',
-      maintainer='Zlatko Minev, pyEPR team',
-      license='BSD-3-Clause',
-      url=r'https://github.com/zlatko-minev/pyEPR',
-      classifiers=[
+setup(
+    name='pyEPR-quantum',
+    version='0.9.0',
+    description=doclines[0],
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    author='Zlatko K. Minev',
+    packages=find_packages(),
+    author_email='zlatko.minev@aya.yale.edu',
+    maintainer='Zlatko Minev, pyEPR team',
+    license='BSD-3-Clause',
+    url=r'https://github.com/zlatko-minev/pyEPR',
+    classifiers=[
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "Operating System :: Microsoft :: Windows",
-        "Operating System :: MacOS",
-        "Operating System :: POSIX :: Linux",
+        "Operating System :: MacOS", "Operating System :: POSIX :: Linux",
         "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
-        "Topic :: Scientific/Engineering",
-        "Environment :: Console",
-        "License :: OSI Approved :: Apache Software License"],
-      python_requires=">=3.5, <4",
-      # install_requires=['numpy','pandas','pint','matplotlib','attrdict','sympy','IPython'],
-      install_requires=requirements
-      )
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Topic :: Scientific/Engineering", "Environment :: Console",
+        "License :: OSI Approved :: Apache Software License"
+    ],
+    python_requires=">=3.5, <4",
+    # install_requires=['numpy','pandas','pint','matplotlib','addict','sympy','IPython'],
+    install_requires=requirements)

@@ -21,7 +21,7 @@ config = Dict( # pylint: disable=invalid-name
 
     # Folder to save result data to.
     # PLEASE CHANGE THIS
-    root_dir=r'D:\data-pyEPR',
+    root_dir=r'C:\data-pyEPR', # Not all machines have a D drive so substituting D with C here
 
     # Loss properties of various materials and surfaces
     dissipation=Dict(
@@ -42,12 +42,28 @@ config = Dict( # pylint: disable=invalid-name
         th=3e-9,
 
         # Surface dielectric (dirt) constant
-        # units: relative permitivity
+        # units: relative permittivity
         eps_r=10,
 
         # Surface dielectric (dirt) loss tangent
         # units: unitless, since this is tan(delta)
         tan_delta_surf=1e-3,
+
+        ##################################################
+        # Surface object specific dielectric properties.
+        # These will override ones above when applicable
+        dielectric_surfaces=Dict(
+            trace=Dict(
+                tan_delta_surf=0.001,
+                th=5e-9,
+                eps_r=10
+            ),
+            gap=Dict(
+                tan_delta_surf=0.001,
+                th=2e-9,
+                eps_r=10
+            )
+        ),
 
         ##################################################
         # Thin-film surface loss
@@ -64,7 +80,7 @@ config = Dict( # pylint: disable=invalid-name
 
     ansys=Dict(
         # method_calc_P_mj sets the method used to calculate the participation ratio in eigenmode.
-        # Valud values:
+        # Valid values:
         # 	'line_voltage' : Uses the line voltage integral
         # 	'J_surf_mag'   : takes the avg. Jsurf over the rect. Make sure you have seeded
         # 					lots of tets here. I recommend starting with 4 across smallest dimension.
@@ -77,7 +93,7 @@ config = Dict( # pylint: disable=invalid-name
     ),
 
     plotting=Dict(
-        # Default color map for plottng. Better if made into a string name
+        # Default color map for plotting. Better if made into a string name
         # taken from matplotlib.cm
         default_color_map='viridis',  # pylint: disable=no-member
     ),

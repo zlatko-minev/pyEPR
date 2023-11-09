@@ -44,4 +44,10 @@ Notes for developers.
   sphinx-apidoc -f -o source/ ../pyEPR -o source/api --no-toc -M -e
   make html
 ```
-You can alos use this to update the doc tree.
+You can also use this to update the doc tree.
+
+# Updating `readthedocs.org`
+
+The docs get update automatically each time you make a commit to the master branch. To check on the status of the docs build or failing, navigate to `https://readthedocs.org/projects/pyepr-docs/builds/` and select the latest build to see its progress and report. 
+
+To manually initiate a rebuild:  Navigate to `https://readthedocs.org/projects/pyepr-docs/`. Here, if you have write access you can initiate a build. 

@@ -12,8 +12,8 @@ A user should not edit `_config_default.py` directly. A user should overwrite va
 Contains the core analysis and run functions.
 
 ##### toolbox
-Module  that contains key and utility modues used in pyEPR.
-- plotting: useful in visualizaiton and analysis.
+Module  that contains key and utility modules used in pyEPR.
+- plotting: useful in visualization and analysis.
 - pythonic:  useful pythonic functions
 - report: used to plot reports
 
@@ -30,7 +30,7 @@ Contributed by Phil Rheinhold. Originally part of [pyHFSS](https://github.com/Ph
 Updated and modified by Zlatko Minev & Zaki Leghtas.
 
 ##### numeic_diag.py
-Internal use only. For numerical diagonalizaiton.
+Internal use only. For numerical diagonalization.
 Written by Phil Rheinhold.
 Updated by Zlatko Minev & Lysander Christakis.
 This file is tricky, use caution to modify.

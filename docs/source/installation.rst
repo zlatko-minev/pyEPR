@@ -22,7 +22,8 @@ Main installation method
    branch
    ``git remote add MASTER_MINEV git://github.com/zlatko-minev/pyEPR.git``
    `(help?)`_.
-5. **Cite ``pyEPR``** `arXiv:1902.10355`_ and enjoy!  🎂
+5. **Cite ``pyEPR``** `arXiv:2010.00620 <https://arxiv.org/abs/2010.00620>`_ and `arXiv:1902.10355 <https://arxiv.org/abs/1902.10355>`_ enjoy!  🎂
+
 
 .. _``pyEPR top-level repository``: https://github.com/zlatko-minev/pyEPR
 .. _How to fork a GitHub repo?: https://help.github.com/en/articles/fork-a-repo
@@ -35,13 +36,13 @@ Main installation method
 
 .. _install-via_pip:
 
-Installing lcoally with via pip
+Installing locally via pip
 ===============================
 
 In the future, ``pyEPR`` can be installed using the Python package manager `pip <http://www.pip-installer.org/>`_.
 
 
-However, for the moment, we recommend a local develper instalation, which allows for fast upgrades. We are still in active development.
+However, for the moment, we recommend a local developer installation, which allows for fast upgrades. We are still in active development.
 Perform the steps in the :ref:`install-main` section.
 What you could do, once you have the local clone git, is to install pyEPR locally. Navigate to the local root folder of the repo.
 
@@ -63,13 +64,29 @@ Now we can locally install the pyEPR module.
 Installing via conda
 ====================
 
-For Python 3.6+, installation via conda will be supported in a future version.
-
-
-In the meantime, if you are using conda, you can locally install from the cloned repo.
-Perform the steps in the :ref:`install-main` section.
-Now, you can use
+For Python 3.6+, installation via `conda`_ is supported since ``pyEPR`` v.0.8.03, through the ``conda-forge`` channel. You can download and install ``pyEPR`` typing in from bash:
 
 .. code-block:: bash
 
-    python -m pip install -e .
+    conda install -c conda-forge pyepr-quantum
+
+The prefix ``-c conda-forge`` is required to activate the optional ``conda-forge`` channel.
+
+.. _install-via_pypi:
+
+Installing via pip from PyPI
+============================
+
+For Python 3.6+, installation via `PyPI`_ is supported since ``pyEPR`` v.0.8. You can download and install ``pyEPR`` typing in from bash:
+
+.. code-block:: bash
+
+    pip install pyEPR-quantum
+
+.. note::
+
+  Note that the name of the recipe on the ``conda-forge`` channel is ``pyepr-quantum``, and on PyPI is ``pyEPR-quantum``, as the name `pyepr` was already taken by another project. This does not change anything in the way the library is imported in Python as documented in the guide and examples.
+
+.. _conda: https://anaconda.org/conda-forge/pyepr-quantum
+.. _PyPI: https://pypi.org/project/pyEPR-quantum/0.8/
+

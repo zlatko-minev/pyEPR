@@ -1,5 +1,5 @@
 """
-Transmon caluclations
+Transmon calculations
 
 """
 import math
@@ -62,7 +62,7 @@ class CalcsTransmon():
     def transmon_get_all_params(Ej_MHz, Ec_MHz):
         """
         Linear harmonic oscillator approximation of transmon.
-        Convinince func
+        Convenience func
         """
         Ej, Ec = Ej_MHz, Ec_MHz
         Lj_H, Cs_F = Convert.Lj_from_Ej(
@@ -87,7 +87,7 @@ class CalcsTransmon():
     def transmon_print_all_params(Lj_nH, Cs_fF):
         """
         Linear harmonic oscillator approximation of transmon.
-        Convinince func
+        Convenience func
         """
         # Parameters - duplicates with transmon_get_all_params
         Ej, Ec = Convert.Ej_from_Lj(Lj_nH, 'nH', 'MHz'), Convert.Ec_from_Cs(
