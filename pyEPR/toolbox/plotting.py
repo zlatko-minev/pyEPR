@@ -97,6 +97,7 @@ def get_color_cycle(n, colormap=None, start=0., stop=1., format='hex'):
     colormap = colormap or default_colormap()
 
     pts = np.linspace(start, stop, n)
+    colors = None
     if format == 'hex':
         colors = [rgb2hex(colormap(pt)) for pt in pts]
     return colors
