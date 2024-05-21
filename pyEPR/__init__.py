@@ -68,7 +68,7 @@ Automated analysis of lumped and distributed circuits is provided.
 # pylint: disable= wrong-import-position, invalid-name
 
 # Compatibility with python 2.7 and 3
-#from __future__ import division, print_function, absolute_import
+# from __future__ import division, print_function, absolute_import
 
 import logging
 import warnings
@@ -82,14 +82,18 @@ from addict import Dict
 __author__ = "Zlatko Minev, Zaki Leghas, and the pyEPR team"
 __copyright__ = "Copyright 2015-2020, pyEPR team"
 __credits__ = [
-    "Zlatko Minev", "Zaki Leghtas,", "Phil Rheinhold", "Asaf Diringer",
-    "Will Livingston", "Steven Touzard"
+    "Zlatko Minev",
+    "Zaki Leghtas,",
+    "Phil Rheinhold",
+    "Asaf Diringer",
+    "Will Livingston",
+    "Steven Touzard",
 ]
 __license__ = "BSD-3-Clause"
 __version__ = "0.9.0"
 __maintainer__ = "Zlatko K. Minev and  Asaf Diringer"
 __email__ = "zlatko.minev@aya.yale.edu"
-__url__ = r'https://github.com/zlatko-minev/pyEPR'
+__url__ = r"https://github.com/zlatko-minev/pyEPR"
 __status__ = "Dev-Production"
 
 ##############################################################################
@@ -100,9 +104,10 @@ config = get_config()
 
 ##############################################################################
 # Set up logging -- only on first loading of module, not on reloading.
-logger = logging.getLogger('pyEPR')  # singleton
+logger = logging.getLogger("pyEPR")  # singleton
 if not len(logger.handlers):
     from .toolbox._logging import set_up_logger
+
     set_up_logger(logger)
     del set_up_logger
 
@@ -112,13 +117,15 @@ if not len(logger.handlers):
 
 try:
     import pandas as pd
-    warnings.filterwarnings('ignore',
-                            category=pd.io.pytables.PerformanceWarning)
+
+    warnings.filterwarnings("ignore", category=pd.io.pytables.PerformanceWarning)
     del pd
 except (ImportError, ModuleNotFoundError):
     if config.internal.warn_missing_import:
-        logger.warning("IMPORT WARNING: `pandas` python package not found. %s",
-                       config.internal.error_msg_missing_import)
+        logger.warning(
+            "IMPORT WARNING: `pandas` python package not found. %s",
+            config.internal.error_msg_missing_import,
+        )
 
 # Check for a few usually troublesome packages
 if config.internal.warn_missing_import:
@@ -126,16 +133,20 @@ if config.internal.warn_missing_import:
     # Check for qutip
     try:
         import qutip
+
         del qutip
     except (ImportError, ModuleNotFoundError):
         logger.warning(
             """IMPORT WARNING: `qutip` package not found.
         Numerical diagonalization will not work. Please install, e.g.:
             $ conda  install -c conda-forge qutip
-        %s""", config.internal.error_msg_missing_import)
+        %s""",
+            config.internal.error_msg_missing_import,
+        )
 
     try:
         import pythoncom
+
         del pythoncom
     except (ImportError, ModuleNotFoundError):
         logger.warning(
@@ -144,27 +155,34 @@ if config.internal.warn_missing_import:
         It is used in communicating with HFSS on PCs. If you wish to do this, please set it up.
         For Linux, check the HFSS python linux files for the com module used. It is equivalent,
         and can be used just as well.
-        %s""", config.internal.error_msg_missing_import)
+        %s""",
+            config.internal.error_msg_missing_import,
+        )
 
     try:
         from win32com.client import Dispatch, CDispatch
+
         del Dispatch
         del CDispatch
     except (ImportError, ModuleNotFoundError):
         logger.warning(
             """IMPORT WARNING: Could not load from 'win32com.client'.
         The communication to hfss won't work. If you want to use it, you need to set it up.
-        %s""", config.internal.error_msg_missing_import)
+        %s""",
+            config.internal.error_msg_missing_import,
+        )
 
     try:
         import pint  # units
+
         del pint
     except (ImportError, ModuleNotFoundError):
         logger.error(
             """IMPORT ERROR:
         Python package 'pint' could not be loaded. It is used in communicating with HFSS. Try:
             $ conda install -c conda-forge pint \n%s""",
-            config.internal.error_msg_missing_import)
+            config.internal.error_msg_missing_import,
+        )
 
 # remove unused
 del Path, warnings, logging
@@ -178,25 +196,31 @@ from . import ansys
 from . import core
 
 from .ansys import parse_units, parse_units_user, parse_entry
-from .core import ProjectInfo, DistributedAnalysis, QuantumAnalysis,\
-                  Project_Info, pyEPR_HFSSAnalysis, pyEPR_Analysis # names to be deprecated
+from .core import (
+    ProjectInfo,
+    DistributedAnalysis,
+    QuantumAnalysis,
+    Project_Info,
+    pyEPR_HFSSAnalysis,
+    pyEPR_Analysis,
+)  # names to be deprecated
 
 __all__ = [
-    'logger',
-    'config',
-    'toolbox',
-    'calcs',
-    'ansys',
-    'core',
-    'ProjectInfo',
-    'DistributedAnalysis',
-    'QuantumAnalysis',
-    'Project_Info',
-    'pyEPR_HFSSAnalysis',
-    'pyEPR_Analysis',  # names to be deprecated
-    'parse_units',
-    'parse_units_user',
-    'parse_entry'
+    "logger",
+    "config",
+    "toolbox",
+    "calcs",
+    "ansys",
+    "core",
+    "ProjectInfo",
+    "DistributedAnalysis",
+    "QuantumAnalysis",
+    "Project_Info",
+    "pyEPR_HFSSAnalysis",
+    "pyEPR_Analysis",  # names to be deprecated
+    "parse_units",
+    "parse_units_user",
+    "parse_entry",
 ]
 
 # TODO: Add "about" method. Add to tutorial

@@ -12,50 +12,40 @@ Do not edit `_config_default.py` directly. Rather, overwrite attributes here
 from . import Dict
 
 config = Dict(
-
     # Folder to save result data to.
     # PLEASE CHANGE THIS
-    root_dir=r'C:\data-pyEPR',
-
+    root_dir=r"C:\data-pyEPR",
     # Loss properties of various materials and surfaces
     dissipation=Dict(
-
         ##################################################
         # Bulk dielectric
         # refs: https://arxiv.org/abs/1308.1743
         #       http://arxiv.org/pdf/1509.01854.pdf
         tan_delta_sapp=1e-6,  # tan(delta) for bulk surface
-        epsi=10,    # dielectric
-
+        epsi=10,  # dielectric
         ##################################################
         # Surface dielectric
         # ref: http://arxiv.org/pdf/1509.01854.pdf
-
         # Surface dielectric (dirt) thickness
         # units: meters
         th=3e-9,
-
         # Surface dielectric (dirt) constant
         # units: relative permittivity
         eps_r=10,
-
         # Surface dielectric (dirt) loss tangent
         # units: unitless, since this is tan(delta)
         tan_delta_surf=1e-3,
-
         ##################################################
         # Thin-film surface loss
         # units:  Ohms
         # ref:    https://arxiv.org/abs/1308.1743
         surface_Rs=250e-9,
-
         ##################################################
         # Seam current loss
         # units: per Ohm meter; i.e., seam conductance
         # ref:   http://arxiv.org/pdf/1509.01119.pdf
         gseam=1.0e3,
     ),
-
     ansys=Dict(
         # method_calc_P_mj sets the method used to calculate the participation ratio in eigenmode.
         # Valid values:
@@ -66,16 +56,14 @@ config = Dict(
         # 					Current is integrated average of J_surf by default: (zkm 3/29/16)
         # 					Will calculate the Pj matrix for the selected modes for the given junctions
         # 					junc_rect array & length of junctions
-        method_calc_P_mj='line_voltage',
-
+        method_calc_P_mj="line_voltage",
     ),
-
     plotting=Dict(
         # Default color map for plotting. Better if made into a string name
         # taken from matplotlib.cm
-        default_color_map='viridis',  # pylint: disable=no-member
+        default_color_map="viridis",  # pylint: disable=no-member
     ),
 )
 
 
-__all__ = ['config']
+__all__ = ["config"]

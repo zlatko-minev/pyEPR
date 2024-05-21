@@ -2,6 +2,7 @@ import logging
 
 from .. import config
 
+
 def set_up_logger(logger):
     # add custom stream handler
     logger.c_handler = logging.StreamHandler()
@@ -15,5 +16,3 @@ def set_up_logger(logger):
     logger.c_handler.setFormatter(logger.c_format)
     logger.addHandler(logger.c_handler)
     logger.setLevel(getattr(logging, config.log.level))
-
-

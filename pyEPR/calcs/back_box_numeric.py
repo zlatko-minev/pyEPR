@@ -1,4 +1,4 @@
-'''
+"""
 Numerical diagonalization of quantum Hamiltonian and parameter
 extraction.
 
@@ -6,7 +6,7 @@ extraction.
 
 Original code on black_box_hamiltonian and make_dispersive functions by Phil Reinhold
 Revisions and updates by Zlatko Minev & Lysander Christakis
-'''
+"""
 # pylint: disable=invalid-name
 
 
@@ -26,10 +26,12 @@ try:
 except (ImportError, ModuleNotFoundError):
     pass
 
-__all__ = [ 'epr_numerical_diagonalization',
-            'make_dispersive',
-            'black_box_hamiltonian',
-            'black_box_hamiltonian_nq']
+__all__ = [
+    "epr_numerical_diagonalization",
+    "make_dispersive",
+    "black_box_hamiltonian",
+    "black_box_hamiltonian_nq",
+]
 
 dot = MatrixOps.dot
 cos_approx = MatrixOps.cos_approx
@@ -39,13 +41,18 @@ cos_approx = MatrixOps.cos_approx
 # ANALYSIS FUNCTIONS
 # ==============================================================================
 
-def epr_numerical_diagonalization(freqs, Ljs, ϕzpf,
-             cos_trunc=8,
-             fock_trunc=9,
-             use_1st_order=False,
-             return_H=False,
-             non_linear_potential=None):
-    '''
+
+def epr_numerical_diagonalization(
+    freqs,
+    Ljs,
+    ϕzpf,
+    cos_trunc=8,
+    fock_trunc=9,
+    use_1st_order=False,
+    return_H=False,
+    non_linear_potential=None,
+):
+    """
     Numerical diagonalization for pyEPR. Ask Zlatko for details.
 
     :param fs: (GHz, not radians) Linearized model, H_lin, normal mode frequencies in Hz, length M
@@ -55,28 +62,42 @@ def epr_numerical_diagonalization(freqs, Ljs, ϕzpf,
 
     :return: Hamiltonian mode freq and dispersive shifts. Shifts are in MHz.
              Shifts have flipped sign so that down shift is positive.
-    '''
+    """
 
     freqs, Ljs, ϕzpf = map(np.array, (freqs, Ljs, ϕzpf))
-    assert(all(freqs < 1E6)
-           ), "Please input the frequencies in GHz. \N{nauseated face}"
-    assert(all(Ljs < 1E-3)
-           ), "Please input the inductances in Henries. \N{nauseated face}"
+    assert all(freqs < 1e6), "Please input the frequencies in GHz. \N{nauseated face}"
+    assert all(
+        Ljs < 1e-3
+    ), "Please input the inductances in Henries. \N{nauseated face}"
 
-    Hs = black_box_hamiltonian(freqs * 1E9, Ljs.astype(float), fluxQ*ϕzpf,
-                               cos_trunc, fock_trunc, individual=use_1st_order,
-                               non_linear_potential = non_linear_potential)
+    Hs = black_box_hamiltonian(
+        freqs * 1e9,
+        Ljs.astype(float),
+        fluxQ * ϕzpf,
+        cos_trunc,
+        fock_trunc,
+        individual=use_1st_order,
+        non_linear_potential=non_linear_potential,
+    )
     f_ND, χ_ND, _, _ = make_dispersive(
-        Hs, fock_trunc, ϕzpf, freqs, use_1st_order=use_1st_order)
-    χ_ND = -1*χ_ND * 1E-6  # convert to MHz, and flip sign so that down shift is positive
+        Hs, fock_trunc, ϕzpf, freqs, use_1st_order=use_1st_order
+    )
+    χ_ND = (
+        -1 * χ_ND * 1e-6
+    )  # convert to MHz, and flip sign so that down shift is positive
 
     return (f_ND, χ_ND, Hs) if return_H else (f_ND, χ_ND)
 
 
-
-
-def black_box_hamiltonian(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual=False,
-                          non_linear_potential = None):
+def black_box_hamiltonian(
+    fs,
+    ljs,
+    fzpfs,
+    cos_trunc=5,
+    fock_trunc=8,
+    individual=False,
+    non_linear_potential=None,
+):
     r"""
     :param fs: Linearized model, H_lin, normal mode frequencies in Hz, length N
     :param ljs: junction linearized inductances in Henries, length M
@@ -97,14 +118,15 @@ def black_box_hamiltonian(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual=
 
     fzpfs = np.transpose(fzpfs)  # Take from MxJ  to JxM
 
-    assert np.isnan(fzpfs).any(
-    ) == False, "Phi ZPF has NAN, this is NOT allowed! Fix me. \n%s" % fzpfs
-    assert np.isnan(ljs).any(
-    ) == False, "Ljs has NAN, this is NOT allowed! Fix me."
-    assert np.isnan(
-        fs).any() == False, "freqs has NAN, this is NOT allowed! Fix me."
-    assert fzpfs.shape == (njuncs, n_modes), "incorrect shape for zpf array, {} not {}".format(
-        fzpfs.shape, (njuncs, n_modes))
+    assert np.isnan(fzpfs).any() == False, (
+        "Phi ZPF has NAN, this is NOT allowed! Fix me. \n%s" % fzpfs
+    )
+    assert np.isnan(ljs).any() == False, "Ljs has NAN, this is NOT allowed! Fix me."
+    assert np.isnan(fs).any() == False, "freqs has NAN, this is NOT allowed! Fix me."
+    assert fzpfs.shape == (
+        njuncs,
+        n_modes,
+    ), "incorrect shape for zpf array, {} not {}".format(fzpfs.shape, (njuncs, n_modes))
     assert fs.shape == (n_modes,), "incorrect number of mode frequencies"
     assert ejs.shape == (njuncs,), "incorrect number of qubit frequencies"
 
@@ -122,22 +144,25 @@ def black_box_hamiltonian(fs, ljs, fzpfs, cos_trunc=5, fock_trunc=8, individual=
 
     def cos(x):
         return cos_approx(x, cos_trunc=cos_trunc)
-    
+
     if non_linear_potential is None:
         non_linear_potential = cos
 
     linear_part = dot(fs, mode_ns)
-    cos_interiors = [dot(fzpf_row/fluxQ, mode_fields) for fzpf_row in fzpfs]
+    cos_interiors = [dot(fzpf_row / fluxQ, mode_fields) for fzpf_row in fzpfs]
     nonlinear_part = dot(-fjs, map(non_linear_potential, cos_interiors))
     if individual:
         return linear_part, nonlinear_part
     else:
         return linear_part + nonlinear_part
 
+
 bbq_hmt = black_box_hamiltonian
 
-def make_dispersive(H, fock_trunc, fzpfs=None, f0s=None, chi_prime=False,
-                    use_1st_order=False):
+
+def make_dispersive(
+    H, fock_trunc, fzpfs=None, f0s=None, chi_prime=False, use_1st_order=False
+):
     r"""
     Input: Hamiltonian Matrix.
         Optional: phi_zpfs and normal mode frequencies, f0s.
@@ -149,14 +174,17 @@ def make_dispersive(H, fock_trunc, fzpfs=None, f0s=None, chi_prime=False,
         Based on the assignment of the excitations, the function returns the dressed mode frequencies :math:`\omega_m^\prime`, and the cross-Kerr matrix (including anharmonicities) extracted from the numerical diagonalization, as well as from 1st order perturbation theory.
         Note, the diagonal of the CHI matrix is directly the anharmonicity term.
     """
-    if hasattr(H, '__len__'):  # is it an array / list?
+    if hasattr(H, "__len__"):  # is it an array / list?
         [H_lin, H_nl] = H
         H = H_lin + H_nl
     else:  # make sure its a quanutm object
         from qutip import Qobj
-        if not isinstance(H, Qobj): #  Validate that the input is a Qobj instance.
-            raise TypeError("Please pass in either a list of Qobjs or a Qobj for the Hamiltonian")
-        #assert type(
+
+        if not isinstance(H, Qobj):  #  Validate that the input is a Qobj instance.
+            raise TypeError(
+                "Please pass in either a list of Qobjs or a Qobj for the Hamiltonian"
+            )
+        # assert type(
         #    H) == qutip.qobj.Qobj, "Please pass in either a list of Qobjs or Qobj for the Hamiltonian"
 
     print("Starting the diagonalization")
@@ -164,12 +192,14 @@ def make_dispersive(H, fock_trunc, fzpfs=None, f0s=None, chi_prime=False,
     print("Finished the diagonalization")
     evals -= evals[0]
 
-    N = int(np.log(H.shape[0]) / np.log(fock_trunc))    # number of modes
-    assert H.shape[0] == fock_trunc ** N
+    N = int(np.log(H.shape[0]) / np.log(fock_trunc))  # number of modes
+    assert H.shape[0] == fock_trunc**N
 
     def fock_state_on(d):
-        ''' d={mode number: # of photons} '''
-        return qutip.tensor(*[qutip.basis(fock_trunc, d.get(i, 0)) for i in range(N)])  # give me the value d[i]  or 0 if d[i] does not exist
+        """d={mode number: # of photons}"""
+        return qutip.tensor(
+            *[qutip.basis(fock_trunc, d.get(i, 0)) for i in range(N)]
+        )  # give me the value d[i]  or 0 if d[i] does not exist
 
     if use_1st_order:
         num_modes = N
@@ -177,69 +207,82 @@ def make_dispersive(H, fock_trunc, fzpfs=None, f0s=None, chi_prime=False,
 
         def multi_index_2_vector(d, num_modes, fock_trunc):
             return tensor([basis(fock_trunc, d.get(i, 0)) for i in range(num_modes)])
-            '''this function creates a vector representation a given fock state given the data for excitations per
-                        mode of the form d={mode number: # of photons}'''
+            """this function creates a vector representation a given fock state given the data for excitations per
+                        mode of the form d={mode number: # of photons}"""
 
         def find_multi_indices(fock_trunc):
-            multi_indices = [{ind: item for ind, item in enumerate([i, j, k])} for i in range(fock_trunc)
-                             for j in range(fock_trunc)
-                             for k in range(fock_trunc)]
+            multi_indices = [
+                {ind: item for ind, item in enumerate([i, j, k])}
+                for i in range(fock_trunc)
+                for j in range(fock_trunc)
+                for k in range(fock_trunc)
+            ]
             return multi_indices
-            '''this function generates all possible multi-indices for three modes for a given fock_trunc'''
+            """this function generates all possible multi-indices for three modes for a given fock_trunc"""
 
         def get_expect_number(left, middle, right):
-            return (left.dag()*middle*right).data.toarray()[0, 0]
-            '''this function calculates the expectation value of an operator called "middle" '''
+            return (left.dag() * middle * right).data.toarray()[0, 0]
+            """this function calculates the expectation value of an operator called "middle" """
 
         def get_basis0(fock_trunc, num_modes):
             multi_indices = find_multi_indices(fock_trunc)
-            basis0 = [multi_index_2_vector(
-                multi_indices[i], num_modes, fock_trunc) for i in range(len(multi_indices))]
+            basis0 = [
+                multi_index_2_vector(multi_indices[i], num_modes, fock_trunc)
+                for i in range(len(multi_indices))
+            ]
             evalues0 = [get_expect_number(v0, H_lin, v0).real for v0 in basis0]
             return multi_indices, basis0, evalues0
-            '''this function creates a basis of fock states and their corresponding eigenvalues'''
+            """this function creates a basis of fock states and their corresponding eigenvalues"""
 
         def closest_state_to(vector0):
-
             def PT_on_vector(original_vector, original_basis, pertub, energy0, evalue):
                 new_vector = 0 * original_vector
                 for i in range(len(original_basis)):
-                    if (energy0[i]-evalue) > 1e-3:
-                        new_vector += ((original_basis[i].dag()*H_nl*original_vector).data.toarray()[
-                                       0, 0])*original_basis[i]/(evalue-energy0[i])
+                    if (energy0[i] - evalue) > 1e-3:
+                        new_vector += (
+                            (
+                                (
+                                    original_basis[i].dag() * H_nl * original_vector
+                                ).data.toarray()[0, 0]
+                            )
+                            * original_basis[i]
+                            / (evalue - energy0[i])
+                        )
                     else:
                         pass
-                return (new_vector + original_vector)/(new_vector + original_vector).norm()
-                '''this function calculates the normalized vector with the first order correction term
-                   from the non-linear hamiltonian '''
+                return (new_vector + original_vector) / (
+                    new_vector + original_vector
+                ).norm()
+                """this function calculates the normalized vector with the first order correction term
+                   from the non-linear hamiltonian """
 
-            [multi_indices, basis0, evalues0] = get_basis0(
-                fock_trunc, num_modes)
+            [multi_indices, basis0, evalues0] = get_basis0(fock_trunc, num_modes)
             evalue0 = get_expect_number(vector0, H_lin, vector0)
             vector1 = PT_on_vector(vector0, basis0, H_nl, evalues0, evalue0)
 
-            index = np.argmax([(vector1.dag() * evec).norm()
-                               for evec in evecs])
+            index = np.argmax([(vector1.dag() * evec).norm() for evec in evecs])
             return evals[index], evecs[index]
 
     else:
+
         def closest_state_to(s):
             def distance(s2):
                 return (s.dag() * s2[1]).norm()
+
             return max(zip(evals, evecs), key=distance)
 
     f1s = [closest_state_to(fock_state_on({i: 1}))[0] for i in range(N)]
-    chis = [[0]*N for _ in range(N)]
-    chips = [[0]*N for _ in range(N)]
+    chis = [[0] * N for _ in range(N)]
+    chips = [[0] * N for _ in range(N)]
     for i in range(N):
         for j in range(i, N):
-            d = {k: 0 for k in range(N)}       # put 0 photons in each mode (k)
+            d = {k: 0 for k in range(N)}  # put 0 photons in each mode (k)
             d[i] += 1
             d[j] += 1
             # load ith mode and jth mode with 1 photon
             fs = fock_state_on(d)
             ev, evec = closest_state_to(fs)
-            chi = (ev - (f1s[i] + f1s[j]))
+            chi = ev - (f1s[i] + f1s[j])
             chis[i][j] = chi
             chis[j][i] = chi
 
@@ -247,17 +290,25 @@ def make_dispersive(H, fock_trunc, fzpfs=None, f0s=None, chi_prime=False,
                 d[j] += 1
                 fs = fock_state_on(d)
                 ev, evec = closest_state_to(fs)
-                chip = (ev - (f1s[i] + 2*f1s[j]) - 2 * chis[i][j])
+                chip = ev - (f1s[i] + 2 * f1s[j]) - 2 * chis[i][j]
                 chips[i][j] = chip
                 chips[j][i] = chip
 
     if chi_prime:
-        return np.array(f1s), np.array(chis), np.array(chips), np.array(fzpfs), np.array(f0s)
+        return (
+            np.array(f1s),
+            np.array(chis),
+            np.array(chips),
+            np.array(fzpfs),
+            np.array(f0s),
+        )
     else:
         return np.array(f1s), np.array(chis), np.array(fzpfs), np.array(f0s)
 
 
-def black_box_hamiltonian_nq(freqs, zmat, ljs, cos_trunc=6, fock_trunc=8, show_fit=False):
+def black_box_hamiltonian_nq(
+    freqs, zmat, ljs, cos_trunc=6, fock_trunc=8, show_fit=False
+):
     """
     N-Qubit version of bbq, based on the full Z-matrix
     Currently reproduces 1-qubit data, untested on n-qubit data
@@ -267,7 +318,7 @@ def black_box_hamiltonian_nq(freqs, zmat, ljs, cos_trunc=6, fock_trunc=8, show_f
     nj = len(ljs)
     assert zmat.shape == (nf, nj, nj)
 
-    imY = (1/zmat[:, 0, 0]).imag
+    imY = (1 / zmat[:, 0, 0]).imag
     # zeros where the sign changes from negative to positive
 
     (zeros,) = np.where((imY[:-1] <= 0) & (imY[1:] > 0))
@@ -277,25 +328,36 @@ def black_box_hamiltonian_nq(freqs, zmat, ljs, cos_trunc=6, fock_trunc=8, show_f
     f0s = np.zeros(nz)
     slopes = np.zeros((nj, nz))
     import matplotlib.pyplot as plt
+
     # Fit a second order polynomial in the region around the zero
     # Extract the exact location of the zero and the associated slope
     # If you need better than second order fit, you're not sampling finely enough
     for i, z in enumerate(zeros):
-        f0_guess = (freqs[z+1] + freqs[z]) / 2
+        f0_guess = (freqs[z + 1] + freqs[z]) / 2
         zero_polys = np.polyfit(
-            freqs[z-1:z+3] - f0_guess, imYs[:, z-1:z+3].transpose(), 2)
+            freqs[z - 1 : z + 3] - f0_guess, imYs[:, z - 1 : z + 3].transpose(), 2
+        )
         zero_polys = zero_polys.transpose()
-        f0s[i] = f0 = min(np.roots(zero_polys[0]),
-                          key=lambda r: abs(r)) + f0_guess
+        f0s[i] = f0 = min(np.roots(zero_polys[0]), key=lambda r: abs(r)) + f0_guess
         for j, p in enumerate(zero_polys):
             slopes[j, i] = np.polyval(np.polyder(p), f0 - f0_guess)
         if show_fit:
-            plt.plot(freqs[z-1:z+3] - f0_guess, imYs[:, z-1:z +
-                                                     3].transpose(), lw=1, ls='--', marker='o', label=str(f0))
+            plt.plot(
+                freqs[z - 1 : z + 3] - f0_guess,
+                imYs[:, z - 1 : z + 3].transpose(),
+                lw=1,
+                ls="--",
+                marker="o",
+                label=str(f0),
+            )
             p = np.poly1d(zero_polys[0, :])
             p2 = np.poly1d(zero_polys[1, :])
-            plt.plot(freqs[z-1:z+3] - f0_guess, p(freqs[z-1:z+3] - f0_guess))
-            plt.plot(freqs[z-1:z+3] - f0_guess, p2(freqs[z-1:z+3] - f0_guess))
+            plt.plot(
+                freqs[z - 1 : z + 3] - f0_guess, p(freqs[z - 1 : z + 3] - f0_guess)
+            )
+            plt.plot(
+                freqs[z - 1 : z + 3] - f0_guess, p2(freqs[z - 1 : z + 3] - f0_guess)
+            )
             plt.legend(loc=0)
 
     zeffs = 2 / (slopes * f0s[np.newaxis, :])
@@ -305,5 +367,6 @@ def black_box_hamiltonian_nq(freqs, zmat, ljs, cos_trunc=6, fock_trunc=8, show_f
 
     H = black_box_hamiltonian(f0s, ljs, fzpfs, cos_trunc, fock_trunc)
     return make_dispersive(H, fock_trunc, fzpfs, f0s)
+
 
 black_box_hamiltonian_nq = black_box_hamiltonian_nq

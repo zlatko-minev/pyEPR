@@ -27,25 +27,26 @@ with open(here / "README.md", encoding="utf-8") as f:
 with open(here / "requirements.txt", encoding="utf-8") as f:
     requirements = f.read().splitlines()
 
-doclines = __doc__.split('\n')
+doclines = __doc__.split("\n")
 
 setup(
-    name='pyEPR-quantum',
-    version='0.9.0',
+    name="pyEPR-quantum",
+    version="0.9.0",
     description=doclines[0],
     long_description=long_description,
     long_description_content_type="text/markdown",
-    author='Zlatko K. Minev',
+    author="Zlatko K. Minev",
     packages=find_packages(),
-    author_email='zlatko.minev@aya.yale.edu',
-    maintainer='Zlatko Minev, pyEPR team',
-    license='BSD-3-Clause',
-    url=r'https://github.com/zlatko-minev/pyEPR',
+    author_email="zlatko.minev@aya.yale.edu",
+    maintainer="Zlatko Minev, pyEPR team",
+    license="BSD-3-Clause",
+    url=r"https://github.com/zlatko-minev/pyEPR",
     classifiers=[
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "Operating System :: Microsoft :: Windows",
-        "Operating System :: MacOS", "Operating System :: POSIX :: Linux",
+        "Operating System :: MacOS",
+        "Operating System :: POSIX :: Linux",
         "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
@@ -53,9 +54,11 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
-        "Topic :: Scientific/Engineering", "Environment :: Console",
-        "License :: OSI Approved :: Apache Software License"
+        "Topic :: Scientific/Engineering",
+        "Environment :: Console",
+        "License :: OSI Approved :: Apache Software License",
     ],
     python_requires=">=3.5, <4",
     # install_requires=['numpy','pandas','pint','matplotlib','addict','sympy','IPython'],
-    install_requires=requirements)
+    install_requires=requirements,
+)

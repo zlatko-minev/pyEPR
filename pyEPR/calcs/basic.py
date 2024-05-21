@@ -6,11 +6,11 @@ import numpy as np
 from numpy import sqrt
 from .. import logger
 
-class CalcsBasic():
 
+class CalcsBasic:
     @staticmethod
     def epr_to_zpf(Pmj, SJ, Ω, EJ):
-        r'''
+        r"""
         Arguments, All as matrices (numpy arrays):
             :Pnj: MxJ energy-participation-ratio matrix, p_mj
             :SJ: MxJ sign matrix, s_mj
@@ -19,16 +19,18 @@ class CalcsBasic():
 
         RETURNS:
             reduced zpf  (in units of :math:`\phi_0`)
-        '''
+        """
         (Pmj, SJ, Ω, EJ) = map(np.array, (Pmj, SJ, Ω, EJ))
 
         if (Pmj < 0).any():
-            print('BAD!')
-            logger.error(f"""The simulation is not converged!!! \N{nauseated face}
+            print("BAD!")
+            logger.error(
+                f"""The simulation is not converged!!! \N{nauseated face}
             Some of the energy participations are less than zero.
             This happens when some participations are tiny 10^-8 or less
             or when not enough passes have been taken. The Pmj matrix is
-            {Pmj}""")
+            {Pmj}"""
+            )
 
         # Technically, there the equation is hbar omega / 2J, but here we assume
         # that the hbar is absorbed in the units of omega, and omega and Ej have the same units.
@@ -45,4 +47,4 @@ class CalcsBasic():
         Experimental. To be tested
         """
         (Pmj, SJ, Ω, EJ) = map(np.array, (Pmj_cap, SJ, Ω, Ec))
-        return SJ * sqrt(Ω @ Pmj @ np.linalg.inv(Ec) /(4*4))
+        return SJ * sqrt(Ω @ Pmj @ np.linalg.inv(Ec) / (4 * 4))

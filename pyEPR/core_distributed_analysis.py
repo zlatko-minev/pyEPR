@@ -32,9 +32,12 @@ from . import Dict, config, logger
 from .ansys import CalcObject, ConstantVecCalcObject, set_property, ureg
 from .calcs.constants import epsilon_0
 from .project_info import ProjectInfo
-from .reports import (plot_convergence_f_vspass, plot_convergence_max_df,
-                      plot_convergence_maxdf_vs_sol,
-                      plot_convergence_solved_elem)
+from .reports import (
+    plot_convergence_f_vspass,
+    plot_convergence_max_df,
+    plot_convergence_maxdf_vs_sol,
+    plot_convergence_solved_elem,
+)
 from .toolbox.pythonic import print_NoNewLine
 
 
@@ -59,7 +62,7 @@ class DistributedAnalysis(object):
     """
 
     def __init__(self, *args, **kwargs):
-        '''
+        """
         Pass in the arguments for ProjectInfo. See help for `?ProjectInfo`.
 
 
@@ -118,18 +121,20 @@ class DistributedAnalysis(object):
 
                              ("Height='0.06mm' Lj='13.5nH'",   "Height='0.06mm' Lj='15.3nH'")
 
-        '''
+        """
 
         # Get the project info
         project_info = None
-        if (len(args) == 1) and (args[0].__class__.__name__ == 'ProjectInfo'):
+        if (len(args) == 1) and (args[0].__class__.__name__ == "ProjectInfo"):
             # isinstance(args[0], ProjectInfo): # fails on module repload with changes
             project_info = args[0]
         else:
-            assert len(args) == 0, '''Since you did not pass a ProjectInfo object
+            assert (
+                len(args) == 0
+            ), """Since you did not pass a ProjectInfo object
                 as a argument, we now assume you are trying to create a project
                 info object here by passing its arguments. See ProjectInfo.
-                It does not take any arguments, only kwargs. \N{face with medical mask}'''
+                It does not take any arguments, only kwargs. \N{face with medical mask}"""
             project_info = ProjectInfo(*args, **kwargs)
 
         # Input
@@ -156,7 +161,7 @@ class DistributedAnalysis(object):
         self.variations_analyzed = []  # : List of analyzed variations. List of indices
 
         # String identifier of variables, such as  "Cj='2fF' Lj='12.5nH'"
-        self._nominal_variation = ''
+        self._nominal_variation = ""
         self._list_variations = ("",)  # tuple set of variables
         # container for eBBQ list of variables; basically the same as _list_variations
         self._hfss_variables = Dict()
@@ -165,9 +170,11 @@ class DistributedAnalysis(object):
 
         self.update_ansys_info()
 
-        print('Design \"%s\" info:' % self.design.name)
-        print('\t%-15s %d\n\t%-15s %d' % ('# eigenmodes', self.n_modes,
-                                          '# variations', self.n_variations))
+        print('Design "%s" info:' % self.design.name)
+        print(
+            "\t%-15s %d\n\t%-15s %d"
+            % ("# eigenmodes", self.n_modes, "# variations", self.n_variations)
+        )
 
         # Setup data saving
         self.data_dir = None
@@ -210,45 +217,45 @@ class DistributedAnalysis(object):
 
     @property
     def options(self):
-        """ Project info options"""
+        """Project info options"""
         return self.pinfo.options
 
     def setup_data(self):
-        '''
+        """
         Set up folder paths for saving data to.
 
         Sets the save filename with the current time.
 
         Saves to Path(config.root_dir) / self.project.name / self.design.name
-        '''
+        """
 
         if len(self.design.name) > 50:
-            logger.error('WARNING!   DESIGN FILENAME MAY BE TOO LONG! ')
+            logger.error("WARNING!   DESIGN FILENAME MAY BE TOO LONG! ")
 
-        self.data_dir = Path(config.root_dir) / \
-            self.project.name / self.design.name
-        self.data_filename = self.data_dir / (time.strftime(config.save_format,
-                                                            time.localtime()) + '.npz')
+        self.data_dir = Path(config.root_dir) / self.project.name / self.design.name
+        self.data_filename = self.data_dir / (
+            time.strftime(config.save_format, time.localtime()) + ".npz"
+        )
 
         if not self.data_dir.is_dir():
             self.data_dir.mkdir(parents=True, exist_ok=True)
 
     def calc_p_junction_single(self, mode, variation, U_E=None, U_H=None):
-        '''
+        """
         This function is used in the case of a single junction only.
         For multiple junctions, see :func:`~pyEPR.DistributedAnalysis.calc_p_junction`.
 
         Assumes no lumped capacitive elements.
-        '''
+        """
         if U_E is None:
             U_E = self.calc_energy_electric(variation)
         if U_H is None:
             U_H = self.calc_energy_magnetic(variation)
 
         pj = OrderedDict()
-        pj_val = (U_E-U_H)/U_E
-        pj['pj_'+str(mode)] = np.abs(pj_val)
-        print('    p_j_' + str(mode) + ' = ' + str(pj_val))
+        pj_val = (U_E - U_H) / U_E
+        pj["pj_" + str(mode)] = np.abs(pj_val)
+        print("    p_j_" + str(mode) + " = " + str(pj_val))
         return pj
 
     # TODO: replace this method with the one below, here because some funcs use it still
@@ -268,16 +275,17 @@ class DistributedAnalysis(object):
         freqs_bare_vals = []
         freqs_bare_dict = OrderedDict()
         freqs, kappa_over_2pis = self.solutions.eigenmodes(
-            self.get_variation_string(variation))
+            self.get_variation_string(variation)
+        )
         for m in range(self.n_modes):
-            freqs_bare_dict['freq_bare_'+str(m)] = 1e9*freqs[m]
-            freqs_bare_vals.append(1e9*freqs[m])
+            freqs_bare_dict["freq_bare_" + str(m)] = 1e9 * freqs[m]
+            freqs_bare_vals.append(1e9 * freqs[m])
             if kappa_over_2pis is not None:
-                freqs_bare_dict['Q_'+str(m)] = freqs[m]/kappa_over_2pis[m]
+                freqs_bare_dict["Q_" + str(m)] = freqs[m] / kappa_over_2pis[m]
             else:
-                freqs_bare_dict['Q_'+str(m)] = 0
-        #self.freqs_bare = freqs_bare_dict
-        #self.freqs_bare_vals = freqs_bare_vals
+                freqs_bare_dict["Q_" + str(m)] = 0
+        # self.freqs_bare = freqs_bare_dict
+        # self.freqs_bare_vals = freqs_bare_vals
         return freqs_bare_dict, freqs_bare_vals
 
     def get_freqs_bare_pd(self, variation: str, frame=True):
@@ -316,23 +324,22 @@ class DistributedAnalysis(object):
         Qs = freqs / pd.Series(kappa_over_2pis, index=range(len(freqs)))
 
         if frame:
-            df = pd.DataFrame({'Freq. (GHz)': freqs, 'Quality Factor': Qs})
-            df.index.name = 'mode'
+            df = pd.DataFrame({"Freq. (GHz)": freqs, "Quality Factor": Qs})
+            df.index.name = "mode"
             return df
         else:
             return freqs, Qs
 
-    def get_ansys_frequencies_all(self, vs='variation'):
+    def get_ansys_frequencies_all(self, vs="variation"):
         """
         Return all ansys frequencies and quality factors vs a variation
 
         Returns a multi-index pandas DataFrame
         """
         df = dict()
-        variable = None if vs == 'variation' else self.get_variable_vs_variations(
-            vs)
+        variable = None if vs == "variation" else self.get_variable_vs_variations(vs)
         for variation in self.variations:  # just for the first 2
-            if vs == 'variation':
+            if vs == "variation":
                 label = variation
             else:
                 label = variable[variation]
@@ -341,7 +348,7 @@ class DistributedAnalysis(object):
         return pd.concat(df, names=[vs])
 
     def _get_lv(self, variation=None):
-        '''
+        """
         List of variation variables in a format that is used when feeding back to ansys.
 
         Args:
@@ -355,7 +362,7 @@ class DistributedAnalysis(object):
             .. code-block:: python
 
                 ['Lj1:=','13nH', 'QubitGap:=','100um']
-        '''
+        """
         if variation is None:
             lv = self._nominal_variation  # "Cj='2fF' Lj='12.5nH'"
             lv = self._parse_listvariations(lv)
@@ -368,8 +375,8 @@ class DistributedAnalysis(object):
 
     @property
     def n_variations(self):
-        """ Number of **solved** variations, corresponding to the
-        selected Setup. """
+        """Number of **solved** variations, corresponding to the
+        selected Setup."""
         return len(self._list_variations)
 
     def set_variation(self, variation: str):
@@ -430,7 +437,7 @@ class DistributedAnalysis(object):
         """
         lv = str(lv)
         lv = lv.replace("=", ":=,")
-        lv = lv.replace(' ', ',')
+        lv = lv.replace(" ", ",")
         lv = lv.replace("'", "")
         lv = lv.split(",")
         return lv
@@ -446,8 +453,8 @@ class DistributedAnalysis(object):
         try:
             return str(self._list_variations.index(self._nominal_variation))
         except Exception:
-            print('WARNING: Unsure of the index, returning 0')
-            return '0'
+            print("WARNING: Unsure of the index, returning 0")
+            return "0"
 
     def get_ansys_variations(self):
         """
@@ -468,7 +475,7 @@ class DistributedAnalysis(object):
         return self._list_variations
 
     def update_ansys_info(self):
-        ''''
+        """'
         Updates all information about the Ansys solved variations and variables.
 
         .. code-block:: python
@@ -476,7 +483,7 @@ class DistributedAnalysis(object):
 
             n_modes, _list_variations, nominal_variation, n_variations
 
-        '''
+        """
         # from oDesign
         self._nominal_variation = self.design.get_nominal_variation()
 
@@ -484,11 +491,12 @@ class DistributedAnalysis(object):
             # from oSetup -- only for the solved variations!
             self._list_variations = self.solutions.list_variations()
 
-            self.variations = [str(i) for i in range(
-                self.n_variations)]  # TODO: change to integer?
+            self.variations = [
+                str(i) for i in range(self.n_variations)
+            ]  # TODO: change to integer?
 
             # eigenmodes
-            if self.design.solution_type == 'Eigenmode':
+            if self.design.solution_type == "Eigenmode":
                 self.n_modes = int(self.setup.n_modes)
             else:
                 self.n_modes = 0
@@ -502,7 +510,8 @@ class DistributedAnalysis(object):
         variations = variations or self.variations
         for variation in variations:
             self._hfss_variables[variation] = pd.Series(
-                self.get_variables(variation=variation))
+                self.get_variables(variation=variation)
+            )
         return self._hfss_variables
 
     def get_ansys_variables(self):
@@ -512,11 +521,11 @@ class DistributedAnalysis(object):
         Returns:
             Return a dataframe of variables as index and columns as the variations
         """
-        vs = 'variation'
+        vs = "variation"
         df = pd.DataFrame(self._hfss_variables, columns=self.variations)
         df.columns.name = vs
-        df.index = [x[1:] if x.startswith('_') else x for x in df.index]
-        #df.index.name = 'variable'
+        df.index = [x[1:] if x.startswith("_") else x for x in df.index]
+        # df.index.name = 'variable'
         return df
 
     def get_variables(self, variation=None):
@@ -529,9 +538,9 @@ class DistributedAnalysis(object):
         """
         lv = self._get_lv(variation)
         variables = OrderedDict()
-        for ii in range(int(len(lv)/2)):
-            variables['_'+lv[2*ii][:-2]] = lv[2*ii+1]
-        #self.variables = variables
+        for ii in range(int(len(lv) / 2)):
+            variables["_" + lv[2 * ii][:-2]] = lv[2 * ii + 1]
+        # self.variables = variables
         return variables
 
     def get_variable_vs_variations(self, variable: str, convert: bool = True):
@@ -552,13 +561,15 @@ class DistributedAnalysis(object):
             s = s.apply(lambda x: ureg.Quantity(x).magnitude)
         return s
 
-    def calc_energy_electric(self,
-                             variation: str = None,
-                             obj: str = 'AllObjects',
-                             volume: str = 'Deprecated',
-                             smooth: bool = False,
-                             obj_dims: int = 3):
-        r'''
+    def calc_energy_electric(
+        self,
+        variation: str = None,
+        obj: str = "AllObjects",
+        volume: str = "Deprecated",
+        smooth: bool = False,
+        obj_dims: int = 3,
+    ):
+        r"""
         Calculates two times the peak electric energy, or 4 times the RMS,
         :math:`4*\mathcal{E}_{\mathrm{elec}}`
         (since we do not divide by 2 and use the peak phasors).
@@ -583,9 +594,11 @@ class DistributedAnalysis(object):
                 ℰ_substr = epr_hfss.calc_energy_electric(obj='Box1')
                 print(f'Energy in substrate = {100*ℰ_substr/ℰ_total:.1f}%')
 
-        '''
-        if volume != 'Deprecated':
-            logger.warning('The use of the "volume" argument is deprecated... use "obj" instead')
+        """
+        if volume != "Deprecated":
+            logger.warning(
+                'The use of the "volume" argument is deprecated... use "obj" instead'
+            )
             obj = volume
 
         calcobject = CalcObject([], self.setup)
@@ -605,19 +618,23 @@ class DistributedAnalysis(object):
         elif obj_dims == 3:
             A = A.integrate_vol(name=obj)
         else:
-            logger.warning('Invalid object dimensions %s, using default of 3 (volume)' % obj_dims)
+            logger.warning(
+                "Invalid object dimensions %s, using default of 3 (volume)" % obj_dims
+            )
             A = A.integrate_vol(name=obj)
 
         lv = self._get_lv(variation)
         return A.evaluate(lv=lv)
 
-    def calc_energy_magnetic(self,
-                             variation: str = None,
-                             obj: str = 'AllObjects',
-                             volume: str = 'Deprecated',
-                             smooth: bool = False,
-                             obj_dims: int = 3):
-        '''
+    def calc_energy_magnetic(
+        self,
+        variation: str = None,
+        obj: str = "AllObjects",
+        volume: str = "Deprecated",
+        smooth: bool = False,
+        obj_dims: int = 3,
+    ):
+        """
         See calc_energy_electric.
 
         Args:
@@ -626,9 +643,11 @@ class DistributedAnalysis(object):
             volume (string | 'AllObjects'): Name of the volume to integrate over
             smooth (bool | False) : Smooth the electric field or not when performing calculation
             obj_dims (int | 3) : 1 - line, 2 - surface, 3 - volume. Default volume
-        '''
-        if volume != 'Deprecated':
-            logger.warning('The use of the "volume" argument is deprecated... use "obj" instead')
+        """
+        if volume != "Deprecated":
+            logger.warning(
+                'The use of the "volume" argument is deprecated... use "obj" instead'
+            )
             obj = volume
 
         calcobject = CalcObject([], self.setup)
@@ -648,19 +667,18 @@ class DistributedAnalysis(object):
         elif obj_dims == 3:
             A = A.integrate_vol(name=obj)
         else:
-            logger.warn(f'Invalid object dimensions {obj_dims}, using default of 3 (volume)')
+            logger.warn(
+                f"Invalid object dimensions {obj_dims}, using default of 3 (volume)"
+            )
             A = A.integrate_vol(name=obj)
 
         lv = self._get_lv(variation)
         return A.evaluate(lv=lv)
 
-    def calc_p_electric_volume(self,
-                               name_dielectric3D,
-                               relative_to='AllObjects',
-                               variation=None,
-                               E_total=None
-                               ):
-        r'''
+    def calc_p_electric_volume(
+        self, name_dielectric3D, relative_to="AllObjects", variation=None, E_total=None
+    ):
+        r"""
         Calculate the dielectric energy-participation ratio
         of a 3D object (one that has volume) relative to the dielectric energy of
         a list of objects.
@@ -672,26 +690,26 @@ class DistributedAnalysis(object):
 
         Returns:
             ℰ_object/ℰ_total, (ℰ_object, _total)
-        '''
+        """
 
         if E_total is None:
-            logger.debug('Calculating ℰ_total')
+            logger.debug("Calculating ℰ_total")
             ℰ_total = self.calc_energy_electric(obj=relative_to, variation=variation)
         else:
             ℰ_total = E_total
 
-        logger.debug('Calculating ℰ_object')
+        logger.debug("Calculating ℰ_object")
         ℰ_object = self.calc_energy_electric(obj=name_dielectric3D, variation=variation)
 
-        return ℰ_object/ℰ_total, (ℰ_object, ℰ_total)
+        return ℰ_object / ℰ_total, (ℰ_object, ℰ_total)
 
     def calc_current(self, fields, line: str):
-        '''
+        """
         Function to calculate Current based on line. Not in use.
 
         Args:
             line (str) : integration line between plates - name
-        '''
+        """
         self.design.Clear_Field_Clac_Stack()
         comp = fields.Vector_H
         exp = comp.integrate_line_tangent(line)
@@ -700,7 +718,7 @@ class DistributedAnalysis(object):
         return I
 
     def calc_avg_current_J_surf_mag(self, variation: str, junc_rect: str, junc_line):
-        ''' Peak current I_max for mode J in junction J
+        """Peak current I_max for mode J in junction J
             The avg. is over the surface of the junction. I.e., spatial.
         Args:
             variation (str): A string identifier of the variation,
@@ -709,23 +727,27 @@ class DistributedAnalysis(object):
             junc_line (str) : name of junction line to integrate over
         Returns:
             Value of peak current
-        '''
+        """
         lv = self._get_lv(variation)
 
         jl, uj = self.get_junc_len_dir(variation, junc_line)
 
         uj = ConstantVecCalcObject(uj, self.setup)
         calc = CalcObject([], self.setup)
-        #calc = calc.getQty("Jsurf").mag().integrate_surf(name = junc_rect)
-        calc = (((calc.getQty("Jsurf")).dot(uj)).imag()
-                ).integrate_surf(name=junc_rect)
+        # calc = calc.getQty("Jsurf").mag().integrate_surf(name = junc_rect)
+        calc = (((calc.getQty("Jsurf")).dot(uj)).imag()).integrate_surf(name=junc_rect)
         I = calc.evaluate(lv=lv) / jl  # phase = 90
         # self.design.Clear_Field_Clac_Stack()
         return I
 
-    def calc_current_using_line_voltage(self, variation: str, junc_line_name: str,
-                                        junc_L_Henries: float, Cj_Farads: float = None):
-        '''
+    def calc_current_using_line_voltage(
+        self,
+        variation: str,
+        junc_line_name: str,
+        junc_L_Henries: float,
+        Cj_Farads: float = None,
+    ):
+        """
         Peak current I_max for prespecified mode calculating line voltage across junction.
 
         Make sure that you have set the correct variation in HFSS before running this
@@ -736,42 +758,55 @@ class DistributedAnalysis(object):
             junc_L_Henries: junction inductance in henries
             Cj_Farads: junction cap in Farads
             TODO: Smooth?
-        '''
+        """
         lv = self._get_lv(variation)
-        v_calc_real = CalcObject([], self.setup).getQty(
-            "E").real().integrate_line_tangent(name=junc_line_name)
-        v_calc_imag = CalcObject([], self.setup).getQty(
-            "E").imag().integrate_line_tangent(name=junc_line_name)
-        V = np.sign(v_calc_real.evaluate(lv=lv)) * np.sqrt(v_calc_real.evaluate(lv=lv)**2 +
-                    v_calc_imag.evaluate(lv=lv)**2)
+        v_calc_real = (
+            CalcObject([], self.setup)
+            .getQty("E")
+            .real()
+            .integrate_line_tangent(name=junc_line_name)
+        )
+        v_calc_imag = (
+            CalcObject([], self.setup)
+            .getQty("E")
+            .imag()
+            .integrate_line_tangent(name=junc_line_name)
+        )
+        V = np.sign(v_calc_real.evaluate(lv=lv)) * np.sqrt(
+            v_calc_real.evaluate(lv=lv) ** 2 + v_calc_imag.evaluate(lv=lv) ** 2
+        )
 
         # Get frequency
-        freq = CalcObject(
-            [('EnterOutputVar', ('Freq', "Complex"))], self.setup).real().evaluate()
-        omega = 2*np.pi*freq  # in SI radian Hz units
+        freq = (
+            CalcObject([("EnterOutputVar", ("Freq", "Complex"))], self.setup)
+            .real()
+            .evaluate()
+        )
+        omega = 2 * np.pi * freq  # in SI radian Hz units
 
-        Z = omega*junc_L_Henries
-        if abs(float(Cj_Farads)) > 1E-29:  # zero
-            #print('Non-zero Cj used in calc_current_using_line_voltage')
-            #Z += 1./(omega*Cj_Farads)
+        Z = omega * junc_L_Henries
+        if abs(float(Cj_Farads)) > 1e-29:  # zero
+            # print('Non-zero Cj used in calc_current_using_line_voltage')
+            # Z += 1./(omega*Cj_Farads)
             print(
-                '\t\t'f'Energy fraction (Lj over Lj&Cj)= {100./(1.+omega**2 *Cj_Farads*junc_L_Henries):.2f}%')
+                "\t\t"
+                f"Energy fraction (Lj over Lj&Cj)= {100./(1.+omega**2 *Cj_Farads*junc_L_Henries):.2f}%"
+            )
             # f'Z_L= {omega*junc_L_Henries:.1f} Ohms Z_C= {1./(omega*Cj_Farads):.1f} Ohms')
 
-        I_peak = V/Z  # I=V/(wL)s
+        I_peak = V / Z  # I=V/(wL)s
 
         return I_peak, V, freq
 
     def calc_line_current(self, variation, junc_line_name):
         lv = self._get_lv(variation)
         calc = CalcObject([], self.setup)
-        calc = calc.getQty("H").imag().integrate_line_tangent(
-            name=junc_line_name)
+        calc = calc.getQty("H").imag().integrate_line_tangent(name=junc_line_name)
         # self.design.Clear_Field_Clac_Stack()
         return calc.evaluate(lv=lv)
 
     def get_junc_len_dir(self, variation: str, junc_line):
-        '''
+        """
         Return the length and direction of a junction defined by a line
 
         Args:
@@ -782,49 +817,54 @@ class DistributedAnalysis(object):
             jl (float) : junction length
             uj (list of 3 floats): x,y,z coordinates of the unit vector
                  tangent to the junction line
-        '''
+        """
         #
         lv = self._get_lv(variation)
         u = []
-        for coor in ['X', 'Y', 'Z']:
+        for coor in ["X", "Y", "Z"]:
             calc = CalcObject([], self.setup)
             calc = calc.line_tangent_coor(junc_line, coor)
             u.append(calc.evaluate(lv=lv))
 
-        jl = float(np.sqrt(u[0]**2+u[1]**2+u[2]**2))
-        uj = [float(u[0]/jl), float(u[1]/jl), float(u[2]/jl)]
+        jl = float(np.sqrt(u[0] ** 2 + u[1] ** 2 + u[2] ** 2))
+        uj = [float(u[0] / jl), float(u[1] / jl), float(u[2] / jl)]
         return jl, uj
 
     def get_Qseam(self, seam, mode, variation, U_H=None):
-        r'''
+        r"""
         Calculate the contribution to Q of a seam, by integrating the current in
         the seam with finite conductance: set in the config file
         ref: http://arxiv.org/pdf/1509.01119.pdf
-        '''
+        """
 
         if U_H is None:
             U_H = self.calc_energy_magnetic(variation)
 
         _, freqs_bare_vals = self.get_freqs_bare(variation)
-        self.omega = 2*np.pi*freqs_bare_vals[mode]
+        self.omega = 2 * np.pi * freqs_bare_vals[mode]
 
         lv = self._get_lv(variation)
         Qseam = OrderedDict()
-        print(f'Calculating Qseam_{seam} for mode {mode} ({mode}/{self.n_modes-1})')
+        print(f"Calculating Qseam_{seam} for mode {mode} ({mode}/{self.n_modes-1})")
         # overestimating the loss by taking norm2 of j, rather than jperp**2
         j_2_norm = self.fields.Vector_Jsurf.norm_2()
         int_j_2 = j_2_norm.integrate_line(seam)
         int_j_2_val = int_j_2.evaluate(lv=lv, phase=90)
-        yseam = int_j_2_val/U_H/self.omega
+        yseam = int_j_2_val / U_H / self.omega
 
-        Qseam['Qseam_'+seam+'_' +
-              str(mode)] = config.dissipation.gseam/yseam
+        Qseam["Qseam_" + seam + "_" + str(mode)] = config.dissipation.gseam / yseam
 
-        print('Qseam_' + seam + '_' + str(mode), '=', str(config.dissipation.gseam/yseam))
+        print(
+            "Qseam_" + seam + "_" + str(mode),
+            "=",
+            str(config.dissipation.gseam / yseam),
+        )
 
         return pd.Series(Qseam)
 
-    def get_Qseam_sweep(self, seam, mode, variation, variable, values, unit, U_H=None, pltresult=True):
+    def get_Qseam_sweep(
+        self, seam, mode, variation, variable, values, unit, U_H=None, pltresult=True
+    ):
         """
         Q due to seam loss.
 
@@ -835,70 +875,100 @@ class DistributedAnalysis(object):
         if U_H is None:
             U_H = self.calc_energy_magnetic(variation)
 
-        self.solutions.set_mode(mode+1, 0)
+        self.solutions.set_mode(mode + 1, 0)
         self.fields = self.setup.get_fields()
         freqs_bare_dict, freqs_bare_vals = self.get_freqs_bare(variation)
-        self.omega = 2*np.pi*freqs_bare_vals[mode]
+        self.omega = 2 * np.pi * freqs_bare_vals[mode]
         print(variation)
         print(type(variation))
         print(ureg(variation))
 
         lv = self._get_lv(variation)
         Qseamsweep = []
-        print('Calculating Qseam_' + seam + ' for mode ' + str(mode) +
-              ' (' + str(mode) + '/' + str(self.n_modes-1) + ')')
+        print(
+            "Calculating Qseam_"
+            + seam
+            + " for mode "
+            + str(mode)
+            + " ("
+            + str(mode)
+            + "/"
+            + str(self.n_modes - 1)
+            + ")"
+        )
         for value in values:
-            self.design.set_variable(variable, str(value)+unit)
+            self.design.set_variable(variable, str(value) + unit)
 
             # overestimating the loss by taking norm2 of j, rather than jperp**2
             j_2_norm = self.fields.Vector_Jsurf.norm_2()
             int_j_2 = j_2_norm.integrate_line(seam)
             int_j_2_val = int_j_2.evaluate(lv=lv, phase=90)
-            yseam = int_j_2_val/U_H/self.omega
-            Qseamsweep.append(config.dissipation.gseam/yseam)
-#        Qseamsweep['Qseam_sweep_'+seam+'_'+str(mode)] = gseam/yseam
-            # Cprint 'Qseam_' + seam + '_' + str(mode) + str(' = ') + str(gseam/yseam)
+            yseam = int_j_2_val / U_H / self.omega
+            Qseamsweep.append(config.dissipation.gseam / yseam)
+        #        Qseamsweep['Qseam_sweep_'+seam+'_'+str(mode)] = gseam/yseam
+        # Cprint 'Qseam_' + seam + '_' + str(mode) + str(' = ') + str(gseam/yseam)
 
         if pltresult:
             _, ax = plt.subplots()
             ax.plot(values, Qseamsweep)
-            ax.set_yscale('log')
-            ax.set_xlabel(variable+' ('+unit+')')
-            ax.set_ylabel('Q'+'_'+seam)
+            ax.set_yscale("log")
+            ax.set_xlabel(variable + " (" + unit + ")")
+            ax.set_ylabel("Q" + "_" + seam)
 
         return Qseamsweep
 
     def get_Qdielectric(self, dielectric, mode, variation, U_E=None):
         if U_E is None:
-            U_E = self.calc_energy_electric(variation) 
+            U_E = self.calc_energy_electric(variation)
         Qdielectric = OrderedDict()
-        print('Calculating Qdielectric_' + dielectric + ' for mode ' +
-              str(mode) + ' (' + str(mode) + '/' + str(self.n_modes-1) + ')')
+        print(
+            "Calculating Qdielectric_"
+            + dielectric
+            + " for mode "
+            + str(mode)
+            + " ("
+            + str(mode)
+            + "/"
+            + str(self.n_modes - 1)
+            + ")"
+        )
 
         U_dielectric = self.calc_energy_electric(variation, obj=dielectric)
-        p_dielectric = U_dielectric/U_E
+        p_dielectric = U_dielectric / U_E
         # TODO: Update make p saved sep. and get Q for diff materials, indep. specify in pinfo
-        Qdielectric['Qdielectric_' + dielectric] = 1/(p_dielectric*config.dissipation.tan_delta_sapp)
-        print('p_dielectric'+'_'+dielectric+'_' + str(mode) + ' = ' + str(p_dielectric))
+        Qdielectric["Qdielectric_" + dielectric] = 1 / (
+            p_dielectric * config.dissipation.tan_delta_sapp
+        )
+        print(
+            "p_dielectric"
+            + "_"
+            + dielectric
+            + "_"
+            + str(mode)
+            + " = "
+            + str(p_dielectric)
+        )
         return pd.Series(Qdielectric)
 
     def get_Qsurface(self, mode, variation, name, U_E=None, material_properties=None):
-        '''
+        """
         Calculate the contribution to Q of a dielectric layer of dirt on a given surface.
         Set the dirt thickness and loss tangent in the config file
         ref: http://arxiv.org/pdf/1509.01854.pdf
-        '''
+        """
         if U_E is None:
             U_E = self.calc_energy_electric(variation)
         if material_properties is None:
             material_properties = {}
-        th = material_properties.get('th', config.dissipation.th)
-        eps_r = material_properties.get('eps_r', config.dissipation.eps_r)
-        tan_delta_surf = material_properties.get('tan_delta_surf', config.dissipation.tan_delta_surf)
+        th = material_properties.get("th", config.dissipation.th)
+        eps_r = material_properties.get("eps_r", config.dissipation.eps_r)
+        tan_delta_surf = material_properties.get(
+            "tan_delta_surf", config.dissipation.tan_delta_surf
+        )
 
         lv = self._get_lv(variation)
         Qsurf = OrderedDict()
-        print(f'Calculating Qsurface {name} for mode ({mode}/{self.n_modes-1})')
+        print(f"Calculating Qsurface {name} for mode ({mode}/{self.n_modes-1})")
         calcobject = CalcObject([], self.setup)
         vecE = calcobject.getQty("E")
         A = vecE
@@ -908,46 +978,47 @@ class DistributedAnalysis(object):
         A = A.integrate_surf(name=name)
         U_surf = A.evaluate(lv=lv)
         U_surf *= th * epsilon_0 * eps_r
-        p_surf = U_surf/U_E
-        Qsurf[f'Qsurf_{name}'] = 1 / (p_surf * tan_delta_surf)
-        print(f'p_surf_{name}_{mode} = {p_surf}')
+        p_surf = U_surf / U_E
+        Qsurf[f"Qsurf_{name}"] = 1 / (p_surf * tan_delta_surf)
+        print(f"p_surf_{name}_{mode} = {p_surf}")
         return pd.Series(Qsurf)
 
     def get_Qsurface_all(self, mode, variation, U_E=None):
-        '''
+        """
         Calculate the contribution to Q of a dielectric layer of dirt on all surfaces.
         Set the dirt thickness and loss tangent in the config file
         ref: http://arxiv.org/pdf/1509.01854.pdf
-        '''
-        return self.get_Qsurface(mode, variation, name='AllObjects', U_E=U_E)
+        """
+        return self.get_Qsurface(mode, variation, name="AllObjects", U_E=U_E)
 
-    def calc_Q_external(self, variation, freq_GHz, U_E = None):
-        '''
+    def calc_Q_external(self, variation, freq_GHz, U_E=None):
+        """
         Calculate the coupling Q of mode m with each port p
         Expected that you have specified the mode before calling this
 
         Args:
             variation (str): A string identifier of the variation,
             such as '0', '1', ...
-        '''
+        """
         if U_E is None:
             U_E = self.calc_energy_electric(variation)
-        Qp = pd.Series({}, dtype='float64')
+        Qp = pd.Series({}, dtype="float64")
 
         freq = freq_GHz * 1e9  # freq in Hz
         for port_nm, port in self.pinfo.ports.items():
-            I_peak = self.calc_avg_current_J_surf_mag(variation, port['rect'],
-                                                      port['line'])
-            U_dissip = 0.5 * port['R'] * I_peak**2 * 1 / freq
-            p = U_dissip / (U_E/2)  # U_E is 2x the peak electrical energy
+            I_peak = self.calc_avg_current_J_surf_mag(
+                variation, port["rect"], port["line"]
+            )
+            U_dissip = 0.5 * port["R"] * I_peak**2 * 1 / freq
+            p = U_dissip / (U_E / 2)  # U_E is 2x the peak electrical energy
             kappa = p * freq
             Q = 2 * np.pi * freq / kappa
-            Qp['Q_' + port_nm] = Q
+            Qp["Q_" + port_nm] = Q
 
         return Qp
 
     def calc_p_junction(self, variation, U_H, U_E, Ljs, Cjs):
-        '''
+        """
         For a single specific mode.
         Expected that you have specified the mode before calling this, :func:`~pyEPR.DistributedAnalysis.set_mode`.
 
@@ -971,74 +1042,85 @@ class DistributedAnalysis(object):
 
         .. warning::
            Potential errors: If you dont have a line or rect by the right name you will prob
-           get an error of the type: com_error: (-2147352567, 'Exception occurred.', 
+           get an error of the type: com_error: (-2147352567, 'Exception occurred.',
            (0, None, None, None, 0, -2147024365), None)
-        '''
+        """
 
         # ------------------------------------------------------------
         # Calculate all peak voltage and currents for all junctions in a given mode
         method = self.pinfo.options.method_calc_P_mj
         I_peak_ = {}
         V_peak_ = {}
-        Sj = pd.Series({}, dtype='float64')
+        Sj = pd.Series({}, dtype="float64")
         for j_name, j_props in self.pinfo.junctions.items():
-            logger.debug(f'Calculating participations for {(j_name, j_props)}')
+            logger.debug(f"Calculating participations for {(j_name, j_props)}")
             Lj = Ljs[j_name]
             Cj = Cjs[j_name]
-            line_name = j_props['line']
+            line_name = j_props["line"]
 
-            if method == 'J_surf_mag':  # old method
+            if method == "J_surf_mag":  # old method
 
                 _I_peak_1 = self.calc_avg_current_J_surf_mag(
-                    variation, j_props['rect'], line_name)
+                    variation, j_props["rect"], line_name
+                )
                 # could also use this to back out the V_peak using the impedances as in the line
                 # below for now, keep both methods
 
                 _I_peak_2, _V_peak_2, _ = self.calc_current_using_line_voltage(
-                    variation, line_name, Lj, Cj)
+                    variation, line_name, Lj, Cj
+                )
 
                 logger.debug(
-                    f'Difference in I_Peak calculation ala the two methods: {(_I_peak_1,_I_peak_2)}')
+                    f"Difference in I_Peak calculation ala the two methods: {(_I_peak_1,_I_peak_2)}"
+                )
 
                 V_peak = _V_peak_2  # make sure this is signed
                 I_peak = _I_peak_1
 
-            elif method == 'line_voltage':  # new preferred method
+            elif method == "line_voltage":  # new preferred method
 
                 I_peak, V_peak, _ = self.calc_current_using_line_voltage(
-                    variation, line_name, Lj, Cj)
+                    variation, line_name, Lj, Cj
+                )
 
             else:
-                raise NotImplementedError('Other calculation methods\
-                    (self.pinfo.options.method_calc_P_mj) are possible but not implemented here. ')
+                raise NotImplementedError(
+                    "Other calculation methods\
+                    (self.pinfo.options.method_calc_P_mj) are possible but not implemented here. "
+                )
 
             # save results
             I_peak_[j_name] = I_peak
             V_peak_[j_name] = V_peak
-            Sj['s_' + j_name] = _Smj = 1 if V_peak > 0 else - 1
+            Sj["s_" + j_name] = _Smj = 1 if V_peak > 0 else -1
 
             # REPORT preliminary
-            pmj_ind = 0.5*Ljs[j_name] * I_peak**2 / U_E
-            pmj_cap = 0.5*Cjs[j_name] * V_peak**2 / U_E
-            #print('\tpmj_ind=',pmj_ind, Ljs[j_name], U_E)
+            pmj_ind = 0.5 * Ljs[j_name] * I_peak**2 / U_E
+            pmj_cap = 0.5 * Cjs[j_name] * V_peak**2 / U_E
+            # print('\tpmj_ind=',pmj_ind, Ljs[j_name], U_E)
 
             self.I_peak = I_peak
             self.V_peak = V_peak
             self.Ljs = Ljs
             self.Cjs = Cjs
             print(
-                f'\t{j_name:<15} {pmj_ind:>8.6g}{("(+)"if _Smj else "(-)"):>5s}        {pmj_cap:>8.6g}')
-            #print('\tV_peak=', V_peak)
+                f'\t{j_name:<15} {pmj_ind:>8.6g}{("(+)"if _Smj else "(-)"):>5s}        {pmj_cap:>8.6g}'
+            )
+            # print('\tV_peak=', V_peak)
 
         # ------------------------------------------------------------
         # Calculate participation from the peak voltage and currents
         #
 
         # All junction capacitive and inductive lumped energies - all peak
-        U_J_inds = {j_name: 0.5*Ljs[j_name] * I_peak_[j_name]
-                    ** 2 for j_name in self.pinfo.junctions}
-        U_J_caps = {j_name: 0.5*Cjs[j_name] * V_peak_[j_name]
-                    ** 2 for j_name in self.pinfo.junctions}
+        U_J_inds = {
+            j_name: 0.5 * Ljs[j_name] * I_peak_[j_name] ** 2
+            for j_name in self.pinfo.junctions
+        }
+        U_J_caps = {
+            j_name: 0.5 * Cjs[j_name] * V_peak_[j_name] ** 2
+            for j_name in self.pinfo.junctions
+        }
 
         U_tot_ind = U_H + sum(list(U_J_inds.values()))  # total
         U_tot_cap = U_E + sum(list(U_J_caps.values()))
@@ -1046,33 +1128,49 @@ class DistributedAnalysis(object):
         # what to use for the norm?  U_tot_cap or the mean of  U_tot_ind and  U_tot_cap?
         # i.e., (U_tot_ind + U_tot_cap)/2
         U_norm = U_tot_cap
-        U_diff = (U_tot_cap-U_tot_ind)/(U_tot_cap+U_tot_ind)
-        print("\t\t"f"(U_tot_cap-U_tot_ind)/mean={U_diff*100:.2f}%")
+        U_diff = (U_tot_cap - U_tot_ind) / (U_tot_cap + U_tot_ind)
+        print("\t\t" f"(U_tot_cap-U_tot_ind)/mean={U_diff*100:.2f}%")
         if abs(U_diff) > 0.15:
-            print('WARNING: This simulation must not have converged well!!!\
+            print(
+                "WARNING: This simulation must not have converged well!!!\
                 The difference in the total cap and ind energies is larger than 10%.\
-                Proceed with caution.')
+                Proceed with caution."
+            )
 
-        Pj = pd.Series(OrderedDict([(j_name, Uj_ind/U_norm)
-                                    for j_name, Uj_ind in U_J_inds.items()]))
+        Pj = pd.Series(
+            OrderedDict(
+                [(j_name, Uj_ind / U_norm) for j_name, Uj_ind in U_J_inds.items()]
+            )
+        )
 
-        PCj = pd.Series(OrderedDict([(j_name, Uj_cap/U_norm)
-                                     for j_name, Uj_cap in U_J_caps.items()]))
+        PCj = pd.Series(
+            OrderedDict(
+                [(j_name, Uj_cap / U_norm) for j_name, Uj_cap in U_J_caps.items()]
+            )
+        )
 
         # print('\t{:<15} {:>8.6g} {:>5s}'.format(
         #    j_name,
         #    Pj['p_' + j_name],
         #    '+' if Sj['s_' + j_name] > 0 else '-'))
 
-        return Pj, Sj, PCj, pd.Series(I_peak), pd.Series(V_peak), \
-            {'U_J_inds': U_J_inds,
-             'U_J_caps': U_J_caps,
-             'U_H': U_H,
-             'U_E': U_E,
-             'U_tot_ind': U_tot_ind,
-             'U_tot_cap': U_tot_cap,
-             'U_norm': U_norm,
-             'U_diff': U_diff}
+        return (
+            Pj,
+            Sj,
+            PCj,
+            pd.Series(I_peak),
+            pd.Series(V_peak),
+            {
+                "U_J_inds": U_J_inds,
+                "U_J_caps": U_J_caps,
+                "U_H": U_H,
+                "U_E": U_E,
+                "U_tot_ind": U_tot_ind,
+                "U_tot_cap": U_tot_cap,
+                "U_norm": U_norm,
+                "U_diff": U_diff,
+            },
+        )
 
     def get_previously_analyzed(self):
         """
@@ -1096,27 +1194,32 @@ class DistributedAnalysis(object):
             variation (str) : label such as '0' or 'all', in which case return
             pandas table for all variations
         """
-        if variation == 'all':
+        if variation == "all":
             # for all variations and concat
             raise NotImplementedError()  # TODO
         else:
-            Ljs = pd.Series({}, dtype='float64')
-            Cjs = pd.Series({}, dtype='float64')
+            Ljs = pd.Series({}, dtype="float64")
+            Cjs = pd.Series({}, dtype="float64")
 
             for junc_name, val in self.pinfo.junctions.items():  # junction nickname
                 _variables = self._hfss_variables[variation]
-                def _parse(name): return ureg.Quantity(
-                    _variables['_'+val[name]]).to_base_units().magnitude
-                Ljs[junc_name] = _parse('Lj_variable')
-                Cjs[junc_name] = 2E-15  # _parse(
+
+                def _parse(name):
+                    return (
+                        ureg.Quantity(_variables["_" + val[name]])
+                        .to_base_units()
+                        .magnitude
+                    )
+
+                Ljs[junc_name] = _parse("Lj_variable")
+                Cjs[junc_name] = 2e-15  # _parse(
                 # 'Cj_variable') if 'Cj_variable' in val else 0
 
         return Ljs, Cjs
 
-    def do_EPR_analysis(self,
-                        variations: list = None,
-                        modes=None,
-                        append_analysis=True):
+    def do_EPR_analysis(
+        self, variations: list = None, modes=None, append_analysis=True
+    ):
         """
         Main analysis routine
 
@@ -1134,7 +1237,7 @@ class DistributedAnalysis(object):
                 Modes to analyze
                 for example  modes = [0, 2, 3]
 
-            append_analysis (bool) : 
+            append_analysis (bool) :
                 When we run the Ansys analysis, should we redo any variations that we have already done?
 
         Ansys Notes:
@@ -1161,17 +1264,21 @@ class DistributedAnalysis(object):
             eprd = epr.DistributedAnalysis(pinfo)
             eprd.do_EPR_analysis(append_analysis=False)
         """
-        
+
         if not modes is None:
-            assert max(modes) < self.n_modes, 'Non-existing mode selected. \n'\
-                f'The possible modes are between 0 and {self.n_modes-1}.'
+            assert max(modes) < self.n_modes, (
+                "Non-existing mode selected. \n"
+                f"The possible modes are between 0 and {self.n_modes-1}."
+            )
             if len(modes) != len(set(modes)):
-                logger.warn(f'Select each mode only once! Fixing...\n'\
-                    'modes: {modes} --> {list(set(modes))}')
+                logger.warn(
+                    f"Select each mode only once! Fixing...\n"
+                    "modes: {modes} --> {list(set(modes))}"
+                )
                 modes = list(set(modes))
 
         # Track the total timing
-        self._run_time = time.strftime('%Y%m%d_%H%M%S', time.localtime())
+        self._run_time = time.strftime("%Y%m%d_%H%M%S", time.localtime())
 
         # Update the latest hfss variation information
         self.update_ansys_info()
@@ -1184,11 +1291,11 @@ class DistributedAnalysis(object):
         # Main loop - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # TODO: Move inside of loop to function calle self.analyze_variation
         for ii, variation in enumerate(variations):
-            print(f'\nVariation {variation}  [{ii+1}/{len(variations)}]')
+            print(f"\nVariation {variation}  [{ii+1}/{len(variations)}]")
 
             # Previously analyzed and we should re analyze
             if append_analysis and variation in self.get_previously_analyzed():
-                print_NoNewLine('  previously analyzed ...\n')
+                print_NoNewLine("  previously analyzed ...\n")
                 continue
 
             # QUESTION! should we set the current variation, can this save time, set the variables
@@ -1199,8 +1306,10 @@ class DistributedAnalysis(object):
             time.sleep(0.4)
 
             if self.has_fields() == False:
-                logger.error(f" Error: HFSS does not have field solution for variation={ii}.\
-                                Skipping this mode in the analysis")
+                logger.error(
+                    f" Error: HFSS does not have field solution for variation={ii}.\
+                                Skipping this mode in the analysis"
+                )
                 continue
 
             try:
@@ -1209,30 +1318,32 @@ class DistributedAnalysis(object):
                 # This could fail if more variables are added after the simulation is completed.
                 self.set_variation(variation)
             except Exception as e:
-                print('\tERROR: Could not set the variation string.'
-                      '\nPossible causes: Did you add a variable after the simulation was already solved? '
-                      '\nAttempting to proceed nonetheless, should be just slower ...')
+                print(
+                    "\tERROR: Could not set the variation string."
+                    "\nPossible causes: Did you add a variable after the simulation was already solved? "
+                    "\nAttempting to proceed nonetheless, should be just slower ..."
+                )
 
             # use nonframe because old style
-            freqs_bare_GHz, Qs_bare = self.get_freqs_bare_pd(
-                variation, frame=False)
+            freqs_bare_GHz, Qs_bare = self.get_freqs_bare_pd(variation, frame=False)
 
             # update to the latest
             self._hfss_variables[variation] = pd.Series(
-                self.get_variables(variation=variation))
+                self.get_variables(variation=variation)
+            )
 
             # Create Ljs and Cjs series for a variation
             Ljs, Cjs = self.get_junctions_L_and_C(variation)
 
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
             # This is crummy now.  use dict
-            #result = dict()
+            # result = dict()
 
             Om = OrderedDict()  # Matrix of angular frequency (of analyzed modes)
             Pm = OrderedDict()  # Participation P matrix
             Sm = OrderedDict()  # Sign          S matrix
             Qm_coupling = OrderedDict()  # Quality factor matrix
-            SOL = OrderedDict()          # Other results
+            SOL = OrderedDict()  # Other results
             Pm_cap = OrderedDict()
             I_peak = OrderedDict()
             V_peak = OrderedDict()
@@ -1244,133 +1355,199 @@ class DistributedAnalysis(object):
                 self.set_mode(mode)
 
                 # Get HFSS  solved frequencies
-                _Om = pd.Series({}, dtype='float64')
+                _Om = pd.Series({}, dtype="float64")
                 temp_freq = freqs_bare_GHz[mode]
-                _Om['freq_GHz'] = temp_freq  # freq
+                _Om["freq_GHz"] = temp_freq  # freq
                 Om[mode] = _Om
                 print(
-                    '\n'f'  \033[1mMode {mode} at {"%.2f" % temp_freq} GHz   [{mode+1}/{self.n_modes}]\033[0m')
+                    "\n"
+                    f'  \033[1mMode {mode} at {"%.2f" % temp_freq} GHz   [{mode+1}/{self.n_modes}]\033[0m'
+                )
 
                 # EPR Hamiltonian calculations
                 # Calculation global energies and report
 
                 # Magnetic
-                print('    Calculating ℰ_magnetic', end=',')
+                print("    Calculating ℰ_magnetic", end=",")
                 try:
                     self.U_H = self.calc_energy_magnetic(variation)
                 except Exception as e:
                     tb = sys.exc_info()[2]
                     print("\n\nError:\n", e)
-                    raise(Exception(' Did you save the field solutions?\n\
+                    raise (
+                        Exception(
+                            " Did you save the field solutions?\n\
                     Failed during calculation of the total magnetic energy.\
                     This is the first calculation step, and is indicative that there are \
-                    no field solutions saved. ').with_traceback(tb))
+                    no field solutions saved. "
+                        ).with_traceback(tb)
+                    )
 
                 # Electric
-                print('ℰ_electric')
+                print("ℰ_electric")
                 self.U_E = self.calc_energy_electric(variation)
 
                 # the unnormed
-                sol = pd.Series({'U_H': self.U_H, 'U_E': self.U_E})
+                sol = pd.Series({"U_H": self.U_H, "U_E": self.U_E})
 
                 # Fraction - report the peak energy, properly normalized
                 # the 2 is from the calculation methods
-                print(f"""     {'(ℰ_E-ℰ_H)/ℰ_E':>15s} {'ℰ_E':>9s} {'ℰ_H':>9s}
-    {100*(self.U_E - self.U_H)/self.U_E:>15.1f}%  {self.U_E/2:>9.4g} {self.U_H/2:>9.4g}\n""")
+                print(
+                    f"""     {'(ℰ_E-ℰ_H)/ℰ_E':>15s} {'ℰ_E':>9s} {'ℰ_H':>9s}
+    {100*(self.U_E - self.U_H)/self.U_E:>15.1f}%  {self.U_E/2:>9.4g} {self.U_H/2:>9.4g}\n"""
+                )
 
                 # Calculate EPR for each of the junctions
                 print(
-                    f'    Calculating junction energy participation ration (EPR)\n\tmethod=`{self.pinfo.options.method_calc_P_mj}`. First estimates:')
+                    f"    Calculating junction energy participation ration (EPR)\n\tmethod=`{self.pinfo.options.method_calc_P_mj}`. First estimates:"
+                )
                 print(
-                    f"\t{'junction':<15s} EPR p_{mode}j   sign s_{mode}j    (p_capacitive)")
+                    f"\t{'junction':<15s} EPR p_{mode}j   sign s_{mode}j    (p_capacitive)"
+                )
 
-                Pm[mode], Sm[mode], Pm_cap[mode], I_peak[mode], V_peak[mode], ansys_energies[mode] = self.calc_p_junction(
-                    variation, self.U_H/2., self.U_E/2., Ljs, Cjs)
+                (
+                    Pm[mode],
+                    Sm[mode],
+                    Pm_cap[mode],
+                    I_peak[mode],
+                    V_peak[mode],
+                    ansys_energies[mode],
+                ) = self.calc_p_junction(
+                    variation, self.U_H / 2.0, self.U_E / 2.0, Ljs, Cjs
+                )
 
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                 # EPR Dissipative calculations -- should be a function block below
 
                 # TODO: this should really be passed as argument  to the functions rather than a
                 # property of the calss I would say
-                self.omega = 2*np.pi*freqs_bare_GHz[mode]
+                self.omega = 2 * np.pi * freqs_bare_GHz[mode]
 
-                Qm_coupling[mode] = self.calc_Q_external(variation,
-                                                         freqs_bare_GHz[mode],
-                                                         self.U_E)
+                Qm_coupling[mode] = self.calc_Q_external(
+                    variation, freqs_bare_GHz[mode], self.U_E
+                )
 
                 # get seam Q
-                if self.pinfo.dissipative['seams']:
-                    for seam in self.pinfo.dissipative['seams']:
-                        sol = pd.concat([sol, self.get_Qseam(seam, mode, variation, self.U_H)])
+                if self.pinfo.dissipative["seams"]:
+                    for seam in self.pinfo.dissipative["seams"]:
+                        sol = pd.concat(
+                            [sol, self.get_Qseam(seam, mode, variation, self.U_H)]
+                        )
 
                 # get Q dielectric
-                if self.pinfo.dissipative['dielectrics_bulk']:
-                    for dielectric in self.pinfo.dissipative['dielectrics_bulk']:
-                        sol = pd.concat([sol, self.get_Qdielectric(dielectric, mode, variation, self.U_E)])
+                if self.pinfo.dissipative["dielectrics_bulk"]:
+                    for dielectric in self.pinfo.dissipative["dielectrics_bulk"]:
+                        sol = pd.concat(
+                            [
+                                sol,
+                                self.get_Qdielectric(
+                                    dielectric, mode, variation, self.U_E
+                                ),
+                            ]
+                        )
 
                 # get Q surface
-                if self.pinfo.dissipative['dielectric_surfaces']:
-                    if self.pinfo.dissipative['dielectric_surfaces'] == 'all':
-                        sol = pd.concat([sol, self.get_Qsurface_all(mode, variation, self.U_E)])
+                if self.pinfo.dissipative["dielectric_surfaces"]:
+                    if self.pinfo.dissipative["dielectric_surfaces"] == "all":
+                        sol = pd.concat(
+                            [sol, self.get_Qsurface_all(mode, variation, self.U_E)]
+                        )
                     else:
-                        for surface, properties in self.pinfo.dissipative['dielectric_surfaces'].items():
-                            sol = pd.concat([sol, self.get_Qsurface(mode, variation, surface, self.U_E, properties)])
+                        for surface, properties in self.pinfo.dissipative[
+                            "dielectric_surfaces"
+                        ].items():
+                            sol = pd.concat(
+                                [
+                                    sol,
+                                    self.get_Qsurface(
+                                        mode, variation, surface, self.U_E, properties
+                                    ),
+                                ]
+                            )
 
                 SOL[mode] = sol
 
             # Save
-            self._update_results(variation, Om, Pm, Sm, Qm_coupling, SOL,
-                                 freqs_bare_GHz, Qs_bare, Ljs, Cjs,
-                                 Pm_cap, I_peak, V_peak,
-                                 ansys_energies,
-                                 self._hfss_variables[variation])
+            self._update_results(
+                variation,
+                Om,
+                Pm,
+                Sm,
+                Qm_coupling,
+                SOL,
+                freqs_bare_GHz,
+                Qs_bare,
+                Ljs,
+                Cjs,
+                Pm_cap,
+                I_peak,
+                V_peak,
+                ansys_energies,
+                self._hfss_variables[variation],
+            )
             self.save()
 
             self._previously_analyzed.add(variation)
 
-        print('\nANALYSIS DONE. Data saved to:\n\n' +
-              str(self.data_filename)+'\n\n')
+        print("\nANALYSIS DONE. Data saved to:\n\n" + str(self.data_filename) + "\n\n")
 
         return self.data_filename, variations
 
-    def _update_results(self, variation: str, Om, Pm, Sm, Qm_coupling, sols,
-                        freqs_bare_GHz, Qs_bare, Ljs, Cjs, Pm_cap, I_peak, V_peak,
-                        ansys_energies, _hfss_variables):
-        '''
+    def _update_results(
+        self,
+        variation: str,
+        Om,
+        Pm,
+        Sm,
+        Qm_coupling,
+        sols,
+        freqs_bare_GHz,
+        Qs_bare,
+        Ljs,
+        Cjs,
+        Pm_cap,
+        I_peak,
+        V_peak,
+        ansys_energies,
+        _hfss_variables,
+    ):
+        """
         Save variation
-        '''
+        """
         # raw, not normalized - DataFrames
-        self.results[variation]['Pm'] = pd.DataFrame(Pm).transpose()
-        self.results[variation]['Pm_cap'] = pd.DataFrame(Pm_cap).transpose()
-        self.results[variation]['Sm'] = pd.DataFrame(Sm).transpose()
-        self.results[variation]['Om'] = pd.DataFrame(Om)
-        self.results[variation]['sols'] = pd.DataFrame(sols).transpose()
-        self.results[variation]['Qm_coupling'] = pd.DataFrame(
-            Qm_coupling).transpose()
+        self.results[variation]["Pm"] = pd.DataFrame(Pm).transpose()
+        self.results[variation]["Pm_cap"] = pd.DataFrame(Pm_cap).transpose()
+        self.results[variation]["Sm"] = pd.DataFrame(Sm).transpose()
+        self.results[variation]["Om"] = pd.DataFrame(Om)
+        self.results[variation]["sols"] = pd.DataFrame(sols).transpose()
+        self.results[variation]["Qm_coupling"] = pd.DataFrame(Qm_coupling).transpose()
 
-        self.results[variation]['Ljs'] = Ljs  # pd.Series
-        self.results[variation]['Cjs'] = Cjs  # pd.Series
-        self.results[variation]['Qs'] = Qs_bare
-        self.results[variation]['freqs_hfss_GHz'] = freqs_bare_GHz
-        self.results[variation]['hfss_variables'] = _hfss_variables
-        self.results[variation]['modes'] = self.modes
+        self.results[variation]["Ljs"] = Ljs  # pd.Series
+        self.results[variation]["Cjs"] = Cjs  # pd.Series
+        self.results[variation]["Qs"] = Qs_bare
+        self.results[variation]["freqs_hfss_GHz"] = freqs_bare_GHz
+        self.results[variation]["hfss_variables"] = _hfss_variables
+        self.results[variation]["modes"] = self.modes
 
         # mostly for debug info
-        self.results[variation]['I_peak'] = pd.Series(I_peak)
-        self.results[variation]['V_peak'] = pd.Series(V_peak)
-        self.results[variation]['ansys_energies'] = ansys_energies  # dict
+        self.results[variation]["I_peak"] = pd.Series(I_peak)
+        self.results[variation]["V_peak"] = pd.Series(V_peak)
+        self.results[variation]["ansys_energies"] = ansys_energies  # dict
 
-        self.results[variation]['mesh'] = None
-        self.results[variation]['convergence'] = None
-        self.results[variation]['convergence_f_pass'] = None
+        self.results[variation]["mesh"] = None
+        self.results[variation]["convergence"] = None
+        self.results[variation]["convergence_f_pass"] = None
 
         if self.options.save_mesh_stats:
-            self.results[variation]['mesh'] = self.get_mesh_statistics(
-                variation)  # dataframe
-            self.results[variation]['convergence'] = self.get_convergence(
-                variation)
-            self.results[variation]['convergence_f_pass'] = self.hfss_report_f_convergence(
-                variation, save_csv=False)  # dataframe
+            self.results[variation]["mesh"] = self.get_mesh_statistics(
+                variation
+            )  # dataframe
+            self.results[variation]["convergence"] = self.get_convergence(variation)
+            self.results[variation][
+                "convergence_f_pass"
+            ] = self.hfss_report_f_convergence(
+                variation, save_csv=False
+            )  # dataframe
 
     @staticmethod
     def results_variations_on_inside(results: dict):
@@ -1390,15 +1567,19 @@ class DistributedAnalysis(object):
 
         new_res = dict()
         for key in keys:
-            new_res[key] = {variation: results[variation].get(key, None)
-                            for variation in variations}
+            new_res[key] = {
+                variation: results[variation].get(key, None) for variation in variations
+            }
 
             # Conver to pandas Dataframe if all are pd.Series
-            if all(isinstance(new_res[key][variation], pd.Series) for variation in variations):
+            if all(
+                isinstance(new_res[key][variation], pd.Series)
+                for variation in variations
+            ):
                 # print(key) # Conver these to  dataframe
                 # Variations will become columns
                 new_res[key] = pd.DataFrame(new_res[key])
-                new_res[key].columns.name = 'variation'
+                new_res[key].columns.name = "variation"
                 # sort_df_col : maybe sort
 
         return new_res  # dict of keys now
@@ -1418,7 +1599,7 @@ class DistributedAnalysis(object):
             results=self.results,
         )
 
-        with open(str(self.data_filename), 'wb') as handle:
+        with open(str(self.data_filename), "wb") as handle:
             pickle.dump(to_save, handle)  # , protocol=pickle.HIGHEST_PROTOCOL)
 
     def load(self, filepath=None):
@@ -1429,13 +1610,13 @@ class DistributedAnalysis(object):
         """
         filepath = filepath or self.data_filename
 
-        with open(str(filepath), 'rb') as handle:
+        with open(str(filepath), "rb") as handle:
             loaded = pickle.load(handle)
 
         return loaded
 
-    def get_mesh_statistics(self, variation='0'):
-        '''
+    def get_mesh_statistics(self, variation="0"):
+        """
         Args:
             variation (str): A string identifier of the variation,
             such as '0', '1', ...
@@ -1450,12 +1631,12 @@ class DistributedAnalysis(object):
             0	Region	    909451	    0.000243	0.860488	0.037048	    6.006260e-13	0.037352	0.000029	6.268190e-04
             1	substrate	1490356	    0.000270	0.893770	0.023639	    1.160090e-12	0.031253	0.000007	2.309920e-04
 
-        '''
+        """
         variation = self._list_variations[ureg(variation)]
         return self.setup.get_mesh_stats(variation)
 
-    def get_convergence(self, variation='0'):
-        '''
+    def get_convergence(self, variation="0"):
+        """
         Args:
             variation (str): A string identifier of the variation,
             such as '0', '1', ...
@@ -1472,13 +1653,13 @@ class DistributedAnalysis(object):
                 3       	192746	        3.208600
                 4       	199244	        1.524000
 
-        '''
+        """
         variation = self._list_variations[ureg(variation)]
         df, _ = self.setup.get_convergence(variation)
         return df
 
-    def get_convergence_vs_pass(self, variation='0'):
-        '''
+    def get_convergence_vs_pass(self, variation="0"):
+        """
         Makes a plot in HFSS that return a pandas dataframe
 
         Args:
@@ -1497,44 +1678,48 @@ class DistributedAnalysis(object):
                 2	5.114490	5.505828	6.242423
                 3	5.278594	5.604426	6.296777
 
-        '''
+        """
         return self.hfss_report_f_convergence(variation)
 
     def set_mode(self, mode_num, phase=0):
-        '''
+        """
         Set source excitations should be used for fields post processing.
         Counting modes from 0 onward
-        '''
-        assert self.setup, "ERROR: There is no 'setup' connected. \N{face with medical mask}"
+        """
+        assert (
+            self.setup
+        ), "ERROR: There is no 'setup' connected. \N{face with medical mask}"
 
         if mode_num < 0:
-            logger.error('Too small a mode number')
+            logger.error("Too small a mode number")
 
         self.solutions.set_mode(mode_num + 1, phase)
 
         if self.has_fields() == False:
-            logger.warning(f" Error: HFSS does not have field solution for variation={mode_num}.\
-                                    Skipping this mode in the analysis \N{face with medical mask}")
+            logger.warning(
+                f" Error: HFSS does not have field solution for variation={mode_num}.\
+                                    Skipping this mode in the analysis \N{face with medical mask}"
+            )
 
         self.fields = self.setup.get_fields()
 
     def has_fields(self, variation: str = None):
-        '''
+        """
         Determine if fields exist for a particular solution.
         Just calls `self.solutions.has_fields(variation_string)`
 
         Args:
             variation (str): String of variation label, such as '0' or '1'. If None, gets the nominal variation
-        '''
+        """
         if self.solutions:
-            #print('variation=', variation)
+            # print('variation=', variation)
             variation_string = self.get_variation_string(variation)
             return self.solutions.has_fields(variation_string)
         else:
             return False
 
-    def hfss_report_f_convergence(self, variation='0', save_csv=True):
-        '''
+    def hfss_report_f_convergence(self, variation="0", save_csv=True):
+        """
         Create a report inside HFSS to plot the converge of freq and style it.
 
         Saves report to csv file.
@@ -1550,13 +1735,13 @@ class DistributedAnalysis(object):
             2	5.114490	5.505828	6.242423
             3	5.278594	5.604426	6.296777
 
-        '''
+        """
         # TODO: Move to class for reporter ?
         if not self.setup:
-            logger.error('NO SETUP PRESENT - hfss_report_f_convergence.')
+            logger.error("NO SETUP PRESENT - hfss_report_f_convergence.")
             return None
 
-        if not self.design.solution_type == 'Eigenmode':
+        if not self.design.solution_type == "Eigenmode":
             return None
 
         oDesign = self.design
@@ -1564,34 +1749,38 @@ class DistributedAnalysis(object):
         report = oDesign._reporter
 
         # Create report
-        ycomp = [f"re(Mode({i}))" for i in range(1, 1+self.n_modes)]
-        params = ["Pass:=", ["All"]]+variation
+        ycomp = [f"re(Mode({i}))" for i in range(1, 1 + self.n_modes)]
+        params = ["Pass:=", ["All"]] + variation
         report_name = "Freq. vs. pass"
         if report_name in report.GetAllReportNames():
             report.DeleteReports([report_name])
         self.solutions.create_report(
-            report_name, "Pass", ycomp, params, pass_name='AdaptivePass')
+            report_name, "Pass", ycomp, params, pass_name="AdaptivePass"
+        )
 
         # Properties of lines
-        curves = [f"{report_name}:re(Mode({i})):Curve1" for i in range(
-            1, 1+self.n_modes)]
+        curves = [
+            f"{report_name}:re(Mode({i})):Curve1" for i in range(1, 1 + self.n_modes)
+        ]
         # set_property(report, 'Attributes', curves, 'Line Width', 3)
-        set_property(report, 'Scaling',
-                     f"{report_name}:AxisY1", 'Auto Units', False)
-        set_property(report, 'Scaling', f"{report_name}:AxisY1", 'Units', 'g')
-        set_property(report, 'Legend',
-                     f"{report_name}:Legend", 'Show Solution Name', False)
+        set_property(report, "Scaling", f"{report_name}:AxisY1", "Auto Units", False)
+        set_property(report, "Scaling", f"{report_name}:AxisY1", "Units", "g")
+        set_property(
+            report, "Legend", f"{report_name}:Legend", "Show Solution Name", False
+        )
 
         if save_csv:  # Save
             try:
-                path = Path(self.data_dir)/'hfss_eig_f_convergence.csv'
+                path = Path(self.data_dir) / "hfss_eig_f_convergence.csv"
                 report.ExportToFile(report_name, path)
-                logger.info(f'Saved convergences to {path}')
+                logger.info(f"Saved convergences to {path}")
                 return pd.read_csv(path, index_col=0)
             except Exception as e:
-                logger.error(f"Error could not save and export hfss plot to {path}.\
+                logger.error(
+                    f"Error could not save and export hfss plot to {path}.\
                                Is the plot made in HFSS with the correct name.\
-                               Check the HFSS error window. \t Error =  {e}")
+                               Check the HFSS error window. \t Error =  {e}"
+                )
 
         return None
 
@@ -1608,7 +1797,7 @@ class DistributedAnalysis(object):
         """
 
         if fig is None:
-            fig = plt.figure(figsize=(11, 3.))
+            fig = plt.figure(figsize=(11, 3.0))
 
         for variation, variation_labels in self.get_variations().items():
             fig.clf()
@@ -1617,34 +1806,38 @@ class DistributedAnalysis(object):
             gs = mpl.gridspec.GridSpec(1, 3, width_ratios=[1.2, 1.5, 1])
             axs = [fig.add_subplot(gs[i]) for i in range(3)]
 
-            logger.info(f'Creating report for variation {variation}')
+            logger.info(f"Creating report for variation {variation}")
             convergence_t = self.get_convergence(variation=variation)
             convergence_f = self.hfss_report_f_convergence(variation=variation)
 
-            axs[0].set_ylabel(variation_labels.replace(' ', '\n'))  # add variation labels to y-axis of first plot
+            axs[0].set_ylabel(
+                variation_labels.replace(" ", "\n")
+            )  # add variation labels to y-axis of first plot
 
             ax0t = axs[1].twinx()
             plot_convergence_f_vspass(axs[0], convergence_f)
             plot_convergence_max_df(axs[1], convergence_t.iloc[:, 1])
             plot_convergence_solved_elem(ax0t, convergence_t.iloc[:, 0])
-            plot_convergence_maxdf_vs_sol(axs[2], convergence_t.iloc[:, 1],
-                                          convergence_t.iloc[:, 0])
+            plot_convergence_maxdf_vs_sol(
+                axs[2], convergence_t.iloc[:, 1], convergence_t.iloc[:, 0]
+            )
 
             fig.tight_layout(w_pad=0.1)  # pad=0.0, w_pad=0.1, h_pad=1.0)
 
             if _display:
                 from IPython.display import display
+
                 display(fig)
 
         return fig
 
-    def quick_plot_frequencies(self, swp_variable='variations', ax=None):
+    def quick_plot_frequencies(self, swp_variable="variations", ax=None):
         """
         Quick plot of frequencies from HFSS
         """
         fs = self.get_ansys_frequencies_all(swp_variable)
         ax = ax or plt.gca()
-        fs['Freq. (GHz)'].unstack(0).transpose().plot(marker='o', ax=ax)
-        ax.set_ylabel('Ansys frequencies (MHz)')
+        fs["Freq. (GHz)"].unstack(0).transpose().plot(marker="o", ax=ax)
+        ax.set_ylabel("Ansys frequencies (MHz)")
         ax.grid(alpha=0.2)
         return fs

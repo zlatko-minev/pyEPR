@@ -13,7 +13,6 @@ Copyright Zlatko Minev, Zaki Leghtas, and the pyEPR team
 # pylint: disable=invalid-name, unused-import
 
 
-
 from .project_info import ProjectInfo
 from .core_quantum_analysis import QuantumAnalysis
 from .core_distributed_analysis import DistributedAnalysis
