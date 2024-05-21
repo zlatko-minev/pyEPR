@@ -1,14 +1,14 @@
 Welcome to pyEPR :beers:! &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(see [arXiv:2010.00620](https://arxiv.org/abs/2010.00620))
 ===================
+### Automated Python module for the design and quantization of Josephson quantum circuits
+
 [![Open Source Love](https://badges.frapsoft.com/os/v1/open-source.png?v=103)](https://github.com/zlatko-minev/pyEPR)
 [![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/zlatko-minev/pyEPR)
-[![star this repo](http://githubbadges.com/star.svg?user=zlatko-minev&repo=pyEPR&style=flat)](https://github.com/zlatko-minev/pyEPR)
-[![fork this repo](http://githubbadges.com/fork.svg?user=zlatko-minev&repo=pyEPR&style=flat)](https://github.com/zlatko-minev/pyEPR/fork)
-[![Anaconda-Server Badge](https://anaconda.org/conda-forge/pyepr-quantum/badges/installer/conda.svg)](https://conda.anaconda.org/conda-forge)
+[![Star pyEPR](https://img.shields.io/badge/⭐-Star%20pyEPR-blue?style=flat)](https://github.com/zlatko-minev/pyEPR/stargazers)
+[![Fork pyEPR](https://img.shields.io/badge/🍴-Fork%20pyEPR-blue?style=flat)](https://github.com/zlatko-minev/pyEPR/fork)
+<br>
 [![PyPI version](https://badge.fury.io/py/pyEPR-quantum.svg)](https://badge.fury.io/py/pyEPR-quantum)
 [![DOI](https://zenodo.org/badge/101073856.svg)](https://zenodo.org/badge/latestdoi/101073856)
- 
-### Automated Python module for the design and quantization of Josephson quantum circuits
 
 
 ### Documentation
