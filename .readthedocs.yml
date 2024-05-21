@@ -22,7 +22,7 @@ sphinx:
 # Optionally set the version of Python and requirements required to build your docs
 # See https://docs.readthedocs.io/en/stable/guides/reproducible-builds.html
 python:
-  version: 3.8
+  # version: 3.8
   install:
     - requirements: requirements.txt
     - path: .
