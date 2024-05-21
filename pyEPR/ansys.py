@@ -3246,7 +3246,7 @@ def load_ansys_project(proj_name: str,
         ), "ERROR! project_path is not a valid directory \N{loudly crying face}.\
             Check the path, and especially \\ characters."
 
-        project_path /= project_path / Path(proj_name + extension)
+        project_path = Path(project_path, proj_name).with_suffix(extension)
 
         if (project_path).is_file():
             logger.info('\tFile path to HFSS project found.')
