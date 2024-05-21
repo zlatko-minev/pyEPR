@@ -1500,7 +1500,7 @@ class AnsysQ3DSetup(HfssSetup):
                               skipinitialspace=True,
                               index_col=0)
         units = re.findall(r'C Units:(.*?),', text)[0]
-
+        
         if len(s2) > 1:
             df_cond = pd.read_csv(io.StringIO(s2[1].strip()),
                                   delim_whitespace=True,
@@ -1509,6 +1509,7 @@ class AnsysQ3DSetup(HfssSetup):
             units_cond = re.findall(r'G Units:(.*?)\n', text)[0]
         else:
             df_cond = None
+            units_cond = None
 
         var = re.findall(r'DesignVariation:(.*?)\n',
                          text)  # this changed circa v2020
