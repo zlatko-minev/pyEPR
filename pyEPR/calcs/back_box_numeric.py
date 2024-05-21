@@ -153,8 +153,11 @@ def make_dispersive(H, fock_trunc, fzpfs=None, f0s=None, chi_prime=False,
         [H_lin, H_nl] = H
         H = H_lin + H_nl
     else:  # make sure its a quanutm object
-        assert type(
-            H) == qutip.qobj.Qobj, "Please pass in either a list of Qobjs or Qobj for the Hamiltonian"
+        from qutip import Qobj
+        if not isinstance(H, Qobj): #  Validate that the input is a Qobj instance.
+            raise TypeError("Please pass in either a list of Qobjs or a Qobj for the Hamiltonian")
+        #assert type(
+        #    H) == qutip.qobj.Qobj, "Please pass in either a list of Qobjs or Qobj for the Hamiltonian"
 
     print("Starting the diagonalization")
     evals, evecs = H.eigenstates()
