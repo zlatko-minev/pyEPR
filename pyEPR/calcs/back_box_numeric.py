@@ -267,7 +267,7 @@ def make_dispersive(
 
         def closest_state_to(s):
             def distance(s2):
-                return (s.dag() * s2[1]).norm()
+                return np.abs((s.dag() * s2[1]))
 
             return max(zip(evals, evecs), key=distance)
 
