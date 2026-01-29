@@ -110,7 +110,7 @@ full_logo = True
 html_theme_options = {
     "canonical_url": "",
     #'logo_only': False,
-    "display_version": True,
+    # "display_version": True, # Unsupported by theme
     "prev_next_buttons_location": "bottom",
     "style_external_links": False,
     #'style_nav_header_background': 'white',
