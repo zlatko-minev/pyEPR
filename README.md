@@ -11,6 +11,8 @@ Welcome to pyEPR :beers:! &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(see [arXiv:2010.00620](
 [![DOI](https://zenodo.org/badge/101073856.svg)](https://zenodo.org/badge/latestdoi/101073856)
 
 
+Python (py) Energy-Participation-Ratio (EPR) package pyEPR is an open source, BSD-licensed library providing high-efficiency, easy-to-use analysis functions and automation for the design of quantum chips based on superconducting quantum circuits, both distributed and lumped. pyEPR interfaces the classical distributed microwave analysis with that of quantum structures and Hamiltonians. It is chiefly based on the energy participation ratio approach; however, it has since v0.4 extended to cover a broad range of design approaches. pyEPR straddles the analysis from Maxwell’s to Schrodinger’s equations, and converts the solutions of distributed microwave (typically eigenmode simulations) to a fully diagonalized spectrum of the energy levels, couplings, and key parameters of a many-body quantum Hamiltonian.
+
 ### Documentation
 
 [Read the docs here.](https://pyepr-docs.readthedocs.io)
@@ -195,6 +197,43 @@ pip install pyEPR-quantum
  4. Add the pyEPR repository folder to your python search path. Make sure to add the git remote to the master is set up,  `git remote add MASTER_MINEV git://github.com/zlatko-minev/pyEPR.git`!  [(Help?)](https://stackoverflow.com/questions/11266478/git-add-remote-branch)
  5. Edit pyEPR module `_config_user.py`  to set your data-saving directory and other parameters of interest.  (To keep your changes local, use the shell command `git update-index --skip-worktree _config_user.py` in the `pyEPR/pyEPR` folder)
  6. **ENJOY and cite pyEPR!**  :+1:
+
+#### Development setup (recommended for contributors)
+
+**Using uv (recommended)**
+
+[uv](https://github.com/astral-sh/uv) is a fast Python package installer and resolver. For contributors and developers, we recommend using uv for dependency management:
+
+1. Install uv following the [official installation guide](https://github.com/astral-sh/uv#installation).
+
+2. From the project root, sync dependencies:
+   ```sh
+   uv sync --group dev --group docs --group test
+   ```
+   This creates a virtual environment and installs all dependencies including development tools.
+
+3. Run commands using `uv run`:
+   ```sh
+   uv run pytest              # Run tests
+   uv run pylint pyEPR        # Run linter
+   uv run python -m pyEPR     # Run Python scripts
+   ```
+
+4. To build the package:
+   ```sh
+   uv build
+   ```
+
+**Using pip (alternative)**
+
+If you prefer pip, you can still install the project in editable mode:
+```sh
+python -m pip install -e .
+```
+This installs the project in editable mode along with its core dependencies. For development tools, install extras:
+```sh
+python -m pip install -e ".[dev,docs,test]"
+```
 
 #### “Editable” install for development mode
 Although not required, it’s common to locally install your project in “editable” or “develop” mode while you’re working on it. This allows your project to be both installed and editable in project form.

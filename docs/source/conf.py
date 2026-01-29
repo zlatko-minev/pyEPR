@@ -19,10 +19,16 @@ copyright = "2017-2025, Zlatko Minev, Zaki Leghtas, and the pyEPR Team"
 author = "Zlatko Minev, Zaki Leghtas, and the pyEPR Team"
 
 # The full version, including alpha/beta/rc tags
-import pyEPR
+# Read version from installed package metadata (single source of truth: pyproject.toml)
+try:
+    from importlib.metadata import version as pkg_version
+    release = pkg_version("pyEPR-quantum")
+except Exception:
+    # Fallback if package not installed
+    import pyEPR
+    release = pyEPR.__version__
 
-version = pyEPR.__version__
-release = version
+version = release
 
 import sphinx_rtd_theme
 

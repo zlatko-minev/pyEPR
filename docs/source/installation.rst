@@ -54,9 +54,25 @@ First, in bash, upgrade python ``pip``
 
 Now we can locally install the pyEPR module.
 
+**Using uv (recommended for developers):**
+
 .. code-block:: bash
 
-    python -m pip install -r requirements.txt -e .
+    # Install uv first: https://github.com/astral-sh/uv#installation
+    uv sync --all-groups
+
+This installs all dependencies including development tools. Run commands with ``uv run``:
+
+.. code-block:: bash
+
+    uv run pytest              # Run tests
+    uv run pylint pyEPR         # Run linter
+
+**Using pip (alternative):**
+
+.. code-block:: bash
+
+    python -m pip install -e ".[dev,docs,test]"
 
 
 .. _install-via_conda:
@@ -64,7 +80,7 @@ Now we can locally install the pyEPR module.
 Installing via conda
 ====================
 
-For Python 3.6+, installation via `conda`_ is supported since ``pyEPR`` v.0.8.03, through the ``conda-forge`` channel. You can download and install ``pyEPR`` typing in from bash:
+For Python 3.6+, installation via `conda`_ is supported ``pyEPR`` versions v.0.8.03 to v.0.9.0, through the ``conda-forge`` channel. Conda installation will not be supported for future versions. You can download and install ``pyEPR`` typing in from bash:
 
 .. code-block:: bash
 

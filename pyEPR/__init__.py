@@ -75,6 +75,7 @@ import warnings
 from pathlib import Path
 
 from addict import Dict
+from importlib.metadata import version
 
 ##############################################################################
 # Python header
@@ -90,8 +91,10 @@ __credits__ = [
     "Steven Touzard",
 ]
 __license__ = "BSD-3-Clause"
-__version__ = "0.9.0"
-__maintainer__ = "Zlatko K. Minev and  Asaf Diringer"
+
+# Read version from installed package metadata (single source of truth: pyproject.toml)
+__version__ = version("pyEPR-quantum")
+__maintainer__ = "Zlatko K. Minev and Asaf Diringer"
 __email__ = "zlatko.minev@aya.yale.edu"
 __url__ = r"https://github.com/zlatko-minev/pyEPR"
 __status__ = "Dev-Production"
