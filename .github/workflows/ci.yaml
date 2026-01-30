@@ -37,6 +37,7 @@ jobs:
         with:
           version: 0.9.27
       - name: Run tests
+        working-directory: ./tests
         run: uv run --group dev --python ${{ matrix.python-version }} pytest
 
   test_docs:
@@ -54,7 +55,7 @@ jobs:
           python-version: '3.12'
       - name: Make docs
         run: |
-          cd docs
+          working-directory: ./docs
           uv run --group docs make html
       - name: Upload docs to artifact
         uses: actions/upload-artifact@v4
