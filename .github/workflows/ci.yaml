@@ -5,6 +5,7 @@ on:
     branches:
       - master
   pull_request: ~
+  workflow_dispatch:
 
 jobs:
   pylint:
@@ -20,10 +21,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install dependencies
-        run: uv sync --group dev
       - name: Run pylint
-        run: uv run pylint --errors-only --jobs=0 pyEPR
+        run: uv run --group dev pylint --errors-only --jobs=0 pyEPR
 
   tests:
     runs-on: ubuntu-latest
@@ -36,15 +35,9 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
-          version: "latest"
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: uv sync --group test
+          version: 0.9.27
       - name: Run tests
-        run: uv run pytest
+        run: uv run --group dev --python ${{ matrix.python-version }} pytest
 
   test_docs:
     runs-on: ubuntu-latest
@@ -54,17 +47,15 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
-          version: "latest"
+          version: 0.9.27
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install dependencies
-        run: uv sync --group docs
       - name: Make docs
         run: |
           cd docs
-          uv run make html
+          uv run --group docs make html
       - name: Upload docs to artifact
         uses: actions/upload-artifact@v4
         if: always()
