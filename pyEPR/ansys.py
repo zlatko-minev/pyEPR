@@ -1149,7 +1149,7 @@ class HfssDesign(COMWrapper):
             self.set_variable(name, value)
 
     def get_excitations(self):
-        self._boundaries.GetExcitations()
+        return self._boundaries.GetExcitations()
 
     def _evaluate_variable_expression(self, expr, units):
         """
