@@ -3040,7 +3040,7 @@ class HfssModeler(COMWrapper):
                 "YAxisYvec:=",
                 YAxisVec[1],
                 "YAxisZvec:=",
-                YAxisVec[1],
+                YAxisVec[2],
             ],
             ["NAME:Attributes", "Name:=", cs_name],
         )
