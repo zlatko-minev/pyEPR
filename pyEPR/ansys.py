@@ -15,9 +15,8 @@ Purpose:
 # Python 2.7 and 3 compatibility
 from __future__ import division, print_function
 
-from typing import List
-
 import atexit
+import io
 import os
 import re
 import signal
@@ -28,11 +27,11 @@ from collections.abc import Iterable
 from copy import copy
 from numbers import Number
 from pathlib import Path
+from typing import List
 
 import numpy as np
 import pandas as pd
 from sympy.parsing import sympy_parser
-import io
 
 from . import logger
 
@@ -46,7 +45,7 @@ except (ImportError, ModuleNotFoundError):
 try:
     # TODO: Replace `win32com` with Linux compatible package.
     # See Ansys python files in IronPython internal.
-    from win32com.client import Dispatch, CDispatch
+    from win32com.client import CDispatch, Dispatch
 except (ImportError, ModuleNotFoundError):
     pass  # raise NameError ("win32com module not installed. Please install.")
 
@@ -78,13 +77,13 @@ def simplify_arith_expr(expr):
     try:
         out = repr(sympy_parser.parse_expr(str(expr)))
         return out
-    except:
+    except Exception:
         print("Couldn't parse", expr)
         raise
 
 
 def increment_name(base, existing):
-    if not base in existing:
+    if base not in existing:
         return base
     n = 1
 
@@ -602,7 +601,11 @@ class HfssProject(COMWrapper):
         Args:
             name (str): Name of driven modal design
         """
-        return self.new_design(name, "DrivenModal")
+        design = self.new_design(name, "DrivenModal")
+        if self.parent.get_version() >= "2024.1":
+            # For latest version of HFSS
+            design._design.SetSolutionType("HFSS Modal Network")
+        return design
 
     def new_em_design(self, name: str):
         """Create a new eigenmode design
@@ -692,7 +695,7 @@ class HfssDesign(COMWrapper):
         )
 
         if show:
-            from IPython.display import display, Image
+            from IPython.display import Image, display
 
             display(Image(str(path)))
 
@@ -727,13 +730,21 @@ class HfssDesign(COMWrapper):
         if name is None:
             name = setups[0]
         elif name not in setups:
-            raise EnvironmentError("Setup {} not found: {}".format(name, setups))
+            raise EnvironmentError(f"Setup {name} not found: {setups}")
 
         if self.solution_type == "Eigenmode":
             return HfssEMSetup(self, name)
-        elif self.solution_type == "DrivenModal":
+        elif self.solution_type in [
+            "DrivenModal",
+            "HFSS Modal Network",
+            "HFSS Hybrid Modal Network",
+        ]:
             return HfssDMSetup(self, name)
-        elif self.solution_type == "DrivenTerminal":
+        elif self.solution_type in [
+            "DrivenTerminal",
+            "HFSS Terminal Network",
+            "HFSS Hybrid Terminal Network",
+        ]:
             return HfssDTSetup(self, name)
         elif self.solution_type == "Q3D":
             return AnsysQ3DSetup(self, name)
@@ -934,7 +945,7 @@ class HfssDesign(COMWrapper):
         return self._design.GetNominalVariation()
 
     def create_variable(self, name, value, postprocessing=False):
-        if postprocessing == True:
+        if postprocessing is True:
             variableprop = "PostProcessingVariableProp"
         else:
             variableprop = "VariableProp"
@@ -1207,7 +1218,7 @@ class HfssSetup(HfssPropertyObject):
         save_fields=False,
     ):
 
-        if not type in ["Fast", "Interpolating", "Discrete"]:
+        if type not in ["Fast", "Interpolating", "Discrete"]:
             logger.error(
                 "insert_sweep: Error type was not in  ['Fast', 'Interpolating', 'Discrete']"
             )
@@ -1289,7 +1300,7 @@ class HfssSetup(HfssPropertyObject):
     #            ["NAME:CacheItem",
     #             "Title:=", expr.name+"_conv",
     #             "Expression:=", expr.name,
-    #             "Intrinsics:=", "Phase='{}deg'".format(phase),
+    #             "Intrinsics:=", f"Phase='{phase}deg'",
     #             "IsConvergence:=", True,
     #             "UseRelativeConvergence:=", 1,
     #             "MaxConvergenceDelta:=", pct_delta,
@@ -1316,7 +1327,7 @@ class HfssSetup(HfssPropertyObject):
         if name is None:
             name = sweeps[0]
         elif name not in sweeps:
-            raise EnvironmentError("Sweep {} not found in {}".format(name, sweeps))
+            raise EnvironmentError(f"Sweep {name} not found in {sweeps}")
         return HfssFrequencySweep(self, name)
 
     def add_fields_convergence_expr(self, expr, pct_delta, phase=0):
@@ -1331,7 +1342,7 @@ class HfssSetup(HfssPropertyObject):
                 "Expression:=",
                 expr.name,
                 "Intrinsics:=",
-                "Phase='{}deg'".format(phase),
+                f"Phase='{phase}deg'",
                 "IsConvergence:=",
                 True,
                 "UseRelativeConvergence:=",
@@ -1629,7 +1640,7 @@ class AnsysQ3DSetup(HfssSetup):
         Example file:
         ```
         DesignVariation:$BBoxL='650um' $boxH='750um' $boxL='2mm' $QubitGap='30um' \
-                        $QubitH='90um' \$QubitL='450um' Lj_1='13nH'
+                        $QubitH='90um' $QubitL='450um' Lj_1='13nH'
         Setup1:LastAdaptive
         Problem Type:C
         C Units:farad, G Units:mSie
@@ -2179,7 +2190,6 @@ class Optimetrics(COMWrapper):
         )
 
         if setup_type == "parametric":
-
             type_map = {
                 "linear_count": "LINC",
                 "decade_count": "DEC",
@@ -2190,9 +2200,9 @@ class Optimetrics(COMWrapper):
 
             if isinstance(variable, Iterable) and not isinstance(variable, str):
                 # synchronized sweep, check that data is in correct format
-                assert (
-                    len(swp_params) == len(swp_type) == len(variable)
-                ), "Incorrect swp_params or swp_type format for synchronised sweep."
+                assert len(swp_params) == len(swp_type) == len(variable), (
+                    "Incorrect swp_params or swp_type format for synchronised sweep."
+                )
                 synchronize = True
             else:
                 # convert all to lists as we can reuse same code for synchronized
@@ -2211,18 +2221,18 @@ class Optimetrics(COMWrapper):
                         swp_str.append(f"{swp_params[i]}")
                     else:
                         # correct number of inputs
-                        assert (
-                            len(swp_params[i]) == 3
-                        ), "Incorrect number of sweep parameters."
+                        assert len(swp_params[i]) == 3, (
+                            "Incorrect number of sweep parameters."
+                        )
 
                         # Not checking for compatible unit types
                         if e == "linear_step":
                             swp_type_name = "LIN"
                         else:
                             # counts needs to be an integer number
-                            assert isinstance(
-                                swp_params[i][2], int
-                            ), "Count must be integer."
+                            assert isinstance(swp_params[i][2], int), (
+                                "Count must be integer."
+                            )
 
                             swp_type_name = type_map[e]
 
@@ -3696,10 +3706,10 @@ def load_ansys_project(
         project_path = Path(project_path)
 
         # Checks
-        assert (
-            project_path.is_dir()
-        ), "ERROR! project_path is not a valid directory \N{loudly crying face}.\
+        assert project_path.is_dir(), (
+            "ERROR! project_path is not a valid directory \N{LOUDLY CRYING FACE}.\
             Check the path, and especially \\ characters."
+        )
 
         project_path = Path(project_path, proj_name).with_suffix(extension)
 
@@ -3707,14 +3717,14 @@ def load_ansys_project(
             logger.info("\tFile path to HFSS project found.")
         else:
             raise Exception(
-                "ERROR! Valid directory, but invalid project filename. \N{loudly crying face} Not found!\
+                "ERROR! Valid directory, but invalid project filename. \N{LOUDLY CRYING FACE} Not found!\
                      Please check your filename.\n%s\n"
                 % project_path
             )
 
         if (project_path / ".lock").is_file():
             logger.warning(
-                "\t\tFile is locked. \N{fearful face} If connection fails, delete the .lock file."
+                "\t\tFile is locked. \N{FEARFUL FACE} If connection fails, delete the .lock file."
             )
 
     app = HfssApp()
@@ -3742,6 +3752,6 @@ def load_ansys_project(
             f"\tOpened Ansys Project\n\tFolder:    {project.get_path()}\n\tProject:   {project.name}"
         )
     else:
-        logger.info(f"\tAnsys Project was not found.\n\t Project is None.")
+        logger.info("\tAnsys Project was not found.\n\t Project is None.")
 
     return app, desktop, project

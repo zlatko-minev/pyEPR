@@ -126,7 +126,7 @@ class ProjectInfo(object):
                     not isinstance(value, (list, dict))
                     or not all(isinstance(x, str) for x in value)
                 )
-                and (value != None)
+                and (value is not None)
             ):
                 raise ValueError(
                     f"dissipative['{key}'] must be a list of strings "
@@ -210,7 +210,7 @@ class ProjectInfo(object):
 
         # Path: format path correctly to system convention
         self.project_path = (
-            str(Path(project_path)) if not (project_path is None) else None
+            str(Path(project_path)) if project_path is not None else None
         )
         self.project_name = project_name
         self.design_name = design_name
@@ -291,7 +291,7 @@ class ProjectInfo(object):
         designs_in_project = self.project.get_designs()
         if not designs_in_project:
             self.design = None
-            logger.info(f"No active design found (or error getting active design).")
+            logger.info("No active design found (or error getting active design).")
             return
 
         if self.design_name is None:
@@ -311,7 +311,6 @@ class ProjectInfo(object):
                     f"No active design found (or error getting active design). Note: {e}"
                 )
         else:
-
             try:
                 self.design = self.project.get_design(self.design_name)
                 logger.info(
@@ -321,11 +320,11 @@ class ProjectInfo(object):
 
             except Exception as e:
                 _traceback = sys.exc_info()[2]
-                logger.error(f"Original error \N{loudly crying face}: {e}\n")
+                logger.error(f"Original error \N{LOUDLY CRYING FACE}: {e}\n")
                 raise (
                     Exception(
                         " Did you provide the correct design name?\
-                    Failed to pull up design. \N{loudly crying face}"
+                    Failed to pull up design. \N{LOUDLY CRYING FACE}"
                     ).with_traceback(_traceback)
                 )
 
@@ -346,15 +345,27 @@ class ProjectInfo(object):
                     if self.design.solution_type == "Eigenmode":
                         logger.warning("\tCreating eigenmode default setup.")
                         setup = self.design.create_em_setup()
-                    elif self.design.solution_type == "DrivenModal":
+                    elif self.design.solution_type in [
+                        "DrivenModal",
+                        "HFSS Modal Network",
+                        "HFSS Hybrid Modal Network",
+                    ]:
                         logger.warning("\tCreating driven modal default setup.")
                         setup = self.design.create_dm_setup()
-                    elif self.design.solution_type == "DrivenTerminal":
+                    elif self.design.solution_type in [
+                        "DrivenTerminal",
+                        "HFSS Terminal Network",
+                        "HFSS Hybrid Terminal Network",
+                    ]:
                         logger.warning("\tCreating driven terminal default setup.")
                         setup = self.design.create_dt_setup()
                     elif self.design.solution_type == "Q3D":
                         logger.warning("\tCreating Q3D default setup.")
                         setup = self.design.create_q3d_setup()
+                    else:
+                        raise ValueError(
+                            f"Unsupported solution type: {self.design.solution_type}"
+                        )
                     self.setup_name = setup.name
                 else:
                     self.setup_name = setup_names[0]
@@ -363,12 +374,11 @@ class ProjectInfo(object):
                 self.get_setup(self.setup_name)
 
             except Exception as e:
-
                 _traceback = sys.exc_info()[2]
-                logger.error(f"Original error \N{loudly crying face}: {e}\n")
+                logger.error(f"Original error \N{LOUDLY CRYING FACE}: {e}\n")
                 raise Exception(
                     " Did you provide the correct setup name?\
-                            Failed to pull up setup. \N{loudly crying face}"
+                            Failed to pull up setup. \N{LOUDLY CRYING FACE}"
                 ).with_traceback(_traceback)
 
         else:
@@ -396,12 +406,12 @@ class ProjectInfo(object):
 
         if self.project and self.design:
             logger.info(
-                f'\tConnected to project "{self.project_name}" and design "{self.design_name}" \N{grinning face} \n'
+                f'\tConnected to project "{self.project_name}" and design "{self.design_name}" \N{GRINNING FACE} \n'
             )
 
         if not self.project:
             logger.info(
-                "\t Project not detected in Ansys. Is there a project in your desktop app? \N{thinking face} \n"
+                "\t Project not detected in Ansys. Is there a project in your desktop app? \N{THINKING FACE} \n"
             )
 
         if not self.design:
@@ -451,10 +461,10 @@ class ProjectInfo(object):
         """
         Disconnect from existing Ansys Desktop API.
         """
-        assert (
-            self.check_connected() is True
-        ), "It does not appear that you have connected to HFSS yet.\
-            Use the connect()  method. \N{nauseated face}"
+        assert self.check_connected() is True, (
+            "It does not appear that you have connected to HFSS yet.\
+            Use the connect()  method. \N{NAUSEATED FACE}"
+        )
 
         self.project.release()
         self.desktop.release()
@@ -495,10 +505,9 @@ class ProjectInfo(object):
         all_object_names = self.get_all_object_names()
 
         for jjnm, jj in self.junctions.items():
-
             assert (
                 jj["Lj_variable"] in all_variables_names
-            ), """pyEPR ProjectInfo user error found \N{face with medical mask}:
+            ), """pyEPR ProjectInfo user error found \N{FACE WITH MEDICAL MASK}:
                 Seems like for junction `%s` you specified a design or project
                 variable for `Lj_variable` that does not exist in HFSS by the name:
                  `%s` """ % (
@@ -507,10 +516,9 @@ class ProjectInfo(object):
             )
 
             for name in ["rect", "line"]:
-
                 assert (
                     jj[name] in all_object_names
-                ), """pyEPR ProjectInfo user error found \N{face with medical mask}:
+                ), """pyEPR ProjectInfo user error found \N{FACE WITH MEDICAL MASK}:
                     Seems like for junction `%s` you specified a %s that does not exist
                     in HFSS by the name: `%s` """ % (
                     jjnm,
