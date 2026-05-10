@@ -10,6 +10,7 @@ env:
   # Increment this to invalidate the cache without modifying requirements.txt
   PIPCACHEVERSION: 0
   PYTHONVERSION: '3.9.x'
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   pylint:
