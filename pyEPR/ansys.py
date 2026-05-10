@@ -34,6 +34,8 @@ import pandas as pd
 from sympy.parsing import sympy_parser
 
 from . import logger
+from .solution_types import normalize as _normalize_solution_type
+from .solution_types import DRIVEN_MODAL_NAMES, DRIVEN_TERMINAL_NAMES
 
 # Handle a  few usually troublesome to import packages, which the use may not have
 # installed yet
@@ -632,20 +634,11 @@ class HfssDesign(COMWrapper):
         self._ansys_version = self.parent._ansys_version
 
         try:
-            # This function does not exist if the design is not HFSS.
-            # AEDT 2021.2+ renamed solution types: "DrivenModal" → "HFSS Modal Network",
-            # "DrivenTerminal" → "HFSS Terminal Network", etc.  Normalise here using
-            # substring matching (same approach as PyAEDT) so all downstream code —
-            # including Qiskit Metal's exact-string comparisons — sees stable names.
-            raw = design.GetSolutionType()
-            if "Modal" in raw:
-                self.solution_type = "DrivenModal"
-            elif "Terminal" in raw:
-                self.solution_type = "DrivenTerminal"
-            elif "Eigenmode" in raw:
-                self.solution_type = "Eigenmode"
-            else:
-                self.solution_type = raw  # Q3D, SBR+, Transient, etc. passed through
+            # GetSolutionType() does not exist for non-HFSS designs (e.g. Q3D).
+            # AEDT 2021.2+ renamed the returned strings (e.g. "DrivenModal" →
+            # "HFSS Modal Network"); normalise via solution_types.normalize() so
+            # all downstream code sees stable canonical names.  See PR #176.
+            self.solution_type = _normalize_solution_type(design.GetSolutionType())
         except Exception as e:
             logger.debug(
                 f"Exception occurred at design.GetSolutionType() {e}. Assuming Q3D design"
@@ -742,17 +735,9 @@ class HfssDesign(COMWrapper):
 
         if self.solution_type == "Eigenmode":
             return HfssEMSetup(self, name)
-        elif self.solution_type in (
-            "DrivenModal",
-            "HFSS Modal Network",
-            "HFSS Hybrid Modal Network",
-        ):
+        elif self.solution_type in DRIVEN_MODAL_NAMES:
             return HfssDMSetup(self, name)
-        elif self.solution_type in (
-            "DrivenTerminal",
-            "HFSS Terminal Network",
-            "HFSS Hybrid Terminal Network",
-        ):
+        elif self.solution_type in DRIVEN_TERMINAL_NAMES:
             return HfssDTSetup(self, name)
         elif self.solution_type == "Q3D":
             return AnsysQ3DSetup(self, name)
