@@ -34,8 +34,8 @@ import pandas as pd
 from sympy.parsing import sympy_parser
 
 from . import logger
-from .solution_types import normalize as _normalize_solution_type
 from .solution_types import DRIVEN_MODAL_NAMES, DRIVEN_TERMINAL_NAMES
+from .solution_types import normalize as _normalize_solution_type
 
 # Handle a  few usually troublesome to import packages, which the use may not have
 # installed yet
@@ -47,7 +47,7 @@ except (ImportError, ModuleNotFoundError):
 try:
     # TODO: Replace `win32com` with Linux compatible package.
     # See Ansys python files in IronPython internal.
-    from win32com.client import Dispatch, CDispatch
+    from win32com.client import CDispatch, Dispatch
 except (ImportError, ModuleNotFoundError):
     pass  # raise NameError ("win32com module not installed. Please install.")
 
@@ -603,7 +603,11 @@ class HfssProject(COMWrapper):
         Args:
             name (str): Name of driven modal design
         """
-        return self.new_design(name, "DrivenModal")
+        design = self.new_design(name, "DrivenModal")
+        # For latest versions of HFSS
+        if self.parent.get_version() >= "2024.1":
+            design._design.SetSolutionType("HFSS Modal Network")
+        return design
 
     def new_em_design(self, name: str):
         """Create a new eigenmode design
@@ -696,7 +700,7 @@ class HfssDesign(COMWrapper):
         )
 
         if show:
-            from IPython.display import display, Image
+            from IPython.display import Image, display
 
             display(Image(str(path)))
 
@@ -2183,7 +2187,6 @@ class Optimetrics(COMWrapper):
         )
 
         if setup_type == "parametric":
-
             type_map = {
                 "linear_count": "LINC",
                 "decade_count": "DEC",
@@ -2194,9 +2197,9 @@ class Optimetrics(COMWrapper):
 
             if isinstance(variable, Iterable) and not isinstance(variable, str):
                 # synchronized sweep, check that data is in correct format
-                assert (
-                    len(swp_params) == len(swp_type) == len(variable)
-                ), "Incorrect swp_params or swp_type format for synchronised sweep."
+                assert len(swp_params) == len(swp_type) == len(variable), (
+                    "Incorrect swp_params or swp_type format for synchronised sweep."
+                )
                 synchronize = True
             else:
                 # convert all to lists as we can reuse same code for synchronized
@@ -2215,18 +2218,18 @@ class Optimetrics(COMWrapper):
                         swp_str.append(f"{swp_params[i]}")
                     else:
                         # correct number of inputs
-                        assert (
-                            len(swp_params[i]) == 3
-                        ), "Incorrect number of sweep parameters."
+                        assert len(swp_params[i]) == 3, (
+                            "Incorrect number of sweep parameters."
+                        )
 
                         # Not checking for compatible unit types
                         if e == "linear_step":
                             swp_type_name = "LIN"
                         else:
                             # counts needs to be an integer number
-                            assert isinstance(
-                                swp_params[i][2], int
-                            ), "Count must be integer."
+                            assert isinstance(swp_params[i][2], int), (
+                                "Count must be integer."
+                            )
 
                             swp_type_name = type_map[e]
 
@@ -3700,10 +3703,10 @@ def load_ansys_project(
         project_path = Path(project_path)
 
         # Checks
-        assert (
-            project_path.is_dir()
-        ), "ERROR! project_path is not a valid directory \N{loudly crying face}.\
+        assert project_path.is_dir(), (
+            "ERROR! project_path is not a valid directory \N{LOUDLY CRYING FACE}.\
             Check the path, and especially \\ characters."
+        )
 
         project_path = Path(project_path, proj_name).with_suffix(extension)
 
@@ -3711,14 +3714,14 @@ def load_ansys_project(
             logger.info("\tFile path to HFSS project found.")
         else:
             raise Exception(
-                "ERROR! Valid directory, but invalid project filename. \N{loudly crying face} Not found!\
+                "ERROR! Valid directory, but invalid project filename. \N{LOUDLY CRYING FACE} Not found!\
                      Please check your filename.\n%s\n"
                 % project_path
             )
 
         if (project_path / ".lock").is_file():
             logger.warning(
-                "\t\tFile is locked. \N{fearful face} If connection fails, delete the .lock file."
+                "\t\tFile is locked. \N{FEARFUL FACE} If connection fails, delete the .lock file."
             )
 
     app = HfssApp()
