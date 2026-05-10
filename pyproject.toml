@@ -63,3 +63,14 @@ docs = [
     "sphinx>=4.0",
     "sphinx-rtd-theme>=0.4.0",
 ]
+test = [
+    "pytest>=7.0",
+    "pytest-cov",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-m 'not hfss'"
+markers = [
+    "hfss: marks tests that require a live Ansys HFSS connection (skipped in CI)",
+]
