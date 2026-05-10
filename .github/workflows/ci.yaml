@@ -9,7 +9,7 @@ on:
 env:
   # Increment this to invalidate the cache without modifying requirements.txt
   PIPCACHEVERSION: 0
-  PYTHONVERSION: '3.9.x'  # qutip does not support 3.10 yet
+  PYTHONVERSION: '3.9.x'
 
 jobs:
   pylint:
@@ -27,9 +27,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('requirements.txt') }}-${{ env.PIPCACHEVERSION }}
+          key: ${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('pyproject.toml') }}-${{ env.PIPCACHEVERSION }}
           restore-keys: |
-            ${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('requirements.txt') }}-
+            ${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('pyproject.toml') }}-
             ${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-
       - name: Install package and pylint
         run: python -m pip install . pylint
@@ -51,9 +51,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('requirements.txt') }}-${{ env.PIPCACHEVERSION }}
+          key: ${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('pyproject.toml') }}-${{ env.PIPCACHEVERSION }}
           restore-keys: |
-            ${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('requirements.txt') }}-
+            ${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('pyproject.toml') }}-
             ${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-
       - name: Install package and sphinx
         run: python -m pip install . Sphinx
