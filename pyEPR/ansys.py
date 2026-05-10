@@ -15,9 +15,8 @@ Purpose:
 # Python 2.7 and 3 compatibility
 from __future__ import division, print_function
 
-from typing import List
-
 import atexit
+import io
 import os
 import re
 import signal
@@ -28,11 +27,11 @@ from collections.abc import Iterable
 from copy import copy
 from numbers import Number
 from pathlib import Path
+from typing import List
 
 import numpy as np
 import pandas as pd
 from sympy.parsing import sympy_parser
-import io
 
 from . import logger
 
@@ -78,13 +77,13 @@ def simplify_arith_expr(expr):
     try:
         out = repr(sympy_parser.parse_expr(str(expr)))
         return out
-    except:
+    except Exception:
         print("Couldn't parse", expr)
         raise
 
 
 def increment_name(base, existing):
-    if not base in existing:
+    if base not in existing:
         return base
     n = 1
 
@@ -731,9 +730,17 @@ class HfssDesign(COMWrapper):
 
         if self.solution_type == "Eigenmode":
             return HfssEMSetup(self, name)
-        elif self.solution_type == "DrivenModal":
+        elif self.solution_type in (
+            "DrivenModal",
+            "HFSS Modal Network",
+            "HFSS Hybrid Modal Network",
+        ):
             return HfssDMSetup(self, name)
-        elif self.solution_type == "DrivenTerminal":
+        elif self.solution_type in (
+            "DrivenTerminal",
+            "HFSS Terminal Network",
+            "HFSS Hybrid Terminal Network",
+        ):
             return HfssDTSetup(self, name)
         elif self.solution_type == "Q3D":
             return AnsysQ3DSetup(self, name)
@@ -934,7 +941,7 @@ class HfssDesign(COMWrapper):
         return self._design.GetNominalVariation()
 
     def create_variable(self, name, value, postprocessing=False):
-        if postprocessing == True:
+        if postprocessing is True:
             variableprop = "PostProcessingVariableProp"
         else:
             variableprop = "VariableProp"
@@ -1629,7 +1636,7 @@ class AnsysQ3DSetup(HfssSetup):
         Example file:
         ```
         DesignVariation:$BBoxL='650um' $boxH='750um' $boxL='2mm' $QubitGap='30um' \
-                        $QubitH='90um' \$QubitL='450um' Lj_1='13nH'
+                        $QubitH='90um' $QubitL='450um' Lj_1='13nH'
         Setup1:LastAdaptive
         Problem Type:C
         C Units:farad, G Units:mSie

@@ -126,7 +126,7 @@ class ProjectInfo(object):
                     not isinstance(value, (list, dict))
                     or not all(isinstance(x, str) for x in value)
                 )
-                and (value != None)
+                and (value is not None)
             ):
                 raise ValueError(
                     f"dissipative['{key}'] must be a list of strings "
@@ -210,7 +210,7 @@ class ProjectInfo(object):
 
         # Path: format path correctly to system convention
         self.project_path = (
-            str(Path(project_path)) if not (project_path is None) else None
+            str(Path(project_path)) if project_path is not None else None
         )
         self.project_name = project_name
         self.design_name = design_name
@@ -346,15 +346,27 @@ class ProjectInfo(object):
                     if self.design.solution_type == "Eigenmode":
                         logger.warning("\tCreating eigenmode default setup.")
                         setup = self.design.create_em_setup()
-                    elif self.design.solution_type == "DrivenModal":
+                    elif self.design.solution_type in (
+                        "DrivenModal",
+                        "HFSS Modal Network",
+                        "HFSS Hybrid Modal Network",
+                    ):
                         logger.warning("\tCreating driven modal default setup.")
                         setup = self.design.create_dm_setup()
-                    elif self.design.solution_type == "DrivenTerminal":
+                    elif self.design.solution_type in (
+                        "DrivenTerminal",
+                        "HFSS Terminal Network",
+                        "HFSS Hybrid Terminal Network",
+                    ):
                         logger.warning("\tCreating driven terminal default setup.")
                         setup = self.design.create_dt_setup()
                     elif self.design.solution_type == "Q3D":
                         logger.warning("\tCreating Q3D default setup.")
                         setup = self.design.create_q3d_setup()
+                    else:
+                        raise ValueError(
+                            f"Unsupported solution type: {self.design.solution_type!r}"
+                        )
                     self.setup_name = setup.name
                 else:
                     self.setup_name = setup_names[0]
