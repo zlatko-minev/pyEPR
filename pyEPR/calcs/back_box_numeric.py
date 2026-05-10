@@ -174,13 +174,13 @@ def make_dispersive(
         Based on the assignment of the excitations, the function returns the dressed mode frequencies :math:`\omega_m^\prime`, and the cross-Kerr matrix (including anharmonicities) extracted from the numerical diagonalization, as well as from 1st order perturbation theory.
         Note, the diagonal of the CHI matrix is directly the anharmonicity term.
     """
-    if hasattr(H, "__len__"):  # is it an array / list?
+    if isinstance(H, (list, tuple)):  # [H_lin, H_nl] from individual=True
         [H_lin, H_nl] = H
         H = H_lin + H_nl
-    else:  # make sure its a quanutm object
+    else:  # make sure its a quantum object
         from qutip import Qobj
 
-        if not isinstance(H, Qobj):  #  Validate that the input is a Qobj instance.
+        if not isinstance(H, Qobj):  # Validate that the input is a Qobj instance.
             raise TypeError(
                 "Please pass in either a list of Qobjs or a Qobj for the Hamiltonian"
             )
@@ -221,7 +221,9 @@ def make_dispersive(
             """this function generates all possible multi-indices for three modes for a given fock_trunc"""
 
         def get_expect_number(left, middle, right):
-            return (left.dag() * middle * right).data.toarray()[0, 0]
+            result = left.dag() * middle * right
+            # qutip 4: returns 1x1 Qobj; qutip 5: returns complex scalar
+            return result.full()[0, 0] if hasattr(result, "full") else complex(result)
             """this function calculates the expectation value of an operator called "middle" """
 
         def get_basis0(fock_trunc, num_modes):
@@ -239,15 +241,10 @@ def make_dispersive(
                 new_vector = 0 * original_vector
                 for i in range(len(original_basis)):
                     if (energy0[i] - evalue) > 1e-3:
-                        new_vector += (
-                            (
-                                (
-                                    original_basis[i].dag() * H_nl * original_vector
-                                ).data.toarray()[0, 0]
-                            )
-                            * original_basis[i]
-                            / (evalue - energy0[i])
-                        )
+                        mel = original_basis[i].dag() * H_nl * original_vector
+                        # qutip 4: 1x1 Qobj; qutip 5: complex scalar
+                        mel = mel.full()[0, 0] if hasattr(mel, "full") else complex(mel)
+                        new_vector += mel * original_basis[i] / (evalue - energy0[i])
                     else:
                         pass
                 return (new_vector + original_vector) / (

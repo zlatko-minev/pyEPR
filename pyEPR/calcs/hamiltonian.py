@@ -59,7 +59,9 @@ class HamOps(object):
         """
 
         def distance(s2):
-            return (s.dag() * s2[1]).norm()
+            inner = s.dag() * s2[1]
+            # qutip 4 returns a 1x1 Qobj (.norm()); qutip 5 returns a complex scalar (abs())
+            return inner.norm() if hasattr(inner, "norm") else abs(inner)
 
         return max(zip(energyMHz, evecs), key=distance)
 
@@ -70,7 +72,9 @@ class HamOps(object):
         """
 
         def distance(s2):
-            return (s.dag() * s2[1]).norm()
+            inner = s.dag() * s2[1]
+            # qutip 4 returns a 1x1 Qobj (.norm()); qutip 5 returns a complex scalar (abs())
+            return inner.norm() if hasattr(inner, "norm") else abs(inner)
 
         return max(zip(range(len(evecs)), evecs), key=distance)
 
