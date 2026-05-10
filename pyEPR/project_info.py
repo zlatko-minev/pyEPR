@@ -19,6 +19,7 @@ from pathlib import Path
 import pandas as pd
 
 from . import Dict, ansys, config, logger
+from .solution_types import DRIVEN_MODAL_NAMES, DRIVEN_TERMINAL_NAMES
 from .toolbox.pythonic import get_instance_vars
 
 diss_opt = ["dielectrics_bulk", "dielectric_surfaces", "resistive_surfaces", "seams"]
@@ -346,18 +347,10 @@ class ProjectInfo(object):
                     if self.design.solution_type == "Eigenmode":
                         logger.warning("\tCreating eigenmode default setup.")
                         setup = self.design.create_em_setup()
-                    elif self.design.solution_type in (
-                        "DrivenModal",
-                        "HFSS Modal Network",
-                        "HFSS Hybrid Modal Network",
-                    ):
+                    elif self.design.solution_type in DRIVEN_MODAL_NAMES:
                         logger.warning("\tCreating driven modal default setup.")
                         setup = self.design.create_dm_setup()
-                    elif self.design.solution_type in (
-                        "DrivenTerminal",
-                        "HFSS Terminal Network",
-                        "HFSS Hybrid Terminal Network",
-                    ):
+                    elif self.design.solution_type in DRIVEN_TERMINAL_NAMES:
                         logger.warning("\tCreating driven terminal default setup.")
                         setup = self.design.create_dt_setup()
                     elif self.design.solution_type == "Q3D":
