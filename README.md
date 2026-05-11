@@ -74,11 +74,10 @@ Welcome to pyEPR :beers:! &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(see [arXiv:2010.00620](
 
 # Start here: Using `pyEPR`
 
-1. **Fork**  :fork_and_knife: the [``pyEPR top-level repository`` ](https://github.com/zlatko-minev/pyEPR) on GitHub. ([How to fork a GitHub repo?](https://help.github.com/en/articles/fork-a-repo)). Share some love by **staring** :star: [pyEPR](https://github.com/zlatko-minev/pyEPR/).
-2. **Clone** :point_down: your forked repository locally. ([How to clone a GitHub repo?](https://help.github.com/en/articles/cloning-a-repository)). Setup the `pyEPR` python code by following [Installation and Python Setup](#installation-of-pyepr).
-3. **Tutorials**  Learn how to use using the [jupyter notebook tutorials](https://github.com/zlatko-minev/pyEPR/tree/master/_tutorial_notebooks)
-4. **Stay up to date** Enjoy and make sure to git add the master remote branch  `git remote add MASTER_MINEV git://github.com/zlatko-minev/pyEPR.git` [(help?)](https://stackoverflow.com/questions/11266478/git-add-remote-branch).
-5. **Cite `pyEPR`**  [arXiv:2010.00620](https://arxiv.org/abs/2010.00620) / [arXiv:1902.10355](https://arxiv.org/abs/1902.10355)  and enjoy! :birthday:  [![DOI](https://zenodo.org/badge/101073856.svg)](https://zenodo.org/badge/latestdoi/101073856)
+1. **Install** — see [Installation and setup](#installation-and-setup-of-pyepr) below. The fastest path: `pip install pyEPR-quantum`.
+2. **Tutorials** — work through the [Jupyter notebook tutorials](https://github.com/zlatko-minev/pyEPR/tree/master/_tutorial_notebooks) to learn the full workflow.
+3. **Read the docs** — [pyepr-docs.readthedocs.io](https://pyepr-docs.readthedocs.io) for the API reference and detailed guides.
+4. **Cite `pyEPR`** — [arXiv:2010.00620](https://arxiv.org/abs/2010.00620) / [arXiv:1902.10355](https://arxiv.org/abs/1902.10355) [![DOI](https://zenodo.org/badge/101073856.svg)](https://zenodo.org/badge/latestdoi/101073856)
 
 
 
@@ -163,55 +162,63 @@ epra.quick_plot_mode(0,0,1,numeric=True, swp_variable=swp_variable)
 
 # Installation and setup of `pyEPR`
 -------------
-Use `pyEPR` directly from the source, and pull updates from the master git repo, since we often update it. The following steps explain how to set up Python 3, fork the `pyEPR` repo and use it.
-Please keep up to date with `pyEPR` by using git. We like to make it simple using a git-gui manager, [SourceTree](sourcetree.com) or [GitHub Desktop](https://desktop.github.com/).
 
-**Quick setup**
-We recommend the approach in the following section, which will be most up to date, but for quick use you can use the [conda forge channel](https://anaconda.org/conda-forge/pyepr-quantum) to install
+**Requires Python 3.9–3.12.**  All dependencies are installed automatically.
+
+### Quick install
+
+**uv** (recommended — fast, modern):
+```sh
+uv pip install pyEPR-quantum
 ```
-conda install -c conda-forge pyepr-quantum
-```
-or the [PyPi](https://pypi.org/project/pyEPR-quantum/0.8/) channel
-```
+
+**pip**:
+```sh
 pip install pyEPR-quantum
 ```
 
-**Recommended procedure.**   <br />
-
- 1. Install Python 3.x, we recommend the [Anaconda](https://www.anaconda.com/distribution/#download-section) distribution. <br>
- The code is currently under dev with Python 3.6/7. It was developed under 2.7 and should still be compatible. <br>
-  After the install, make sure you configure your system PATH variables. On Windows, in the taskbar search or control panel, search for ["Edit environment variables for your account"](https://superuser.com/questions/949560/how-do-i-set-system-environment-variables-in-windows-10). In the section System Variables, find the PATH environment variable and select it. Click Edit.  Place`C:\Anaconda3;C:\Anaconda3\Scripts;C:\Anaconda3\Library\bin;` at the beginning of the path. If you have a previous Python installation this step is *very* important, especially to compile the qutip module. You may verity your path using the following command in the Command Prompt (terminal):
-      `sh
-      $ echo %PATH%
-      `
-
- 2. Install the required packages, including [pint](http://pint.readthedocs.io/en/latest/), [qutip](http://qutip.org/), and [addict](https://github.com/mewwts/addict). In a terminal window
- ```sh
- conda install -c conda-forge pint
- conda install -c conda-forge qutip
- pip install addict
- ```
- 3. Fork this pyEPR repository on GitHub with your GitHub account. You may clone the fork to your PC and manage it using the [SourceTree](https://www.sourcetreeapp.com/) git-gui manager.
- 4. Add the pyEPR repository folder to your python search path. Make sure to add the git remote to the master is set up,  `git remote add MASTER_MINEV git://github.com/zlatko-minev/pyEPR.git`!  [(Help?)](https://stackoverflow.com/questions/11266478/git-add-remote-branch)
- 5. Edit pyEPR module `_config_user.py`  to set your data-saving directory and other parameters of interest.  (To keep your changes local, use the shell command `git update-index --skip-worktree _config_user.py` in the `pyEPR/pyEPR` folder)
- 6. **ENJOY and cite pyEPR!**  :+1:
-
-#### “Editable” install for development mode
-Although not required, it’s common to locally install your project in “editable” or “develop” mode while you’re working on it. This allows your project to be both installed and editable in project form.
-
-Assuming you’re in the root of your project directory, then run [(see here)](https://packaging.python.org/guides/distributing-packages-using-setuptools/#working-in-development-mode):
+**conda** (conda-forge channel):
+```sh
+conda install -c conda-forge pyepr-quantum
 ```
-   python -m pip install -e .
+
+> The conda-forge package name is `pyepr-quantum` (lower-case); the PyPI name is `pyEPR-quantum`.
+> Either way you import it as `import pyEPR as epr`.
+
+### Development / editable install
+
+```sh
+git clone https://github.com/zlatko-minev/pyEPR.git
+cd pyEPR
+pip install -e “.[test]”
+pytest          # runs all tests that don’t need a live HFSS session
 ```
-Although somewhat cryptic, -e is short for --editable, and . refers to the current working directory, so together, it means to install the current directory (i.e. your project) in editable mode. This will also install any dependencies declared with “install_requires” and any scripts declared with “console_scripts”. Dependencies will be installed in the usual, non-editable mode. Quoted from [python](https://packaging.python.org/guides/distributing-packages-using-setuptools/#working-in-development-mode)
 
-#### Note for Mac/Linux.
-Follow the same instructions above. You shouldn't have to install mingw or modify distutils.cfg, since your distribution should come with gcc as the default compiler.
+### Platform support
 
+pyEPR has two layers with different platform requirements:
 
+| Feature | Windows | macOS | Linux |
+|---|---|---|---|
+| EPR / quantum analysis (`DistributedAnalysis`, `QuantumAnalysis`) | ✅ | ✅ | ✅ |
+| Ansys HFSS COM interface (`HfssDesign`, `ansys.py`) | ✅ | ⚠️ limited | ⚠️ limited |
+
+**EPR and quantum analysis** are pure-Python and work on all platforms — no Ansys installation required for post-processing.
+
+**The HFSS COM interface** (`ansys.py`) was written for Windows, where HFSS exposes automation via `pythoncom`/`win32com`.  On macOS/Linux you can still reach a remote Windows HFSS instance over a network COM bridge.
+
+> **Note on PyAEDT:** [PyAEDT](https://github.com/ansys/pyaedt) is Ansys’s official cross-platform Python scripting library for AEDT.  pyEPR predates it and focuses on the quantum EPR quantization workflow that PyAEDT does not cover.  They are complementary: use PyAEDT for geometry/mesh/solve scripting, pyEPR for EPR-based Hamiltonian extraction.
+
+### Optional configuration
+
+Edit `pyEPR/_config_user.py` to set your data-save directory and logging level.
+To keep local changes out of git:
+```sh
+git update-index --skip-worktree pyEPR/_config_user.py
+```
 
 #### Legacy users
-Warning: pyEPR organization was significantly improved in v0.8-dev (starting 2020; current branch: master \[to be made stable soon\]). If you used a previous version, you will find that all key classes have been renamed. Please, see the tutorials and docs.  In the meantime, if you cannot switch yet, revert to use the stable v0.7.
+pyEPR was significantly refactored in v0.8 (2020). Key classes were renamed — see the tutorials and docs. If you cannot upgrade yet, use the stable v0.7 tag.
 
 
 # HFSS Project Setup for `pyEPR`
@@ -256,33 +263,12 @@ conda update qutip
 conda update numpy
 ```
 
-###### Qutip installation
-You may also choose to install the optional qutip package for some advanced numerical analysis of the Hamiltonian.
-We use [Qutip](http://qutip.org/) to handle quantum objects. Follow the instruction on their website. As of Aug. 2017, qutip is part of conda, and you can use
+###### QuTiP installation
+QuTiP is a required dependency and is installed automatically with `pip install pyEPR-quantum`.
+If you need to install it separately:
 ```sh
-conda install qutip
-```
-If this doesn't work, try  installing from conda forge
-```sh
-conda install -c conda-forge qutip
-```
-######  Qutip installation -- alternative, manual install
-If you wish to install manually, follow the following procedure. Some of this can get a bit tricky at times.
-First, you need to install a C compiler, since qutip uses Cython. If you dont have VS9, gcc, or mingw installed, the following works:
-```sh
-pip install -i https://pypi.anaconda.org/carlkl/simple mingwpy
-```
-Let anaconda know to use this compiler by creating the file `C:\Anaconda2\Lib\distutils\distutils.cfg` with the following content
-```
-[build]
-compiler = mingw32
-[build_ext]
-compiler = mingw32
-```
-Next, let's install qutip. You can choose to use conda install or pip install, or pull from the git directly  as done here:
-```sh
-conda install git
-pip install git+https://github.com/qutip/qutip.git
+pip install qutip          # PyPI (qutip >= 5.0 required)
+conda install -c conda-forge qutip   # conda-forge
 ```
 
 
