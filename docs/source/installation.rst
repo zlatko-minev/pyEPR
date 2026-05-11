@@ -4,89 +4,176 @@
 Installation
 **************
 
+.. contents:: On this page
+   :local:
+   :depth: 2
 
-.. _install-main:
+Requirements
+============
 
-Main installation method
-===========================
+- **Python** 3.9 – 3.12
+- **Operating system:** Windows, macOS, or Linux — see `Platform notes`_ below.
 
-1. **Fork** 🍴 the ```pyEPR top-level repository```_ on
-   GitHub. (`How to fork a GitHub repo?`_). Share some love by
-   **staring** :star: `pyEPR`_.
-2. **Clone** 👇 your forked repository locally. (`How to clone
-   a GitHub repo?`_). Setup the ``pyEPR`` python code by following
-   `Installation and Python Setup`_.
-3. **Tutorials** Learn how to use using the `jupyter notebook
-   tutorials`_
-4. **Stay up to date** Enjoy and make sure to git add the master remote
-   branch
-   ``git remote add MASTER_MINEV git://github.com/zlatko-minev/pyEPR.git``
-   `(help?)`_.
-5. **Cite ``pyEPR``** `arXiv:2010.00620 <https://arxiv.org/abs/2010.00620>`_ and `arXiv:1902.10355 <https://arxiv.org/abs/1902.10355>`_ enjoy!  🎂
+.. _install-quick:
 
+Quick install
+=============
 
-.. _``pyEPR top-level repository``: https://github.com/zlatko-minev/pyEPR
-.. _How to fork a GitHub repo?: https://help.github.com/en/articles/fork-a-repo
-.. _pyEPR: https://github.com/zlatko-minev/pyEPR/
-.. _How to clone a GitHub repo?: https://help.github.com/en/articles/cloning-a-repository
-.. _Installation and Python Setup: #installation-of-pyepr
-.. _jupyter notebook tutorials: https://github.com/zlatko-minev/pyEPR/tree/master/_tutorial_notebooks
-.. _(help?): https://stackoverflow.com/questions/11266478/git-add-remote-branch
-.. _`arXiv:1902.10355`: https://arxiv.org/abs/1902.10355
+.. tabs::
 
-.. _install-via_pip:
+   .. tab:: uv *(recommended)*
 
-Installing locally via pip
-===============================
+      `uv <https://github.com/astral-sh/uv>`_ is a fast, modern Python package manager.
+      Install it once, then:
 
-In the future, ``pyEPR`` can be installed using the Python package manager `pip <http://www.pip-installer.org/>`_.
+      .. code-block:: bash
 
+         uv pip install pyEPR-quantum
 
-However, for the moment, we recommend a local developer installation, which allows for fast upgrades. We are still in active development.
-Perform the steps in the :ref:`install-main` section.
-What you could do, once you have the local clone git, is to install pyEPR locally. Navigate to the local root folder of the repo.
+      Or, inside a uv project/virtual environment:
 
-First, in bash, upgrade python ``pip``
+      .. code-block:: bash
+
+         uv add pyEPR-quantum
+
+   .. tab:: pip + venv
+
+      .. code-block:: bash
+
+         python -m venv .venv
+         source .venv/bin/activate   # Windows: .venv\Scripts\activate
+         pip install pyEPR-quantum
+
+   .. tab:: conda
+
+      ``pyEPR-quantum`` is available on the ``conda-forge`` channel:
+
+      .. code-block:: bash
+
+         conda create -n pyepr python=3.11
+         conda activate pyepr
+         conda install -c conda-forge pyepr-quantum
+
+      .. note::
+
+         The conda-forge package name is ``pyepr-quantum`` (lower-case).
+         The PyPI name is ``pyEPR-quantum``.  Either way, you import it as
+         ``import pyEPR as epr``.
+
+.. _install-dev:
+
+Development / editable install
+================================
+
+Clone the repository and install in editable mode so that your local changes
+are picked up immediately:
+
+.. tabs::
+
+   .. tab:: uv *(recommended)*
+
+      .. code-block:: bash
+
+         git clone https://github.com/zlatko-minev/pyEPR.git
+         cd pyEPR
+         uv pip install -e ".[test]"
+
+   .. tab:: pip + venv
+
+      .. code-block:: bash
+
+         git clone https://github.com/zlatko-minev/pyEPR.git
+         cd pyEPR
+         python -m venv .venv
+         source .venv/bin/activate   # Windows: .venv\Scripts\activate
+         pip install -e ".[test]"
+
+   .. tab:: conda
+
+      .. code-block:: bash
+
+         git clone https://github.com/zlatko-minev/pyEPR.git
+         cd pyEPR
+         conda create -n pyepr python=3.11
+         conda activate pyepr
+         pip install -e ".[test]"
+
+The ``[test]`` extra installs ``pytest`` and ``pytest-cov``.  Run the test
+suite (no Ansys required):
 
 .. code-block:: bash
 
-    python -m pip install -U pip
+   pytest
 
-Now we can locally install the pyEPR module.
+.. _install-platform:
 
-.. code-block:: bash
+Platform notes
+==============
 
-    python -m pip install -r requirements.txt -e .
+pyEPR has two distinct functional layers with different platform requirements:
 
+.. list-table::
+   :widths: 25 25 25 25
+   :header-rows: 1
 
-.. _install-via_conda:
+   * - Feature
+     - Windows
+     - macOS
+     - Linux
+   * - EPR / quantum analysis
+     - ✅ Full support
+     - ✅ Full support
+     - ✅ Full support
+   * - Ansys HFSS COM interface
+     - ✅ Full support
+     - ⚠️ Limited (see below)
+     - ⚠️ Limited (see below)
 
-Installing via conda
-====================
+**EPR and quantum analysis** (``DistributedAnalysis``, ``QuantumAnalysis``) are
+pure-Python and work identically on all platforms — no Ansys installation
+required for post-processing existing data.
 
-For Python 3.6+, installation via `conda`_ is supported since ``pyEPR`` v.0.8.03, through the ``conda-forge`` channel. You can download and install ``pyEPR`` typing in from bash:
-
-.. code-block:: bash
-
-    conda install -c conda-forge pyepr-quantum
-
-The prefix ``-c conda-forge`` is required to activate the optional ``conda-forge`` channel.
-
-.. _install-via_pypi:
-
-Installing via pip from PyPI
-============================
-
-For Python 3.6+, installation via `PyPI`_ is supported since ``pyEPR`` v.0.8. You can download and install ``pyEPR`` typing in from bash:
-
-.. code-block:: bash
-
-    pip install pyEPR-quantum
+**Ansys HFSS COM interface** (``ansys.py``, ``HfssDesign``, etc.) was originally
+written for Windows, where HFSS exposes a COM/DCOM automation interface via
+``pythoncom`` / ``win32com``.  On macOS and Linux, Ansys ships a non-Windows
+scripting interface (IronPython inside the AEDT product, or the ``ansys-aedt``
+Python API); pyEPR's COM wrapper layer does not use these interfaces directly.
+If you are running HFSS on a remote Windows machine or a Windows VM, you can
+still drive it from macOS/Linux over the network COM bridge.
 
 .. note::
 
-  Note that the name of the recipe on the ``conda-forge`` channel is ``pyepr-quantum``, and on PyPI is ``pyEPR-quantum``, as the name `pyepr` was already taken by another project. This does not change anything in the way the library is imported in Python as documented in the guide and examples.
+   **PyAEDT** — Ansys's official open-source Python library
+   (`github.com/ansys/pyaedt <https://github.com/ansys/pyaedt>`_) — provides
+   a fully cross-platform scripting layer for AEDT.  pyEPR predates PyAEDT
+   by several years and covers the quantum-circuit EPR analysis workflow that
+   PyAEDT does not.  For new workflows that only need simulation control
+   (geometry, mesh, solve) and not EPR quantization, PyAEDT is a natural
+   complement or alternative for the COM layer.
 
-.. _conda: https://anaconda.org/conda-forge/pyepr-quantum
-.. _PyPI: https://pypi.org/project/pyEPR-quantum/0.8/
+.. _install-hfss-version:
 
+Ansys HFSS version compatibility
+=================================
+
+AEDT 2021.2 renamed the strings returned by ``GetSolutionType()``.
+AEDT 2024.1 changed the default design type created by ``InsertDesign``.
+pyEPR ≥ 0.9.2 handles both transparently — always use the latest pyEPR.
+
+For the full technical details see the :ref:`HFSS compatibility section
+<install-hfss-version>` in the developer guide (``CLAUDE.md``).
+
+.. _install-config:
+
+Optional configuration
+======================
+
+After installation, you can customise pyEPR's behaviour by editing
+``pyEPR/_config_user.py``.  The most useful settings are the default
+data-save directory and logging verbosity.
+
+To prevent git from tracking your local config changes:
+
+.. code-block:: bash
+
+   git update-index --skip-worktree pyEPR/_config_user.py
