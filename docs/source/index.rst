@@ -119,7 +119,9 @@ Contents
 
    about.rst
    installation.rst
+   hfss_setup.rst
    examples_quick.rst
+   without_hfss.rst
    key_classes_reference.rst
 
 .. toctree::
