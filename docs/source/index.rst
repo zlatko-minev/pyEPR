@@ -127,6 +127,7 @@ Contents
 .. toctree::
    :caption: API Reference:
    :glob:
+   :hidden:
 
    api/*
 
