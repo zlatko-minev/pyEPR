@@ -123,6 +123,7 @@ Contents
    examples_quick.rst
    without_hfss.rst
    key_classes_reference.rst
+   troubleshooting.rst
 
 .. toctree::
    :caption: API Reference:
