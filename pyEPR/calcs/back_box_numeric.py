@@ -257,7 +257,11 @@ def make_dispersive(
             evalue0 = get_expect_number(vector0, H_lin, vector0)
             vector1 = PT_on_vector(vector0, basis0, H_nl, evalues0, evalue0)
 
-            index = np.argmax([(vector1.dag() * evec).norm() for evec in evecs])
+            # qutip 4: dag()*ket returns 1×1 Qobj with .norm(); qutip 5: returns complex scalar
+            index = np.argmax([
+                abs(r.full()[0, 0]) if hasattr(r, "full") else abs(r)
+                for r in (vector1.dag() * evec for evec in evecs)
+            ])
             return evals[index], evecs[index]
 
     else:

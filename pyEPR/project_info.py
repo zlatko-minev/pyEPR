@@ -362,7 +362,15 @@ class ProjectInfo(object):
                         )
                     self.setup_name = setup.name
                 else:
-                    self.setup_name = setup_names[0]
+                    if self.setup_name:
+                        if self.setup_name not in setup_names:
+                            raise ValueError(
+                                f"Setup '{self.setup_name}' not found in design. "
+                                f"Available setups: {setup_names}"
+                            )
+                        # else: keep the user-specified name as-is
+                    else:
+                        self.setup_name = setup_names[0]
 
                 # get the actual setup if there is one
                 self.get_setup(self.setup_name)
