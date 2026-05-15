@@ -32,7 +32,8 @@ _style_plot_conv_kw = dict(marker="o", ms=4)
 def plot_convergence_max_df(ax, s, kw={}, color="r"):
     """For a single pass"""
     s.plot(ax=ax, **{**dict(c="r"), **_style_plot_conv_kw, **kw})
-    ax.set_yscale("log")
+    if (s > 0).any():
+        ax.set_yscale("log")
     _style_plot_convergence(ax)
     fig = ax.figure
     fig.text(0.45, 0.95, s.name, ha="center", va="bottom", size="medium", color=color)
@@ -84,8 +85,10 @@ def plot_convergence_maxdf_vs_sol(ax, s, s2, kw={}):
     s.index = s2
     (s).plot(ax=ax, **{**_style_plot_conv_kw, **kw})
     _style_plot_convergence(ax, s.name, xlabel="Solved elements", y_title=True)
-    ax.set_yscale("log")
-    ax.set_xscale("log")
+    if (s > 0).any():
+        ax.set_yscale("log")
+    if (s2 > 0).any():
+        ax.set_xscale("log")
 
 
 # quick and dirty use
