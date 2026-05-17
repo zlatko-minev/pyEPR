@@ -59,6 +59,7 @@ Key attributes:
 .. autoclass:: pyEPR.project_info.ProjectInfo
    :members:
    :show-inheritance:
+   :no-index:
 
 
 .. _distributed-analysis:
@@ -89,6 +90,7 @@ Key methods:
 .. autoclass:: pyEPR.core_distributed_analysis.DistributedAnalysis
    :members:
    :show-inheritance:
+   :no-index:
 
 
 .. _quantum-analysis:
@@ -127,6 +129,7 @@ Key methods:
 .. autoclass:: pyEPR.core_quantum_analysis.QuantumAnalysis
    :members:
    :show-inheritance:
+   :no-index:
 
 
 solution_types module
@@ -149,6 +152,7 @@ to handle the AEDT 2021.2+ renamed solution-type strings.
 .. automodule:: pyEPR.solution_types
    :members:
    :show-inheritance:
+   :no-index:
 
 
 calcs subpackage

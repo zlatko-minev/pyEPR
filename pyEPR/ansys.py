@@ -416,30 +416,20 @@ class HfssDesktop(COMWrapper):
         return self._desktop.GetProjectList()
 
     def get_messages(self, project_name="", design_name="", level=0):
-        """Use:  Collects the messages from a specified project and design.
-        Syntax:              GetMessages <ProjectName>, <DesignName>, <SeverityName>
-        Return Value:    A simple array of strings.
+        """Collect messages from a specified project and design.
 
-        Parameters:
-        <ProjectName>
-            Type:<string>
-            Name of the project for which to collect messages.
-            An incorrect project name results in no messages (design is ignored)
-            An empty project name results in all messages (design is ignored)
+        Parameters
+        ----------
+        project_name : str
+            Empty string returns all messages; wrong name returns no messages.
+        design_name : str
+            Empty string returns all messages for the project.
+        level : int
+            Severity filter: 0 = info+, 1 = warning+, 2 = error+fatal, 3 = fatal only.
 
-        <DesignName>
-            Type: <string>
-            Name of the design in the named project for which to collect messages
-            An incorrect design name results in no messages for the named project
-            An empty design name results in all messages for the named project
-
-        <SeverityName>
-            Type: <integer>
-            Severity is 0-3, and is tied in to info/warning/error/fatal types as follows:
-                0 is info and above
-                1 is warning and above
-                2 is error and fatal
-                3 is fatal only (rarely used)
+        Returns
+        -------
+        list of str
         """
         return self._desktop.GetMessages(project_name, design_name, level)
 
@@ -1026,20 +1016,17 @@ class HfssDesign(COMWrapper):
             self._setup_module.DeleteSetups(name)
 
     def delete_full_variation(self, DesignVariationKey="All", del_linked_data=False):
-        """
-        DeleteFullVariation
-        Use:                   Use to selectively make deletions or delete all solution data.
-        Command:         HFSS>Results>Clean Up Solutions...
-        Syntax:              DeleteFullVariation Array(<parameters>), boolean
-        Parameters:      All | <DataSpecifierArray>
-                        If, All, all data of existing variations is deleted.
-                        Array(<DesignVariationKey>, )
-                        <DesignVariationKey>
-                            Type: <string>
-                            Design variation string.
-                        <Boolean>
-                        Type: boolean
-                        Whether to also delete linked data.
+        """Delete solution data for one or all design variations.
+
+        Wraps ``DeleteFullVariation`` in the HFSS scripting API
+        (HFSS → Results → Clean Up Solutions).
+
+        Parameters
+        ----------
+        DesignVariationKey : str
+            ``"All"`` deletes all variations; otherwise a design-variation string.
+        del_linked_data : bool
+            Whether to also delete linked data.
         """
         self._design.DeleteFullVariation("All", False)
 
@@ -1271,17 +1258,10 @@ class HfssSetup(HfssPropertyObject):
         self._ansys_version = self.parent._ansys_version
 
     def analyze(self, name=None):
-        """
-        Use:             Solves a single solution setup and all of its frequency sweeps.
-        Command:         Right-click a solution setup in the project tree, and then click Analyze
-                         on the shortcut menu.
-        Syntax:          Analyze(<SetupName>)
-        Parameters:      <setupName>
-        Return Value:    None
-        -----------------------------------------------------
+        """Solve a single solution setup and all its frequency sweeps.
 
-        Will block the until the analysis is completely done.
-        Will raise a com_error if analysis is aborted in HFSS.
+        Wraps ``Analyze(<SetupName>)`` in the HFSS scripting API.
+        Blocks until analysis is complete; raises a COM error if aborted in HFSS.
         """
         if name is None:
             name = self.name
@@ -1289,26 +1269,10 @@ class HfssSetup(HfssPropertyObject):
         return self.parent._design.Analyze(name)
 
     def solve(self, name=None):
-        """
-        Use:             Performs a blocking simulation.
-                         The next script command will not be executed
-                         until the simulation is complete.
+        """Perform a blocking simulation via ``Solve(<SetupNameArray>)``.
 
-        Command:         HFSS>Analyze
-        Syntax:          Solve <SetupNameArray>
-        Return Value:   Type: <int>
-                        -1: simulation error
-                        0: normal completion
-        Parameters:      <SetupNameArray>: Array(<SetupName>, <SetupName>, ...)
-           <SetupName>
-        Type: <string>
-        Name of the solution setup to solve.
-        Example:
-            return_status = oDesign.Solve Array("Setup1", "Setup2")
-        -----------------------------------------------------
-
-        HFSS abort: still returns 0 , since termination by user.
-
+        Returns 0 on normal completion, -1 on simulation error.
+        User abort also returns 0.
         """
         if name is None:
             name = self.name
@@ -1658,12 +1622,7 @@ class AnsysQ3DSetup(HfssSetup):
         return HfssQ3DDesignSolutions(self, self.parent._solutions)
 
     def get_convergence(self, variation=""):
-        """
-        Returns df
-                    # Triangle   Delta %
-            Pass
-            1            164       NaN
-        """
+        """Return Q3D convergence data as a DataFrame (columns: Triangle, Delta %)."""
         return super().get_convergence(variation, pre_fn_args=["CG"])
 
     def get_matrix(
@@ -1676,21 +1635,23 @@ class AnsysQ3DSetup(HfssSetup):
         ACPlusDCResistance=False,
         soln_type="C",
     ):
-        """
-        Arguments:
-        -----------
-            variation: an empty string returns nominal variation.
-                        Otherwise need the list
-            frequency: in Hz
-            soln_type = "C", "AC RL" and "DC RL"
-            solution_kind = 'LastAdaptive' # AdaptivePass
-        Internals:
-        -----------
-            Uses self.solution_name  = Setup1 : LastAdaptive
+        """Export and return the Q3D capacitance/conductance matrix.
 
-        Returns:
-        ---------------------
-            df_cmat, user_units, (df_cond, units_cond), design_variation
+        Parameters
+        ----------
+        variation : str
+            Empty string returns the nominal variation.
+        frequency : float, optional
+            Frequency in Hz.
+        soln_type : str
+            One of ``"C"``, ``"AC RL"``, or ``"DC RL"``.
+        solution_kind : str
+            ``"LastAdaptive"`` or ``"AdaptivePass"``.
+
+        Returns
+        -------
+        tuple
+            ``(df_cmat, user_units, (df_cond, units_cond), design_variation)``
         """
         if frequency is None:
             frequency = self.get_frequency_Hz()
@@ -1856,10 +1817,10 @@ class HfssDesignSolutions(COMWrapper):
         self._ansys_version = self.parent._ansys_version
 
     def get_valid_solution_list(self):
-        """
-        Gets all available solution names that exist in a design.
-        Return example:
-           ('Setup1 : AdaptivePass', 'Setup1 : LastAdaptive')
+        """Get all available solution names that exist in a design.
+
+        Returns a tuple of strings such as
+        ``('Setup1 : AdaptivePass', 'Setup1 : LastAdaptive')``.
         """
         return self._solutions.GetValidISolutionList()
 
@@ -2003,14 +1964,13 @@ class HfssEMDesignSolutions(HfssDesignSolutions):
             )
 
     def has_fields(self, variation_string=None):
-        """
-        Determine if fields exist for a particular solution.
+        """Determine if fields exist for a particular solution.
 
-        variation_string : str | None
-            This must the string that describes the variation in hFSS, not 0 or 1, but
-            the string of variables, such as
-                "Cj='2fF' Lj='12.75nH'"
-            If None, gets the nominal variation
+        Parameters
+        ----------
+        variation_string : str, optional
+            HFSS variation string such as ``"Cj='2fF' Lj='12.75nH'"``.
+            If ``None``, uses the nominal variation.
         """
         if variation_string is None:
             variation_string = self.parent.parent.get_nominal_variation()
@@ -2279,15 +2239,15 @@ class Optimetrics(COMWrapper):
         the Count value is the total number of points. The total number of
         points includes the start and stop values.
 
-        For parametric from file, setup_type='parametric_file', pass in a file
-        name and path to swp_params like "C:\\test.csv" or "C:\\test.txt" for
-        example.
+        For parametric from file, set ``setup_type='parametric_file'`` and pass a
+        file path (e.g. ``"C:\\\\test.csv"``) to ``swp_params``.
 
-        Example csv formatting:
-        *,Lj_qubit
-        1,12.2nH
-        2,9.7nH
-        3,10.2nH
+        Example CSV format::
+
+            *,Lj_qubit
+            1,12.2nH
+            2,9.7nH
+            3,10.2nH
 
         See Ansys documentation for additional formatting instructions.
         """
@@ -2566,21 +2526,12 @@ class HfssModeler(COMWrapper):
         return self.draw_box_corner(corner_pos, size, **kwargs)
 
     def draw_polyline(self, points, closed=True, **kwargs):
-        """
-        Draws a closed or open polyline.
-        If closed = True, then will make into a sheet.
-        points : need to be in the correct units
+        """Draw a closed or open polyline. If ``closed=True``, converts it to a sheet.
 
-        For optional arguments, see _attributes_array; these include:
-        ```
-            nonmodel=False,
-            wireframe=False,
-            color=None,
-            transparency=0.9,
-            material=None,  # str
-            solve_inside=None,  # bool
-            coordinate_system="Global"
-        ```
+        Points must be in the correct units. Optional keyword arguments are
+        forwarded to ``_attributes_array`` and include ``nonmodel``,
+        ``wireframe``, ``color``, ``transparency``, ``material``,
+        ``solve_inside``, and ``coordinate_system``.
         """
         pointsStr = ["NAME:PolylinePoints"]
         indexsStr = ["NAME:PolylineSegments"]
@@ -3025,12 +2976,13 @@ class HfssModeler(COMWrapper):
         return self.parent.eval_expr(expr, units)
 
     def get_objects_in_group(self, group):
-        """
-        Use:              Returns the objects for the specified group.
-        Return Value:    The objects in the group.
-        Parameters:      <groupName>  Type: <string>
-        One of  <materialName>, <assignmentName>, "Non Model",
-                "Solids", "Unclassi­fied", "Sheets", "Lines"
+        """Return the objects in the specified HFSS group.
+
+        Parameters
+        ----------
+        group : str
+            One of a material name, assignment name, ``"Non Model"``,
+            ``"Solids"``, ``"Unclassified"``, ``"Sheets"``, or ``"Lines"``.
         """
         if self._modeler:
             return list(self._modeler.GetObjectsInGroup(group))

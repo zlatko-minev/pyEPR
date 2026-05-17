@@ -12,14 +12,16 @@ build:
     python: "3.12"
   apt_packages:
     - pandoc
+  jobs:
+    pre_build:
+      # Sphinx does not follow symlinks outside the source root.
+      # Replace the symlink with a real copy so myst-nb can parse the notebooks.
+      - rm -f docs/source/_tutorial_notebooks
+      - cp -r _tutorial_notebooks docs/source/_tutorial_notebooks
 
 # Build documentation in the docs/source/ directory with Sphinx
 sphinx:
   configuration: docs/source/conf.py
-
-# Optionally build your docs in additional formats such as PDF and ePub
-# formats:
-#   - pdf
 
 python:
   install:

@@ -33,8 +33,8 @@ class CalcsTransmon:
         returns f_O1, χ_O1
         χ_O1 has diagonal divided by 2 so as to give true anharmonicity.
 
-        Example use:
-        ..codeblock python
+        Example use::
+
             # PT_01: Calculate 1st order PT results
             f_O1, χ_O1 = Calc_basic.dispersiveH_params_PT_O1(Pmj, Ωm, Ej)
         """

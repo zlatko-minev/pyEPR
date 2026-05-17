@@ -721,8 +721,10 @@ class DistributedAnalysis(object):
         return I
 
     def calc_avg_current_J_surf_mag(self, variation: str, junc_rect: str, junc_line):
-        """Peak current I_max for mode J in junction J
-            The avg. is over the surface of the junction. I.e., spatial.
+        """Peak current I_max for mode J in junction J.
+
+        The average is over the surface of the junction (spatial average).
+
         Args:
             variation (str): A string identifier of the variation,
                 such as '0', '1', ...
@@ -818,8 +820,7 @@ class DistributedAnalysis(object):
 
         Returns:
             jl (float) : junction length
-            uj (list of 3 floats): x,y,z coordinates of the unit vector
-                 tangent to the junction line
+            uj (list of 3 floats): x,y,z components of the unit vector tangent to the junction line
         """
         #
         lv = self._get_lv(variation)
@@ -1010,7 +1011,7 @@ class DistributedAnalysis(object):
             such as '0', '1', ...
 
         .. note::
-           U_E and U_H are the total peak energy. (NOT twice as in U_ and U_H other places)
+           ``U_E`` and ``U_H`` are the total peak energy (NOT twice as in ``U_`` and ``U_H`` other places).
 
         .. warning::
            Potential errors: If you dont have a line or rect by the right name you will prob

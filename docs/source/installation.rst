@@ -11,7 +11,7 @@ Installation
 Requirements
 ============
 
-- **Python** 3.9 – 3.12
+- **Python** 3.10 – 3.12
 - **Operating system:** Windows, macOS, or Linux — see `Platform notes`_ below.
 
 .. _install-quick:
@@ -19,32 +19,15 @@ Requirements
 Quick install
 =============
 
-.. tabs::
+.. tab-set::
 
-   .. tab:: uv *(recommended)*
-
-      `uv <https://github.com/astral-sh/uv>`_ is a fast, modern Python package manager.
-      Install it once, then:
+   .. tab-item:: pip
 
       .. code-block:: bash
 
-         uv pip install pyEPR-quantum
-
-      Or, inside a uv project/virtual environment:
-
-      .. code-block:: bash
-
-         uv add pyEPR-quantum
-
-   .. tab:: pip + venv
-
-      .. code-block:: bash
-
-         python -m venv .venv
-         source .venv/bin/activate   # Windows: .venv\Scripts\activate
          pip install pyEPR-quantum
 
-   .. tab:: conda
+   .. tab-item:: conda
 
       ``pyEPR-quantum`` is available on the ``conda-forge`` channel:
 
@@ -60,6 +43,15 @@ Quick install
          The PyPI name is ``pyEPR-quantum``.  Either way, you import it as
          ``import pyEPR as epr``.
 
+   .. tab-item:: uv
+
+      `uv <https://github.com/astral-sh/uv>`_ is a fast, modern Python package manager.
+      Install it once, then:
+
+      .. code-block:: bash
+
+         uv pip install pyEPR-quantum
+
 .. _install-dev:
 
 Development / editable install
@@ -68,27 +60,17 @@ Development / editable install
 Clone the repository and install in editable mode so that your local changes
 are picked up immediately:
 
-.. tabs::
+.. tab-set::
 
-   .. tab:: uv *(recommended)*
-
-      .. code-block:: bash
-
-         git clone https://github.com/zlatko-minev/pyEPR.git
-         cd pyEPR
-         uv pip install -e ".[test]"
-
-   .. tab:: pip + venv
+   .. tab-item:: pip
 
       .. code-block:: bash
 
          git clone https://github.com/zlatko-minev/pyEPR.git
          cd pyEPR
-         python -m venv .venv
-         source .venv/bin/activate   # Windows: .venv\Scripts\activate
          pip install -e ".[test]"
 
-   .. tab:: conda
+   .. tab-item:: conda
 
       .. code-block:: bash
 
@@ -97,6 +79,14 @@ are picked up immediately:
          conda create -n pyepr python=3.11
          conda activate pyepr
          pip install -e ".[test]"
+
+   .. tab-item:: uv
+
+      .. code-block:: bash
+
+         git clone https://github.com/zlatko-minev/pyEPR.git
+         cd pyEPR
+         uv pip install -e ".[test]"
 
 The ``[test]`` extra installs ``pytest`` and ``pytest-cov``.  Run the test
 suite (no Ansys required):
