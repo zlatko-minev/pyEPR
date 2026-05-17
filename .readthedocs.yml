@@ -15,13 +15,9 @@ build:
   jobs:
     pre_build:
       # Sphinx does not follow symlinks outside the source root.
-      # Copy only the notebooks that are listed in the tutorials toctree (3, 5, 6).
-      # Notebooks 1, 2, 4 require a live HFSS session and are not rendered in the docs.
+      # Copy all tutorial notebooks (1-6) so every tutorial card links correctly.
       - rm -rf docs/source/_tutorial_notebooks
-      - mkdir -p docs/source/_tutorial_notebooks
-      - cp "_tutorial_notebooks/Tutorial 3.  toolbox_circuits.ipynb" docs/source/_tutorial_notebooks/
-      - cp "_tutorial_notebooks/Tutorial 5. Generic junction potential and fluxonium EPR.ipynb" docs/source/_tutorial_notebooks/
-      - cp "_tutorial_notebooks/Tutorial 6. EPR without HFSS — purely numerical workflow.ipynb" docs/source/_tutorial_notebooks/
+      - cp -r _tutorial_notebooks docs/source/_tutorial_notebooks
 
 # Build documentation in the docs/source/ directory with Sphinx
 sphinx:
