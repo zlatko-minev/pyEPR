@@ -40,6 +40,11 @@ microwave simulation (Ansys HFSS) and quantum circuit Hamiltonians using the
       Numerically diagonalize the full Josephson Hamiltonian to get
       dressed frequencies, anharmonicities, and the χ matrix.
 
+.. image:: _static/xmon-example.gif
+   :width: 55%
+   :alt: HFSS junction setup animation — Xmon qubit
+   :align: center
+
 ----
 
 Quick install

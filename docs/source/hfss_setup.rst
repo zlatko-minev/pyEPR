@@ -46,6 +46,11 @@ Typical components:
 Step 3 — Define junction rectangles and polylines
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. image:: _static/xmon-example.gif
+   :width: 70%
+   :alt: Xmon junction setup in HFSS — rectangle and polyline
+   :align: center
+
 Each Josephson junction requires two HFSS objects:
 
 **Junction rectangle**
