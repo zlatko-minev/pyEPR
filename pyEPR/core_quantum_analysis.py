@@ -902,20 +902,23 @@ class QuantumAnalysis(object):
 
         ############################################################################
         # Axis: Frequencies
-        f0 = (
+        def _sort_numeric(df):
+            numeric = pd.to_numeric(df.index, errors="coerce")
+            if numeric.notna().all():
+                return df.iloc[np.argsort(numeric)]
+            return df.sort_index()
+
+        f0 = _sort_numeric(
             self.results.get_frequencies_HFSS(variations=variations, vs=swp_variable)
             .transpose()
-            .sort_index(key=lambda x: x.astype(int))
         )
-        f1 = (
+        f1 = _sort_numeric(
             self.results.get_frequencies_O1(variations=variations, vs=swp_variable)
             .transpose()
-            .sort_index(key=lambda x: x.astype(int))
         )
-        f_ND = (
+        f_ND = _sort_numeric(
             self.results.get_frequencies_ND(variations=variations, vs=swp_variable)
             .transpose()
-            .sort_index(key=lambda x: x.astype(int))
         )
         # changed by Asaf from f0 as not all modes are always analyzed
         mode_idx = list(f1.columns)
@@ -947,7 +950,7 @@ class QuantumAnalysis(object):
         # Axis: Quality factors
         Qs = self.get_quality_factors(swp_variable=swp_variable)
         Qs = Qs if variations is None else Qs[variations]
-        Qs = Qs.transpose().sort_index(key=lambda x: x.astype(int))
+        Qs = _sort_numeric(Qs.transpose())
 
         ax = axs[1, 0]
         ax.set_title("Quality factors")
