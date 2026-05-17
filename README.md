@@ -11,50 +11,64 @@ Welcome to pyEPR :beers:! &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(see [arXiv:2010.00620](
 [![DOI](https://zenodo.org/badge/101073856.svg)](https://zenodo.org/badge/latestdoi/101073856)
 
 
+## What is pyEPR?
+
+**pyEPR** implements the *energy-participation ratio* (EPR) method for the design and quantization of superconducting quantum circuits. The EPR framework, introduced in [Minev *et al.*, npj Quantum Information (2021)](https://www.nature.com/articles/s41534-021-00461-8) ([arXiv:2010.00620](https://arxiv.org/abs/2010.00620)), bridges classical electromagnetic simulation and quantum circuit theory:
+
+1. **Classical EM** — simulate the linearized circuit in Ansys HFSS to obtain eigenmode frequencies and field distributions.
+2. **EPR extraction** — compute the energy participation ratios $p_{mj}$ of each Josephson junction $j$ in each mode $m$, and the zero-point phase fluctuations $\varphi_{\rm zpf}^{(mj)} = \sqrt{p_{mj}\,\hbar\omega_m / (2E_J)}$.
+3. **Quantum Hamiltonian** — diagonalize $H = \sum_m \omega_m a_m^\dagger a_m - \sum_j E_J [\cos(\hat\varphi_j) - 1 + \hat\varphi_j^2/2]$ numerically to get dressed frequencies and the dispersive-shift matrix $\chi$.
+
+The method works for any number of modes and junctions, handles strongly anharmonic circuits (fluxonium, $\varphi_{\rm zpf} \gtrsim 1$), and requires no manual circuit diagram — only the 3D geometry in HFSS.
+
 ### Documentation
 
 [Read the docs here.](https://pyepr-docs.readthedocs.io)
 <br>
 
-## Scientific work:
-* Minev, Z. K., Leghtas, Z., Mudhada, S. O., Reinhold, P., Diringer, A., & Devoret, M. H. (2018). [pyEPR: The energy-participation-ratio (EPR) open-source framework for quantum device design.](https://github.com/zlatko-minev/pyEPR/blob/master/pyEPR.bib)  [![DOI](https://zenodo.org/badge/101073856.svg)](https://zenodo.org/badge/latestdoi/101073856)
-* Minev, Z. K., Leghtas, Z., Mundhada, S. O., Christakis, L., Pop, I. M., & Devoret, M. H. (2020). Energy-participation quantization of Josephson circuits. ArXiv. Retrieved from http://arxiv.org/abs/2010.00620 (2020)
-* Z.K. Minev, Ph.D. Dissertation, Yale University (2018), Chapter 4. ([arXiv:1902.10355](https://arxiv.org/abs/1902.10355))  (2018) 
+## How to cite
 
-## pyEPR Working group meeting -- Planning for the future of pyEPR
+If you use pyEPR in your research, please cite:
 
-* Please sign-up here: https://github.com/zlatko-minev/pyEPR/issues/45 or [directly here](https://docs.google.com/forms/d/e/1FAIpQLScd3WyfzDS47D0WB9skkSPQAXCnKLf7JMxsZ7BnMwK0LjE3Sw/viewform?usp=sf_link) :bangbang: :beers:
-- See [pyEPR wiki](https://github.com/zlatko-minev/pyEPR/wiki) for notes from first meeting.
-- We will schedule a follow-up meeting in 1-2 mo.
+* **EPR method paper** (primary reference for the method):
+  Z. K. Minev, Z. Leghtas, S. O. Mundhada, L. Christakis, I. M. Pop, M. H. Devoret,
+  *Energy-participation quantization of Josephson circuits*,
+  [npj Quantum Information **7**, 131 (2021)](https://doi.org/10.1038/s41534-021-00461-8) · [arXiv:2010.00620](https://arxiv.org/abs/2010.00620)
 
-<br>
+* **Software** (Zenodo DOI for the specific version):
+  [![DOI](https://zenodo.org/badge/101073856.svg)](https://zenodo.org/badge/latestdoi/101073856)
+
+Use this [BibTeX file](https://github.com/zlatko-minev/pyEPR/blob/master/pyEPR.bib) for both.
+
+Related references:
+* Z. K. Minev, Ph.D. Dissertation, Yale University (2018), Chapter 4. ([arXiv:1902.10355](https://arxiv.org/abs/1902.10355))
+* A. Petrescu, C. T. Hann, Z. K. Minev *et al.*, EPR for very anharmonic circuits. ([arXiv:2411.15039](https://arxiv.org/abs/2411.15039))
 
 ## Who uses pyEPR?
 * Yale University, Michel Devoret lab [QLab](https://qulab.eng.yale.edu/), CT, USA
 * Yale University, Rob Schoelkopf lab [RSL](https://rsl.yale.edu/), CT, USA
 * [IBM Quantum](https://www.ibm.com/quantum-computing/) and IBM's Qiskit Metal
-* [QUANTIC](https://team.inria.fr/quantic/people.html#) (QUANTUM INFORMATION CIRCUITS), PARISINRIA, ENS, MINES PARISTECH, UPMC, CNRS. Groups of Zaki Leghtas and team. France
+* [QUANTIC](https://team.inria.fr/quantic/people.html#) (QUANTUM INFORMATION CIRCUITS), PARIS — INRIA, ENS, MINES PARISTECH, UPMC, CNRS. Groups of Zaki Leghtas and team. France
 * [Quantum Circuit Group](http://www.physinfo.fr/) Benjamin Huard, Ecole Normale Supérieure de Lyon, France
 * Emanuel Flurin, CEA Saclay, France
-* Ioan Pop group, KIT Physikalisches Institut, Germany 
+* Ioan Pop group, KIT Physikalisches Institut, Germany
 * UC Berkeley, [Quantum Nanoelectronics Laboratory](https://physics.berkeley.edu/quantum-nanoelectronics-laboratory), Irfan Siddiqi, CA, USA
 * [Quantum Circuits, Inc.](https://quantumcircuits.com/), CT, USA
 * [Seeqc](https://seeqc.com/) (spin-out of Hypres) Digital Quantum Computing, USA
-* Serge [Rosenblum Lab] quantum circuits group (https://www.weizmann.ac.il/condmat/rosenblum/) in the Weizmann Instatue, Israel
-* University of Oxford - LeekLab - Peter [Leek Lab](https://leeklab.org/), UK
+* Serge [Rosenblum Lab](https://www.weizmann.ac.il/condmat/rosenblum/) quantum circuits group, Weizmann Institute, Israel
+* University of Oxford — [Leek Lab](https://leeklab.org/), UK
 * Britton [Plourde Lab](https://bplourde.expressions.syr.edu/), Syracuse University, USA
 * Javad [Shabani Lab](https://wp.nyu.edu/shabanilab/) Quantum Materials & Devices, NYU, NY, USA
 * UChicago Dave Schuster Lab, USA
-* SQC lab - Shay Hacohen Gourgy, Israel
+* SQC lab — Shay Hacohen-Gourgy, Israel
 * Lawrence Berkeley National Lab
 * Colorado School of Mines, USA
-* Syracuse University, USA
 * IPQC, SJTU, Shanghai, China
 * Bhabha Atomic Research Centre, India
 * Quantum Computing UK
 * Alice&Bob, France
 * Centre for Quantum Technologies / Qcrew
-* Quantum Device Lab ETHZ; Andreas Wallraff
+* Quantum Device Lab ETHZ — Andreas Wallraff
 * Bleximo
 * ... and many more! (Please e-mail `zlatko.minev@aya.yale.edu` with updates.)
 
@@ -63,6 +77,7 @@ Welcome to pyEPR :beers:! &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(see [arXiv:2010.00620](
 
 # Contents:
 * [Start here: Using `pyEPR`](#start-here-using-pyepr)
+* [Tutorial Notebooks](#tutorial-notebooks)
 * [Video Tutorials](#pyepr-video-tutorials)
 * [Setup and Installation](#installation-and-setup-of-pyepr)
 * [HFSS Project Setup for `pyEPR`](#hfss-project-setup-for-pyepr)
@@ -75,57 +90,63 @@ Welcome to pyEPR :beers:! &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(see [arXiv:2010.00620](
 # Start here: Using `pyEPR`
 
 1. **Install** — see [Installation and setup](#installation-and-setup-of-pyepr) below. The fastest path: `pip install pyEPR-quantum`.
-2. **Tutorials** — work through the [Jupyter notebook tutorials](https://github.com/zlatko-minev/pyEPR/tree/master/_tutorial_notebooks) to learn the full workflow.
+2. **Tutorials** — work through the [Jupyter notebook tutorials](#tutorial-notebooks) below. No HFSS licence? Start with Tutorial 6.
 3. **Read the docs** — [pyepr-docs.readthedocs.io](https://pyepr-docs.readthedocs.io) for the API reference and detailed guides.
-4. **Cite `pyEPR`** — [arXiv:2010.00620](https://arxiv.org/abs/2010.00620) / [arXiv:1902.10355](https://arxiv.org/abs/1902.10355) [![DOI](https://zenodo.org/badge/101073856.svg)](https://zenodo.org/badge/latestdoi/101073856)
-
+4. **Cite `pyEPR`** — [arXiv:2010.00620](https://arxiv.org/abs/2010.00620) [![DOI](https://zenodo.org/badge/101073856.svg)](https://zenodo.org/badge/latestdoi/101073856)
 
 
 #### Start-up example
 
-[Jupyter notebook tutorials](https://github.com/zlatko-minev/pyEPR/tree/master/_tutorial_notebooks)
-
-The following code illustrates how to perform a complete analysis of a simple two-qubit, one-cavity device in just a few lines of code with `pyEPR`.  In the HFSS file, before running the script, first specify the non-linear junction rectangles and variables (see Sec. pyEPR Project Setup in HFSS). All operations in the eigen analysis and Hamiltonian computation are fully automated. The results are saved, printed, and succinctly plotted.
-
+The following code illustrates how to perform a complete EPR analysis of a simple two-qubit, one-cavity device in just a few lines. In the HFSS file, first specify the non-linear junction rectangles and variables (see [HFSS Project Setup](#hfss-project-setup-for-pyepr) below). All operations in the eigenmode analysis and Hamiltonian computation are fully automated.
 
 ```python
-# Load pyEPR. See the tutorial notebooks!
 import pyEPR as epr
 
-# 1. Connect to your Ansys, and load your design
+# 1. Connect to Ansys HFSS and load your design
 pinfo = epr.ProjectInfo(project_path = r'C:\sim_folder',
                         project_name = r'cavity_with_two_qubits',
                         design_name  = r'Alice_Bob')
 
+# 2a. Specify Josephson junctions (non-linear elements)
+pinfo.junctions['jAlice'] = {'Lj_variable':'Lj_alice', 'rect':'rect_alice',
+                              'line': 'line_alice', 'Cj_variable':'Cj_alice'}
+pinfo.junctions['jBob']   = {'Lj_variable':'Lj_bob',   'rect':'rect_bob',
+                              'line': 'line_bob',   'Cj_variable':'Cj_bob'}
+pinfo.validate_junction_info()
 
-# 2a. Non-linear (Josephson) junctions
-pinfo.junctions['jAlice'] = {'Lj_variable':'Lj_alice', 'rect':'rect_alice', 'line': 'line_alice', 'Cj_variable':'Cj_alice'}
-pinfo.junctions['jBob']   = {'Lj_variable':'Lj_bob',   'rect':'rect_bob',   'line': 'line_bob', 'Cj_variable':'Cj_bob'}
-pinfo.validate_junction_info() # Check that valid names of variables and objects have been supplied.
-
-# 2b. Dissipative elements: specify
-pinfo.dissipative['dielectrics_bulk']    = ['si_substrate', 'dielectric_object2'] # supply names of hfss objects
+# 2b. (Optional) Dissipative elements for loss calculation
+pinfo.dissipative['dielectrics_bulk']    = ['si_substrate']
 pinfo.dissipative['dielectric_surfaces'] = ['interface1', 'interface2']
-# Alternatively, these could be specified in ProjectInfo with
-# pinfo = epr.ProjectInfo(..., dielectrics_bulk = ['si_substrate', 'dielectric_object2'])
 
-# 3.  Perform microwave analysis on eigenmode solutions
+# 3. Classical EM analysis — extract EPR participation ratios φ_zpf
 eprd = epr.DistributedAnalysis(pinfo)
-if 1: # automatic reports
-  eprd.quick_plot_frequencies(swp_var) # plot the solved frequencies before the analysis
-  eprd.hfss_report_full_convergence() # report convergence
-eprd.do_EPR_analysis()
+eprd.hfss_report_full_convergence()   # check HFSS convergence
+eprd.do_EPR_analysis()                # compute p_mj and φ_zpf for all modes/junctions
 
-# 4a.  Perform Hamiltonian spectrum post-analysis, building on mw solutions using EPR
+# 4. Quantum Hamiltonian analysis — dress frequencies and compute χ matrix
 epra = epr.QuantumAnalysis(eprd.data_filename)
-epra.analyze_all_variations(cos_trunc = 8, fock_trunc = 7)
+epra.analyze_all_variations(cos_trunc=8, fock_trunc=15)
 
-# 4b. Report solved results
-swp_variable = 'Lj_alice' # suppose we swept an optimetric analysis vs. inductance Lj_alice
+# 5. Report results
+swp_variable = 'Lj_alice'
 epra.plot_hamiltonian_results(swp_variable=swp_variable)
 epra.report_results(swp_variable=swp_variable, numeric=True)
-epra.quick_plot_mode(0,0,1,numeric=True, swp_variable=swp_variable)
 ```
+
+# Tutorial Notebooks
+
+The tutorials are Jupyter notebooks in the [`_tutorial_notebooks/`](https://github.com/zlatko-minev/pyEPR/tree/master/_tutorial_notebooks) folder. They build on each other — work through them in order for the best experience.
+
+| # | Title | Requires HFSS? | Topics |
+|---|---|---|---|
+| 1 | [Startup example](https://github.com/zlatko-minev/pyEPR/blob/master/_tutorial_notebooks/Tutorial%201.%20%20Startup%20example.ipynb) | Yes | Full end-to-end workflow: connect to HFSS, define junctions, run EPR, get χ matrix |
+| 2 | [Dielectric loss EPR](https://github.com/zlatko-minev/pyEPR/blob/master/_tutorial_notebooks/Tutorial%202.%20%20Field%20calculations%20-%20dielectric%20energy%20participation%20ratios%20(EPRs).ipynb) | Yes | Dielectric energy participation ratios, loss rates, HFSS fields calculator |
+| 3 | [Circuit QED parameters](https://github.com/zlatko-minev/pyEPR/blob/master/_tutorial_notebooks/Tutorial%203.%20%20toolbox_circuits.ipynb) | No | Josephson junction physics, E_J, E_C, L_J, I_c conversions, transmon model |
+| 4 | [Parametric sweeps](https://github.com/zlatko-minev/pyEPR/blob/master/_tutorial_notebooks/Tutorial%204.%20Parametric%20sweep%20options.ipynb) | Yes | All HFSS Optimetrics sweep types: linear, log, file-based |
+| 5 | [Generic junction potential & fluxonium](https://github.com/zlatko-minev/pyEPR/blob/master/_tutorial_notebooks/Tutorial%205.%20Generic%20junction%20potential%20and%20fluxonium%20EPR.ipynb) | No | Exact cosine for fluxonium, custom potentials, asymmetric SQUIDs |
+| 6 | [EPR without HFSS](https://github.com/zlatko-minev/pyEPR/blob/master/_tutorial_notebooks/Tutorial%206.%20EPR%20without%20HFSS%20%E2%80%94%20purely%20numerical%20workflow.ipynb) | No | Purely numerical workflow: supply freqs, Ljs, φ_zpf directly |
+
+> **No HFSS?** Start with Tutorials 3, 5, and 6, which are self-contained and require only `pip install pyEPR-quantum`.
 
 # `pyEPR` Video Tutorials <img src="https://developers.google.com/site-assets/logo-youtube.svg" height=30>
 <div style="overflow:auto;">
@@ -155,10 +176,6 @@ epra.quick_plot_mode(0,0,1,numeric=True, swp_variable=swp_variable)
   </tr>
 </table>
 </div>
-<!--
- [![pyEPR Tutorial 1 - Overview](https://img.youtube.com/vi/fSRYvD-ITnQ/0.jpg)](https://www.youtube.com/watch?v=fSRYvD-ITnQ&list=PLnak_fVcHp17tydgFosNtetDNjKbEaXtv&index=1) -->
-
-[Jupyter notebook tutorials](https://github.com/zlatko-minev/pyEPR/tree/master/_tutorial_notebooks)
 
 # Installation and setup of `pyEPR`
 -------------
@@ -190,8 +207,8 @@ conda install -c conda-forge pyepr-quantum
 ```sh
 git clone https://github.com/zlatko-minev/pyEPR.git
 cd pyEPR
-pip install -e “.[test]”
-pytest          # runs all tests that don’t need a live HFSS session
+pip install -e ".[test]"
+pytest          # runs all tests that don't need a live HFSS session
 ```
 
 ### Platform support
@@ -203,11 +220,11 @@ pyEPR has two layers with different platform requirements:
 | EPR / quantum analysis (`DistributedAnalysis`, `QuantumAnalysis`) | ✅ | ✅ | ✅ |
 | Ansys HFSS COM interface (`HfssDesign`, `ansys.py`) | ✅ | ⚠️ limited | ⚠️ limited |
 
-**EPR and quantum analysis** are pure-Python and work on all platforms — no Ansys installation required for post-processing.
+**EPR and quantum analysis** are pure-Python and work on all platforms — no Ansys installation required for post-processing or for the fully numerical workflow (Tutorials 3, 5, 6).
 
-**The HFSS COM interface** (`ansys.py`) was written for Windows, where HFSS exposes automation via `pythoncom`/`win32com`.  On macOS/Linux you can still reach a remote Windows HFSS instance over a network COM bridge.
+**The HFSS COM interface** (`ansys.py`) was written for Windows, where HFSS exposes automation via `pythoncom`/`win32com`. On macOS/Linux you can still reach a remote Windows HFSS instance over a network COM bridge.
 
-> **Note on PyAEDT:** [PyAEDT](https://github.com/ansys/pyaedt) is Ansys’s official cross-platform Python scripting library for AEDT.  pyEPR predates it and focuses on the quantum EPR quantization workflow that PyAEDT does not cover.  They are complementary: use PyAEDT for geometry/mesh/solve scripting, pyEPR for EPR-based Hamiltonian extraction.
+> **Note on PyAEDT:** [PyAEDT](https://github.com/ansys/pyaedt) is Ansys's official cross-platform Python scripting library for AEDT. pyEPR predates it and focuses on the quantum EPR quantization workflow that PyAEDT does not cover. They are complementary: use PyAEDT for geometry/mesh/solve scripting, pyEPR for EPR-based Hamiltonian extraction.
 
 ### Optional configuration
 
@@ -223,16 +240,20 @@ pyEPR was significantly refactored in v0.8 (2020). Key classes were renamed — 
 
 # HFSS Project Setup for `pyEPR`
 -------------
-#### Eigenmode Design --- How to set up junctions
-You may find an advised work flow and some setup tips here.
+#### Eigenmode Design — How to set up junctions
 
- 1. Define circuit geometry & electromagnetic boundary condition (BC).
-   1. Junction rectangles and BC: Create a rectangle for each Josephson junction and give it a good name; e.g., `jAlice` for a qubit named Alice. We recommend 50 x 100 um rectangle for a simple simulation, although orders of magnitude smaller rectangles work as well. Note the length of this junction, you will supply it to pyEPR. Assign a `Lumped RLC` BC on this rectangle surface, with an inductance value given by a local variable, `Lj1` for instance. The name of this variable will also be supplied to the pyEPR.
-   2. Over each junction rectangle draw a model `polyline` to define give a sense of the junction current-flow direction. This line should spans the length of the full junction rectangle. Define it using an object coordinate system on the junction rectangle (so that they move together when the geometry is altered). The name of this line will be supplied to the pyEPR module.
- 2. Meshing.
-   1. Lightly mesh the thin-film metal BC. Lightly mesh the junction rectangles.
- 3. Simulation setup
-   1. We recommend `mixed order` solutions.
+The EPR method requires each Josephson junction to be modelled as a **lumped RLC boundary** on a rectangle in HFSS, together with a **polyline** spanning the junction that defines the current direction. Follow these steps:
+
+ 1. **Define circuit geometry and electromagnetic boundary conditions.**
+    1. *Junction rectangle and BC:* Create a rectangle for each Josephson junction and give it a descriptive name, e.g., `rect_alice` for a qubit named Alice. A 50 × 100 μm rectangle is typical, though smaller sizes work fine. Assign a `Lumped RLC` boundary condition on this rectangle surface, with an inductance value given by a local variable (e.g., `Lj_alice`). The variable name is passed to pyEPR.
+    2. *Current-direction polyline:* Over each junction rectangle, draw a model `polyline` spanning the full length of the rectangle to define the current-flow direction. Best practice: define it in an object coordinate system on the junction rectangle so they move together when the geometry is modified. The polyline name is passed to pyEPR.
+    3. *Note:* The linearised Josephson inductance used in HFSS is $L_J = (\Phi_0/2\pi)^2 / E_J$. This is the small-signal inductance that appears in the classical eigenmode problem; the full nonlinear cosine potential is restored in the quantum Hamiltonian step.
+ 2. **Meshing.**
+    1. Lightly mesh the thin-film metal boundary condition.
+    2. Lightly mesh the junction rectangles.
+ 3. **Simulation setup.**
+    1. We recommend `mixed order` solutions for best accuracy.
+    2. Make sure "Save Fields" is enabled for each variation if running a parametric sweep (see Tutorial 4).
 
 <p align="center">
   <img width="50%" height="50%" src="imgs/xmon-example.gif">
@@ -242,25 +263,9 @@ You may find an advised work flow and some setup tips here.
 # Troubleshooting pyEPR
 ---------------------
 ###### First run: pint error: system='mks' unknown.
-Please update to pint version newer than 0.7.2. You may use
+Please update to pint version newer than 0.7.2:
 ```
 pip install pint --upgrade
-```
-
-###### No attribute `StringIO` during do_EPR_analysis()
-
-`AttributeError: module 'pandas.compat' has no attribute 'StringIO'`
-
-Caleb pointed this out, see [here](https://stackoverflow.com/questions/58372475/attributeerror-module-pandas-compat-has-no-attribute-iteritems) and here for [solution](https://github.com/zlatko-minev/pyEPR/issues/21). You need to change the pandas version. [pyEPR to be upgraded]
-
-This was solved in [this commit](https://github.com/DanielCohenHillel/pyEPR/commit/fd2b5897d6f819681b8a605734cfed855c002df6). Try to update your pyEPR version to the current master.
-
-
-###### When importing qutip an error occurs `AttributeError: module 'numpy' has no attribute '__config__'`
-You probably have to update your numpy installation. For me, the following bash sequence worked:
-```
-conda update qutip
-conda update numpy
 ```
 
 ###### QuTiP installation
@@ -271,37 +276,40 @@ pip install qutip          # PyPI (qutip >= 5.0 required)
 conda install -c conda-forge qutip   # conda-forge
 ```
 
+###### `AttributeError: module 'numpy' has no attribute '__config__'` on importing qutip
+Update your numpy installation:
+```
+conda update qutip
+conda update numpy
+```
 
 ###### COM Error on opening HFSS
-Check the project and design file names carefully. Make sure that the file-path doesn't have apostrophes or other bad characters, such as in C:\\Minev's PC\\my:Project.  Check that HFSS hasn't popped up an error dialogue, such as "File locked." Manually open HFSS and the file.
+Check the project and design file names carefully. Make sure the file path does not contain apostrophes or other special characters (e.g., `C:\Minev's PC\my:Project`). Check that HFSS has not popped up an error dialogue such as "File locked." Manually open HFSS and the file.
 
 ###### COM error on calculation of expression
-Either HFSS popped an error dialog, froze up, or you miss-typed the name of something.
+Either HFSS has popped an error dialog, frozen up, or a name is misspelled. Verify all object and variable names match exactly.
 
 ###### HFSS refuses to close
-If your script terminates improperly, this can happen. pyHFSS tries to catch termination events and handle them. Your safety should be guaranteed however, if you call `hfss.release()` when you have finished. Use the Task-manager (Activity Monitor on MAC) to kill HFSS if you want.
+If your script terminates improperly, this can happen. pyEPR tries to catch termination events and handle them. Call `hfss.release()` when finished. Use the Task Manager (Activity Monitor on macOS) to kill HFSS if necessary.
 
-###### Parametric Sweep Error
-When running a parametric sweep in HFSS, make sure you are actually saving the fields for each variation before running pyEPR. This can be done by right-clicking on your ParametricSetup -> properties -> options -> "Save Fields and Mesh".
-
-###### Spyder pops up command window cmd with tput.exe executed
-This problem is due to pandas 0.20.1, update to 0.20.3 or better solves this issue.
-<br>
+###### Parametric sweep error — missing field solutions
+When running a parametric sweep in HFSS, make sure you save the fields for each variation before running pyEPR. Right-click on your ParametricSetup → Properties → Options → "Save Fields and Mesh". See Tutorial 4 for details.
 
 ###### `ValueError: cannot set WRITEABLE flag to True of this array`
-This error happens when trying to read in an hdf file with numpy version 1.16, see [git issue here](https://github.com/numpy/numpy/issues/12791). A solution is to downgrade numpy to 1.15.4 or upgrade to newer versions of hdf and numpy.
+This occurs with numpy 1.16 and certain HDF files. Upgrade numpy or downgrade to 1.15.4.
 
 # Authors and Contributors
-* _Authors:_ [Zlatko Minev](https://www.zlatko-minev.com/) & [Zaki Leghtas](http://cas.ensmp.fr/~leghtas/), with contributions from many friends and colleagues. ([arXiv:2010.00620](https://arxiv.org/abs/2010.00620))
-* 2015 - present.
-* Contributors: [Phil Rheinhold](https://github.com/PhilReinhold), Lysander Christakis, [Devin Cody](https://github.com/devincody), ...
-Original versions of pyHFSS.py and pyNumericalDiagonalization.py contributed by [Phil Rheinhold](https://github.com/PhilReinhold), excellent original [repo](https://github.com/PhilReinhold/pyHFSS).
-* Terms of use: Use freely and kindly cite the paper (arXiv link to be posted here) and/or this package.
+* *Authors:* [Zlatko Minev](https://www.zlatko-minev.com/) & [Zaki Leghtas](http://cas.ensmp.fr/~leghtas/), with contributions from many friends and colleagues.
+* 2015 – present.
+* Contributors: [Phil Reinhold](https://github.com/PhilReinhold), Lysander Christakis, [Devin Cody](https://github.com/devincody), Zachary Parrott, and many others.
+* Original versions of pyHFSS.py and pyNumericalDiagonalization.py contributed by [Phil Reinhold](https://github.com/PhilReinhold) — excellent original [repo](https://github.com/PhilReinhold/pyHFSS).
+* Terms of use: Use freely and kindly cite the paper ([arXiv:2010.00620](https://arxiv.org/abs/2010.00620)) and/or this package.
 * How can I contribute? Contact [Z. Minev](https://www.zlatko-minev.com/) or [Z. Leghtas](http://cas.ensmp.fr/~leghtas/).  [![DOI](https://zenodo.org/badge/101073856.svg)](https://zenodo.org/badge/latestdoi/101073856)
 
 ## How do I cite `pyEPR`?
- [![DOI](https://zenodo.org/badge/101073856.svg)](https://zenodo.org/badge/latestdoi/101073856)
-Use this [bibtex](https://github.com/zlatko-minev/pyEPR/blob/master/pyEPR.bib) for `pyEPR` and for the method use the energy-participation-ratio paper [arXiv:2010.00620](https://arxiv.org/abs/2010.00620). 
+[![DOI](https://zenodo.org/badge/101073856.svg)](https://zenodo.org/badge/latestdoi/101073856)
+
+Use this [BibTeX file](https://github.com/zlatko-minev/pyEPR/blob/master/pyEPR.bib) for `pyEPR` and cite the energy-participation-ratio paper [arXiv:2010.00620](https://arxiv.org/abs/2010.00620) for the method.
 
 
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/zlatko-minev/pyEPR/graphs/commit-activity)
