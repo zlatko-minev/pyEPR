@@ -1762,7 +1762,12 @@ class DistributedAnalysis(object):
         curves = [
             f"{report_name}:re(Mode({i})):Curve1" for i in range(1, 1 + self.n_modes)
         ]
-        # set_property(report, 'Attributes', curves, 'Line Width', 3)
+        # HFSS accepts only one curve per ChangeProperty call (confirmed against PyAEDT)
+        for curve in curves:
+            try:
+                set_property(report, "Attributes", curve, "Line Width", 3)
+            except Exception:
+                pass
         set_property(report, "Scaling", f"{report_name}:AxisY1", "Auto Units", False)
         set_property(report, "Scaling", f"{report_name}:AxisY1", "Units", "g")
         set_property(
