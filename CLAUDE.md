@@ -21,6 +21,12 @@ pytest -m hfss
 pylint pyEPR/                    # full report
 pylint --errors-only pyEPR/      # CI mode
 
+# Build docs locally (must copy notebooks first — see Docs section)
+rm -rf docs/source/_tutorial_notebooks
+cp -r _tutorial_notebooks docs/source/_tutorial_notebooks
+cd docs && make html
+# open docs/build/html/index.html
+
 # Build distribution
 pip install build
 python -m build
@@ -77,6 +83,25 @@ All COM objects are accessed via a thin `COMWrapper` base that delegates attribu
 from pyEPR.solution_types import normalize, DRIVEN_MODAL_NAMES, is_drivenmodal
 ```
 
+## Testability boundary
+
+This is the most important constraint for any agent working in this repo.
+
+| Area | Testable in CI | Notes |
+|------|---------------|-------|
+| `calcs/` | Yes | Pure math, numpy/scipy/qutip only |
+| `solution_types.py` | Yes | No external deps |
+| `QuantumAnalysis` (post-HDF5) | Yes | Uses fixtures in `tests/` |
+| `toolbox/` | Yes | Logging, plotting, pandas helpers |
+| `project_info.py` | Yes | Config object, no COM |
+| `ansys.py` | **No** | Requires live Ansys HFSS COM session |
+| `DistributedAnalysis` (field extraction) | **No** | Requires live HFSS solve |
+| `HfssDesign`, `HfssSetup`, etc. | **No** | COM-only |
+
+**Never write a test that calls into `ansys.py` without `@pytest.mark.hfss`.** Tests without that mark run in CI on every PR and will fail without a physical Ansys licence.
+
+For the `ansys.py` code: you can read, reason about, and document it. You can flag logic errors or version-compatibility issues. But do not modify COM-facing behaviour without a human who can validate against a real AEDT session.
+
 ## HFSS version compatibility
 
 Two layers of fixes are required for AEDT compatibility:
@@ -112,24 +137,76 @@ When checking Ansys scripting API for new issues, look at:
 
 The Ansys AEDT scripting guide (IronPython/CPython) is the authoritative source; PyAEDT source code is a useful secondary reference for how they handle the same changes.
 
+## Documentation standards
+
+pyEPR uses the **PyData Sphinx Theme** with `sphinx-design` and `myst-nb`. These were chosen to match the broader scientific Python ecosystem (NumPy, SciPy, pandas, QuTiP) and to support rich landing pages and notebook galleries without requiring Ansys.
+
+### Hard rules
+
+- **Zero warnings on `make html`** — this is a CI gate. Every new docstring, RST file, or notebook added must not introduce warnings. Run `cd docs && make html 2>&1 | grep -c WARNING` before committing docs changes; it must return `0`.
+- **No print() in analysis code** — use `logger = logging.getLogger(__name__)`. The toolbox provides logging helpers.
+- **NumPy-style docstrings** — all public methods in `core_*.py`, `project_info.py`, and `calcs/` must use the NumPy docstring convention (Parameters / Returns / Raises sections).
+
+### Notebook copy step (critical)
+
+Sphinx does not follow symlinks outside its source root. `docs/source/_tutorial_notebooks` is a git symlink to `../../_tutorial_notebooks/`. **Always copy before building:**
+
+```bash
+rm -rf docs/source/_tutorial_notebooks
+cp -r _tutorial_notebooks docs/source/_tutorial_notebooks
+```
+
+This step is required in:
+- Local `make html` (do it manually)
+- `.readthedocs.yml` `pre_build` job
+- `.github/workflows/ci.yaml` `test_docs` job
+
+If you add a new CI job that builds docs, add the copy step.
+
+### RST / docstring pitfalls
+
+These have each caused real build failures. Know them before editing docs or docstrings:
+
+- **Pipe characters in docstrings** — `|x⟩` bra-ket notation triggers RST substitution reference parsing. Use `:math:`|x\\rangle`` instead.
+- **`*args` / `**kwargs` in docstrings** — bare `*` and `**` inside paragraphs trigger RST emphasis markup. Wrap in double backticks or a code block.
+- **Separator lines in docstrings** — a line of `----` at the start of a docstring section triggers "Transition must be child of section" warning. Use a proper RST section header instead.
+- **Indented first lines** — a docstring whose first line is indented relative to the opening `"""` creates a block-quote RST node, which Sphinx renders oddly.
+- **Duplicate object descriptions** — if a class appears in both `key_classes_reference.rst` (via `autoclass`) and `api/` (via `automodule`), Sphinx emits a duplicate-object warning. Use `:no-index:` on one, or replace `autoclass` with a plain cross-reference link (preferred).
+- **Unknown directives** — `.. tabs::` (sphinx-tabs) and `.. tab::` are not installed; the project uses `.. tab-set::` / `.. tab-item::` (sphinx-design). Similarly, `nbsphinx` is not installed; notebooks are handled by `myst-nb`.
+- **`.. code-block::` syntax** — must be `.. code-block:: python` with a space before the language. `..codeblock python` is silently ignored.
+
 ## Release workflow
 
 1. Bump `__version__` in `pyEPR/__init__.py` — `pyproject.toml` reads version dynamically from there.
-2. Commit and push to master (via PR, not direct push).
-3. Create a GitHub Release (tag e.g. `v0.9.4`). The `publish-to-pypi.yml` workflow triggers on `release: created` and uses OIDC Trusted Publishing (no API token needed; configured on PyPI under Trusted Publishers).
-4. Verify the published version on PyPI matches the intended `__version__`. If `__version__` was not bumped before tagging, the wheel will carry the old version.
+2. Commit and push to master via PR (never direct-push to master).
+3. After the PR merges, create a GitHub Release with tag `vX.Y.Z` (e.g. `v0.9.6`). The `publish-to-pypi.yml` workflow triggers on `release: created` and uses OIDC Trusted Publishing — no API token needed.
+4. Verify the published version on PyPI matches `__version__`. If the version was not bumped before tagging, the wheel will carry the wrong version.
 
-CI workflow (`ci.yaml`) runs on every push: pylint (errors-only), pytest (no hfss marker), and docs build.
+CI (`ci.yaml`) runs on every push: pylint (errors-only), pytest (non-HFSS), and docs build.
+
+**The tag must be created on the commit that has the bumped version number.** Create the GitHub Release pointing at master only after the version-bump PR has merged.
 
 ## Backwards compatibility
 
-- All public API must remain stable across minor versions. New helpers like `new_dm_design` / `new_dt_design` are additive; they do not change existing `new_design()` behaviour.
-- `Project_Info`, `pyEPR_HFSSAnalysis`, `pyEPR_Analysis` are deprecated aliases kept in `__init__.py` for backwards compatibility — do not remove them.
-- The `solution_types` module is new (added in 0.9.x) — downstream packages (qiskit-metal) can import from it without importing the full COM stack.
-- When adding new HFSS functionality, always check that the COM calls gracefully handle older AEDT versions where the API may not exist.
+- All public API must remain stable across minor versions. New helpers are additive; they do not change existing behaviour.
+- `Project_Info`, `pyEPR_HFSSAnalysis`, `pyEPR_Analysis` are deprecated aliases kept in `__init__.py` — do not remove them. Downstream packages (including qiskit-metal / quantum-metal) import these.
+- The `solution_types` module was designed so downstream packages can import it without pulling in the COM stack (`import win32com` is Windows-only). Never add a top-level import of COM-related modules to `solution_types.py` or `calcs/`.
+- When adding HFSS functionality, always check that COM calls gracefully handle older AEDT versions where the API may not exist. Guard with `self._ansys_version >= "YYYY.N"` checks.
+
+## Ecosystem context
+
+pyEPR is a dependency of **quantum-metal** (formerly qiskit-metal), IBM's open-source quantum chip design framework. That package declares `pyEPR-quantum >= 0.9.5` in its `pyproject.toml`. Changes to pyEPR's public API, import structure, or `solution_types` module may silently break quantum-metal until their next release — be conservative.
+
+The primary adoption path for users without Ansys is:
+1. Tutorial 6 (`_tutorial_notebooks/`) — numerical EPR without HFSS
+2. `QuantumAnalysis` loaded from a pre-computed HDF5 file
+3. `calcs/` subpackage for direct formula access
+
+These paths must remain importable on Linux and macOS without `win32com` or any Windows-only dependency.
 
 ## Testing notes
 
-- Mark any test requiring a live Ansys HFSS session with `@pytest.mark.hfss` and they will be skipped in CI automatically.
+- Mark any test requiring a live Ansys HFSS session with `@pytest.mark.hfss` — CI skips these automatically.
 - `tests/correct_results.pkl` and `tests/data*.npz` are reference fixtures for numerical regression tests.
 - qutip 5.x changed `ket.dag() * ket` to return a complex scalar instead of a 1×1 Qobj — guard with `hasattr(inner, "norm")` when writing quantum analysis tests.
+- When adding a new feature, add a test that would have caught the most obvious misuse. The test suite is the primary protection against regressions from upstream dependency changes (qutip, numpy, pandas, scipy all release breaking changes).
