@@ -15,8 +15,8 @@ build:
   jobs:
     pre_build:
       # Sphinx does not follow symlinks outside the source root.
-      # Replace the symlink with a real copy so myst-nb can parse the notebooks.
-      - rm -f docs/source/_tutorial_notebooks
+      # Copy all tutorial notebooks (1-6) so every tutorial card links correctly.
+      - rm -rf docs/source/_tutorial_notebooks
       - cp -r _tutorial_notebooks docs/source/_tutorial_notebooks
 
 # Build documentation in the docs/source/ directory with Sphinx
