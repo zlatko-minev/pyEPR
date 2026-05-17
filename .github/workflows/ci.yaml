@@ -59,6 +59,10 @@ jobs:
           path: ~/.cache/pip
           key: docs-${{ hashFiles('pyproject.toml') }}-${{ env.PIPCACHEVERSION }}
       - run: python -m pip install ".[docs]"
+      - name: Copy tutorial notebooks into docs source
+        run: |
+          rm -rf docs/source/_tutorial_notebooks
+          cp -r _tutorial_notebooks docs/source/_tutorial_notebooks
       - name: Build docs
         run: cd docs && make html
       - uses: actions/upload-artifact@v4
