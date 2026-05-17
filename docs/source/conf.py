@@ -18,6 +18,10 @@ project = "pyEPR"
 copyright = "2017-2025, Zlatko Minev, Zaki Leghtas, and the pyEPR Team"
 author = "Zlatko Minev, Zaki Leghtas, and the pyEPR Team"
 
+# html_title controls the browser tab and search-engine title.
+# We omit the version number — it dates quickly and clutters search results.
+html_title = "Welcome to pyEPR! — Energy-Participation-Ratio Framework"
+
 # The full version, including alpha/beta/rc tags
 import pyEPR
 
@@ -45,7 +49,10 @@ extensions = [
     "IPython.sphinxext.ipython_directive",
     "IPython.sphinxext.ipython_console_highlighting",
     "matplotlib.sphinxext.plot_directive",
+    "nbsphinx",
 ]
+
+nbsphinx_execute = 'never'
 
 # https://github.com/readthedocs/readthedocs.org/issues/2569
 master_doc = "index"
@@ -105,7 +112,7 @@ full_logo = True
 html_theme_options = {
     "canonical_url": "",
     #'logo_only': False,
-    "display_version": True,
+    "display_version": False,
     "prev_next_buttons_location": "bottom",
     "style_external_links": False,
     #'style_nav_header_background': 'white',
