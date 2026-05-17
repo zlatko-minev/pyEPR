@@ -28,8 +28,6 @@ import pyEPR
 version = pyEPR.__version__
 release = version
 
-import sphinx_rtd_theme
-
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
@@ -44,15 +42,13 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
     "sphinx.ext.mathjax",
-    "sphinx_rtd_theme",
-    "sphinx_tabs.tabs",
-    "IPython.sphinxext.ipython_directive",
-    "IPython.sphinxext.ipython_console_highlighting",
+    "sphinx_design",
+    "myst_nb",
     "matplotlib.sphinxext.plot_directive",
-    "nbsphinx",
 ]
 
-nbsphinx_execute = 'never'
+nb_execution_mode = "off"   # use saved outputs, never re-execute
+myst_enable_extensions = ["colon_fence", "dollarmath"]
 
 # https://github.com/readthedocs/readthedocs.org/issues/2569
 master_doc = "index"
@@ -87,41 +83,24 @@ napoleon_use_admonition_for_notes = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"  #'default' # 'sphinx_rtd_theme' #'alabaster' "sphinxdoc" 'classic'
-if 0:
-    import os
+html_theme = "pydata_sphinx_theme"
 
-    on_rtd = os.environ.get("READTHEDOCS") == "True"
-    if on_rtd:
-        html_theme = "default"
-    else:
-        html_theme = "nature"
-
-# -- Options for HTML output ----------------------------------------------
-
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-#
-html_theme = "sphinx_rtd_theme"
-full_logo = True
-
-
-# Theme options are theme-specific and customize the look and feel of a theme
-# further.  For a list of options available for each theme, see the
-# documentation.
 html_theme_options = {
-    "canonical_url": "",
-    #'logo_only': False,
-    "display_version": False,
-    "prev_next_buttons_location": "bottom",
-    "style_external_links": False,
-    #'style_nav_header_background': 'white',
-    # Toc options
-    "collapse_navigation": False,
-    "sticky_navigation": True,
-    "navigation_depth": 4,
-    "includehidden": True,
-    "titles_only": False,
+    "github_url": "https://github.com/zlatko-minev/pyEPR",
+    "use_edit_page_button": False,
+    "show_toc_level": 2,
+    "navbar_align": "left",
+    "navbar_end": ["navbar-icon-links"],
+    "secondary_sidebar_items": ["page-toc"],
+    "footer_start": ["copyright"],
+    "footer_end": ["sphinx-version"],
+    "icon_links": [
+        {
+            "name": "PyPI",
+            "url": "https://pypi.org/project/pyEPR-quantum/",
+            "icon": "fa-solid fa-box",
+        },
+    ],
 }
 # Add any paths that contain custom themes here, relative to this directory.
 
@@ -180,7 +159,7 @@ numfig_format = {"table": "Table %s"}
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

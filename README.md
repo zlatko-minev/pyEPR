@@ -8,6 +8,10 @@ pyEPR — Energy-Participation-Ratio Framework
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/zlatko-minev/pyEPR/master?filepath=_tutorial_notebooks%2FTutorial%206.%20EPR%20without%20HFSS%20%E2%80%94%20purely%20numerical%20workflow.ipynb)
 [![Open Source](https://badges.frapsoft.com/os/v1/open-source.png?v=103)](https://github.com/zlatko-minev/pyEPR)
 
+<p align="center">
+  <img width="80%" src="https://raw.githubusercontent.com/zlatko-minev/pyEPR/master/imgs/read_me_0.png" alt="HFSS field simulation: cavity E-field mode and qubit current-density mode">
+</p>
+
 **pyEPR** bridges classical EM simulation and quantum circuit theory via the
 [energy-participation ratio (EPR)](https://arxiv.org/abs/2010.00620) method.
 Given a 3-D HFSS eigenmode simulation — or your own frequencies and inductances —
@@ -194,7 +198,7 @@ The EPR method requires each Josephson junction to be modelled as a **lumped RLC
 5. Use `Mixed Order` solutions for best accuracy.
 
 <p align="center">
-  <img width="50%" src="imgs/xmon-example.gif" alt="Junction setup example">
+  <img width="50%" src="https://raw.githubusercontent.com/zlatko-minev/pyEPR/master/imgs/xmon-example.gif" alt="Junction setup example">
 </p>
 
 For a full walkthrough, see [Tutorial 1](https://github.com/zlatko-minev/pyEPR/blob/master/_tutorial_notebooks/Tutorial%201.%20%20Startup%20example.ipynb) and the [HFSS setup guide](https://pyepr-docs.readthedocs.io/en/latest/hfss_setup.html) in the docs.
