@@ -474,15 +474,18 @@ class DistributedAnalysis(object):
         self.update_ansys_info()
         return self._list_variations
 
-    def update_ansys_info(self):
-        """'
-        Updates all information about the Ansys solved variations and variables.
+    def update_ansys_info(self) -> None:
+        """Refresh cached information from the live Ansys session.
 
-        .. code-block:: python
-            :linenos:
+        Call this after changing the number of eigenmodes, adding or removing a
+        parametric sweep variation, or modifying any design variable — any
+        operation that changes the solved-variation list or eigenmode count
+        without restarting Python.
 
-            n_modes, _list_variations, nominal_variation, n_variations
-
+        Updates
+        -------
+        ``self.n_modes``, ``self._list_variations``, ``self.variations``,
+        ``self._nominal_variation``, and ``self._hfss_variables``.
         """
         # from oDesign
         self._nominal_variation = self.design.get_nominal_variation()
@@ -1189,51 +1192,48 @@ class DistributedAnalysis(object):
         return Ljs, Cjs
 
     def do_EPR_analysis(
-        self, variations: list = None, modes=None, append_analysis=True
+        self, variations: list = None, modes: list = None, append_analysis: bool = True
     ):
-        """
-        Main analysis routine
+        """Run the full EPR field extraction and save results to disk.
 
-        Args:
-            variation (str): A string identifier of the variation,
-                such as '0', '1', ...
+        Iterates over all requested variations and eigenmodes, computes EPR
+        participation ratios (p_mj), zero-point fluctuations (φ_zpf), junction
+        currents and voltages, and saves the results to an HDF5/pickle file
+        readable by :class:`~pyEPR.QuantumAnalysis`.
 
-        Optional Parameters:
-        ------------------------
-            variations : list | None
-                Example list of variations is ['0', '1']
-                A variation is a combination of project/design variables in an optimetric sweep
+        Parameters
+        ----------
+        variations : list of str, optional
+            Variation labels to analyse (e.g. ``['0', '1']``).
+            Defaults to all solved variations.
+        modes : list of int, optional
+            Eigenmode indices to include (e.g. ``[0, 2, 3]`` to skip mode 1).
+            Defaults to all modes.  **Use consistent indices** when later calling
+            :meth:`~pyEPR.QuantumAnalysis.analyze_all_variations`.
+        append_analysis : bool, optional
+            If ``True`` (default), skip variations already present in the results
+            file.  Set to ``False`` to recompute and overwrite everything.
 
-            modes : list | None
-                Modes to analyze
-                for example  modes = [0, 2, 3]
+        Returns
+        -------
+        None
+            Results are written to ``self.data_filename``.  Load them with::
 
-            append_analysis (bool) :
-                When we run the Ansys analysis, should we redo any variations that we have already done?
+                epra = epr.QuantumAnalysis(eprd.data_filename)
 
-        Ansys Notes:
-        ------------------------
-            Assumptions:
-                Low dissipation (high-Q).
-                It is easier to assume no lumped capacitors to simply calculations, but we have
-                recently added Cj_variable as a new feature that is begin tested to handle capacitors.
+        Note
+        ----
+        Assumes low dissipation (high-Q).  Lumped capacitor support (``Cj_variable``)
+        is experimental — see the EPR paper for theoretical background.
 
-                See the paper.
-
-
-        Using the results:
-        ------------------------
-            Load results with epr.QuantumAnalysis class
-
-
-        Example use:
-        ----------------
-
+        Example
+        -------
         .. code-block:: python
-            :linenos:
 
             eprd = epr.DistributedAnalysis(pinfo)
-            eprd.do_EPR_analysis(append_analysis=False)
+            eprd.do_EPR_analysis()
+            # or for a subset:
+            eprd.do_EPR_analysis(variations=['0', '2'], modes=[0, 1])
         """
 
         if not modes is None:
