@@ -2,6 +2,21 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Agent context — read these before starting work
+
+| File | When to read |
+|------|-------------|
+| `.claude/context/lessons-learned.md` | Before touching docs, CI, Sphinx config, or Ansys version code. Contains every hard-won fix from real build failures and regressions. |
+| `.claude/context/ecosystem.md` | Before changing public API, release timing, imports, or anything that could affect downstream users. Explains who uses pyEPR, the quantum-metal relationship, and the no-HFSS adoption path. |
+
+## Slash commands
+
+| Command | What it does |
+|---------|-------------|
+| `/health-check` | Full 10-section maintenance audit: docs, tests, deps, API stability, README/PyPI, release, CI, tutorials, ecosystem, code hygiene. |
+| `/release` | Step-by-step release workflow: verify readiness → version bump → PR → merge → tag → PyPI → post-release check. |
+| `/docstring-audit` | Module-by-module NumPy docstring audit with priority ordering and RST pitfall reminders. |
+
 ## Commands
 
 ```bash
