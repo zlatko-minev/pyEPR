@@ -182,6 +182,7 @@ class ProjectInfo(object):
         dielectric_surfaces: list = None,
         resistive_surfaces: list = None,
         seams: list = None,
+        junctions: dict = None,
         do_connect: bool = True,
     ):
         """
@@ -220,6 +221,8 @@ class ProjectInfo(object):
         # HFSS design: describe junction parameters
         # TODO: introduce modal labels
         self.junctions = Dict()  # See above for help
+        if junctions:
+            self.junctions.update(junctions)
         self.ports = Dict()
 
         # Dissipative HFSS volumes and surfaces
@@ -473,6 +476,20 @@ class ProjectInfo(object):
         self.desktop.release()
         self.app.release()
         ansys.release()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        if self.check_connected():
+            self.disconnect()
+
+    def get_variable_value(self, name: str):
+        """Get the value of a local design variable by name.
+
+        Note: only reads local design variables, not global ``$``-prefixed ones.
+        """
+        return self.design.get_variable_value(name)
 
     # UTILITY FUNCTIONS
 
