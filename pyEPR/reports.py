@@ -91,8 +91,24 @@ def plot_convergence_maxdf_vs_sol(ax, s, s2, kw={}):
         ax.set_xscale("log")
 
 
-# quick and dirty use
-def _plot_q3d_convergence_main(epr, RES):
+def plot_q3d_convergence_main(epr, RES):
+    """Plot EPR convergence: loss (alpha) and frequency vs. pass number.
+
+    Parameters
+    ----------
+    epr : QuantumAnalysis
+        A pyEPR QuantumAnalysis object with HFSS convergence data available.
+    RES : dict
+        Results dictionary from ``QuantumAnalysis.analyze_all_variations``,
+        containing ``"alpha"`` (loss rate, MHz) and ``"fQ"`` (frequency, GHz)
+        as pandas Series indexed by pass number.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        Figure with alpha (blue, left axis) and frequency in MHz (red, right axis)
+        plotted vs. simulation pass number.
+    """
     fig = epr.hfss_report_full_convergence(_display=False)
 
     ax = fig.axes[0]
@@ -109,15 +125,28 @@ def _plot_q3d_convergence_main(epr, RES):
     ax2.spines["right"].set_color("r")
     ax2.tick_params(axis="y", labelcolor="r")
     ax.tick_params(axis="y", labelcolor="b")
-    # legend_translucent(ax)
-    # legend_translucent(ax2)
     ax.set_xlabel("Pass")
     fig.tight_layout()
 
     return fig
 
 
-def _plot_q3d_convergence_chi_f(RES):
+def plot_q3d_convergence_chi_f(RES):
+    """Plot EPR convergence: χ (dispersive shift) and g (coupling) vs. pass number.
+
+    Parameters
+    ----------
+    RES : dict
+        Results dictionary from ``QuantumAnalysis.analyze_all_variations``,
+        containing ``"chi_in_MHz"`` and ``"gbus"`` as columns of numeric values
+        indexed by pass number.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        Figure with two subplots: χ convergence (left) and g convergence (right),
+        both in MHz.
+    """
     df_chi = pd.DataFrame(RES["chi_in_MHz"].values.tolist())
     df_chi.index.name = "Pass"
     df_g = pd.DataFrame(RES["gbus"].values.tolist())
@@ -132,3 +161,8 @@ def _plot_q3d_convergence_chi_f(RES):
     axs[1].set_title(r"$g$ convergence (MHz)")
 
     return fig
+
+
+# Backward-compatible private aliases (used by qiskit-metal and older scripts)
+_plot_q3d_convergence_main   = plot_q3d_convergence_main
+_plot_q3d_convergence_chi_f  = plot_q3d_convergence_chi_f
