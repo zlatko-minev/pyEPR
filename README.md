@@ -9,6 +9,8 @@ Welcome to pyEPR :beers:! &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(see [arXiv:2010.00620](
 <br>
 [![PyPI version](https://badge.fury.io/py/pyEPR-quantum.svg)](https://badge.fury.io/py/pyEPR-quantum)
 [![DOI](https://zenodo.org/badge/101073856.svg)](https://zenodo.org/badge/latestdoi/101073856)
+[![CI](https://github.com/zlatko-minev/pyEPR/actions/workflows/ci.yaml/badge.svg)](https://github.com/zlatko-minev/pyEPR/actions/workflows/ci.yaml)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/zlatko-minev/pyEPR/master?filepath=_tutorial_notebooks%2FTutorial%206.%20EPR%20without%20HFSS%20%E2%80%94%20purely%20numerical%20workflow.ipynb)
 
 
 ## What is pyEPR?
@@ -93,6 +95,32 @@ Related references:
 2. **Tutorials** — work through the [Jupyter notebook tutorials](#tutorial-notebooks) below. No HFSS licence? Start with Tutorial 6.
 3. **Read the docs** — [pyepr-docs.readthedocs.io](https://pyepr-docs.readthedocs.io) for the API reference and detailed guides.
 4. **Cite `pyEPR`** — [arXiv:2010.00620](https://arxiv.org/abs/2010.00620) [![DOI](https://zenodo.org/badge/101073856.svg)](https://zenodo.org/badge/latestdoi/101073856)
+
+## Quickstart — no Ansys required
+
+No HFSS licence? You can run the full quantum Hamiltonian diagonalization from scratch in three steps. The only requirements are `numpy`, `qutip`, and `matplotlib` (all installed with `pip install pyEPR-quantum`).
+
+```python
+import numpy as np
+from pyEPR.calcs.back_box_numeric import epr_numerical_diagonalization
+
+# Standard transmon: E_J/h = 20 GHz, E_C/h = 300 MHz
+# Plasma frequency f_p = sqrt(8 E_J E_C)/h ≈ 6.93 GHz
+freqs   = np.array([6.928])     # GHz  (linearised plasma frequency)
+Ljs     = np.array([8.2e-9])    # H    (Josephson inductance L_J = (Φ₀/2π)² / E_J)
+phi_zpf = np.array([[0.416]])   # dimensionless  (n_modes × n_junctions)
+
+# Diagonalize — returns dressed frequencies in Hz and χ matrix in MHz
+f_dressed, chi_matrix = epr_numerical_diagonalization(
+    freqs, Ljs, phi_zpf, cos_trunc=8, fock_trunc=15
+)
+print(f"Qubit frequency : {f_dressed[0].real / 1e9:.3f} GHz")
+print(f"Anharmonicity   : {chi_matrix[0,0].real:.0f} MHz")
+# → Qubit frequency : 6.614 GHz
+# → Anharmonicity   : 337 MHz
+```
+
+For a multi-mode transmon + resonator, fluxonium, or a custom junction potential, see **[Tutorial 6](https://mybinder.org/v2/gh/zlatko-minev/pyEPR/master?filepath=_tutorial_notebooks%2FTutorial%206.%20EPR%20without%20HFSS%20%E2%80%94%20purely%20numerical%20workflow.ipynb)** (runs in-browser via Binder, no install needed).
 
 
 #### Start-up example

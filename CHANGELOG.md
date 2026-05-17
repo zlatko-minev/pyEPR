@@ -61,6 +61,20 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - Rebase conflict in 0.9.5 docstring pass restored missing `QuantumAnalysis`-level
   docstrings that were dropped when cherry-picking onto master.
 
+### Upgrading from 0.9.4
+
+No breaking changes. All existing call signatures are unchanged.
+
+- `epr_numerical_diagonalization` and `analyze_variation` accept a new
+  `use_full_cos=False` keyword; old callers are unaffected.
+- `make_nonlinear_potential` and `cos_full_correction` are new additions to
+  `pyEPR.calcs.back_box_numeric`.
+- `Project_Info`, `pyEPR_HFSSAnalysis`, `pyEPR_Analysis` now emit
+  `DeprecationWarning`. They still work — update to `ProjectInfo`,
+  `DistributedAnalysis`, `QuantumAnalysis` at your convenience.
+- `_plot_q3d_convergence_main` and `_plot_q3d_convergence_chi_f` remain as
+  aliases for the new public names; no caller changes required.
+
 ---
 
 ## [0.9.4] — 2024

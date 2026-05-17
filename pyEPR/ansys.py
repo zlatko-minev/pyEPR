@@ -454,10 +454,12 @@ class HfssDesktop(COMWrapper):
         return HfssProject(self, self._desktop.OpenProject(path))
 
     def set_active_project(self, name):
+        """Make the named project the active project in the desktop."""
         self._desktop.SetActiveProject(name)
 
     @property
     def project_directory(self):
+        """str: Default directory where new projects are saved."""
         return self._desktop.GetProjectDirectory()
 
     @project_directory.setter
@@ -466,6 +468,7 @@ class HfssDesktop(COMWrapper):
 
     @property
     def library_directory(self):
+        """str: Path to the user component library directory."""
         return self._desktop.GetLibraryDirectory()
 
     @library_directory.setter
@@ -474,6 +477,7 @@ class HfssDesktop(COMWrapper):
 
     @property
     def temp_directory(self):
+        """str: Path to the HFSS temporary files directory."""
         return self._desktop.GetTempDirectory()
 
     @temp_directory.setter
@@ -685,6 +689,25 @@ class HfssProject(COMWrapper):
 
 
 class HfssDesign(COMWrapper):
+    """Wrapper around an Ansys HFSS (or Q3D) design COM object.
+
+    Exposes design-level operations: variable management, geometry (via
+    ``HfssModeler``), solution setup, field calculation, and Optimetrics.
+    Created by ``HfssProject.get_design(name)`` or the ``new_*_design``
+    factory methods; not instantiated directly by user code.
+
+    Attributes
+    ----------
+    solution_type : str
+        Canonical solution type string (``"Eigenmode"``, ``"DrivenModal"``,
+        ``"DrivenTerminal"``, or ``"Q3D"``).  Always the pre-2021.2 form
+        regardless of AEDT version.
+    modeler : HfssModeler
+        Geometry editor interface.
+    optimetrics : Optimetrics
+        Parametric / optimisation sweep interface.
+    """
+
     def __init__(self, project, design):
         super(HfssDesign, self).__init__()
         self.parent = project
@@ -731,6 +754,22 @@ class HfssDesign(COMWrapper):
         oDesktop.AddMessage(project.name, self.name, severity, message)
 
     def save_screenshot(self, path: str = None, show: bool = True):
+        """Export a PNG screenshot of the 3-D model view.
+
+        Parameters
+        ----------
+        path : str, optional
+            Destination file path.  Defaults to ``ansys.png`` in the current
+            working directory.
+        show : bool
+            If ``True`` (default), display the image in a Jupyter notebook via
+            ``IPython.display``.
+
+        Returns
+        -------
+        pathlib.Path
+            Path to the saved PNG file.
+        """
         if not path:
             path = Path().absolute() / "ansys.png"  # TODO find better
         self._modeler.ExportModelImageToFile(
@@ -781,8 +820,24 @@ class HfssDesign(COMWrapper):
         return self._setup_module.GetSetups()
 
     def get_setup(self, name=None):
-        """
-        :rtype: HfssSetup
+        """Return the named analysis setup, or the first setup if *name* is omitted.
+
+        Parameters
+        ----------
+        name : str, optional
+            Name of the setup to retrieve.  If ``None``, the first setup in
+            the design is returned.
+
+        Returns
+        -------
+        HfssSetup
+            An ``HfssEMSetup``, ``HfssDMSetup``, ``HfssDTSetup``, or
+            ``AnsysQ3DSetup`` instance depending on ``self.solution_type``.
+
+        Raises
+        ------
+        EnvironmentError
+            If no setups exist, or if *name* is not found.
         """
         setups = self.get_setup_names()
         if not setups:
