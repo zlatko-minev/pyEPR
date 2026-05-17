@@ -330,9 +330,10 @@ pc = Print_colors
 
 
 def DataFrame_col_diff(PS, indx=0):
-    """check weather the columns of a dataframe are equal,
-    returns a T/F series of the row index that specifies which rows are different
-    USE:
+    """Check whether the columns of a DataFrame are equal.
+
+    Returns a boolean Series of the row index specifying which rows differ::
+
         PS[DataFrame_col_diff(PS)]
     """
     R = []

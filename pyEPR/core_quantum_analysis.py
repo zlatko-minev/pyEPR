@@ -403,11 +403,16 @@ class QuantumAnalysis(object):
         return list(lv)
 
     def get_variation_of_multiple_variables_value(self, Var_dic, lv=None):
-        """
-            SEE get_variations_of_variable_value
-        A function to return all the variations in which one of the variables has a specific value
-        lv is list of variations (example ['0', '1']), if None it takes all variations
-        Var_dic is a dic with the name of the variable as key and the value to filter as item
+        """Filter variations by multiple variable values.
+
+        See also ``get_variations_of_variable_value``.
+
+        Args:
+            Var_dic (dict): variable name → value to filter on.
+            lv (list, optional): list of variations to search; defaults to all.
+
+        Returns:
+            tuple: (filtered_variations, description_string)
         """
 
         if lv is None:

@@ -46,13 +46,13 @@ def plt_cla(ax: Axes):
 
 
 def legend_translucent(ax: Axes, values=[], loc=0, alpha=0.5, leg_kw={}):
-    """
-    values = [ ["%.2f" %k for k in RES] ]
+    """Add a translucent legend to a matplotlib Axes.
 
-    Also, you can use the following:
-    leg_kw = dict(fancybox   =True, fontsize = 9,
-                  framealpha =0.5,  ncol     = 1)
-    blah.plot().legend(**leg_kw )
+    Example::
+
+        values = [ ["%.2f" % k for k in RES] ]
+        leg_kw = dict(fancybox=True, fontsize=9, framealpha=0.5, ncol=1)
+        ax.plot(...).legend(**leg_kw)
     """
     if ax.get_legend_handles_labels() == ([], []):
         return None
