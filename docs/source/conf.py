@@ -45,7 +45,10 @@ extensions = [
     "IPython.sphinxext.ipython_directive",
     "IPython.sphinxext.ipython_console_highlighting",
     "matplotlib.sphinxext.plot_directive",
+    "nbsphinx",
 ]
+
+nbsphinx_execute = 'never'
 
 # https://github.com/readthedocs/readthedocs.org/issues/2569
 master_doc = "index"
