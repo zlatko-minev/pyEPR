@@ -61,6 +61,12 @@ templates_path = ["_templates"]
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ["**.ipynb_checkpoints"]
 
+suppress_warnings = [
+    "myst.header",               # non-consecutive header levels in old notebooks
+    "misc.highlighting_failure", # IPython ? magic in notebook code cells
+    "ref.python",                # duplicate QuantumAnalysis cross-reference in reports.rst
+]
+
 
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).

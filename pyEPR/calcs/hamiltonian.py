@@ -78,7 +78,7 @@ class MatrixOps(object):
     def apply_scalar_function(op: Qobj, func) -> Qobj:
         """Evaluate a real scalar function on a Hermitian operator via eigendecomposition.
 
-        For a Hermitian operator H with real eigenvalues λ_i and eigenvectors |i⟩:
+        For a Hermitian operator H with real eigenvalues λ_i and eigenvectors :math:`|i\\rangle`:
 
         .. math::
 
