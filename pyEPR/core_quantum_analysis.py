@@ -303,10 +303,10 @@ class QuantumAnalysis(object):
         return self.data.project_info
 
     def print_info(self):
-        print("\t Differences in variations:")
+        logger.info("\t Differences in variations:")
         if len(self.hfss_vars_diff_idx) > 0:
             display(self._hfss_variables[self.hfss_vars_diff_idx])
-        print("\n")
+        logger.info("")
 
     def get_vs_variable(self, swp_var, attr: str):
         """
@@ -345,7 +345,7 @@ class QuantumAnalysis(object):
                         self._hfss_variables[key]["_" + swpvar]
                     ).magnitude
             except:
-                print(" No such variation as " + key)
+                logger.error("No such variation as %s", key)
         return ret
 
     def get_variable_value(self, swpvar, lv=None):
@@ -554,9 +554,8 @@ class QuantumAnalysis(object):
                 )
 
             if print_:
-                # \nPm_cap_norm=\n{Pm_cap_norm}")
-                print(f"Pm_norm=\n{Pm_norm}\n")
-                print(f"Pm_norm idx =\n{idx}")
+                logger.debug("Pm_norm=\n%s\n", Pm_norm)
+                logger.debug("Pm_norm idx =\n%s", idx)
 
             Pm[idx] = Pm[idx].mul(Pm_norm, axis=0)
             Pm_cap[idx_cap] = Pm_cap[idx_cap].mul(Pm_cap_norm, axis=0)
@@ -569,7 +568,7 @@ class QuantumAnalysis(object):
             idx = None
             idx_cap = None
             if print_:
-                print("NO renorm!")
+                logger.debug("NO renorm!")
 
         if np.any(Pm < 0.0):
             print_color(
@@ -577,7 +576,7 @@ class QuantumAnalysis(object):
                 'or a super low-Q mode.  We will take the abs value.  Otherwise, rerun with more precision,'\
                 'inspect, and do due diligence.)"
             )
-            print(Pm, "\n")
+            logger.warning("Participation matrix with negative values:\n%s", Pm)
             Pm = np.abs(Pm)
 
         return {
@@ -678,10 +677,10 @@ class QuantumAnalysis(object):
             fock_trunc = cos_trunc = None
 
         if print_result:
-            print("\n", ". " * 40)
-            print("Variation %s\n" % variation)
+            logger.info(". " * 40)
+            logger.info("Variation %s", variation)
         else:
-            print("%s, " % variation, end="")
+            logger.info("Variation %s", variation)
 
         # Get matrices
         PJ, SJ, Om, EJ, PHI_zpf, PJ_cap, n_zpf = self.get_epr_base_matrices(variation)
@@ -812,15 +811,11 @@ class QuantumAnalysis(object):
             variation = str(variation)
 
         if len(self.hfss_vars_diff_idx) > 0:
-            print("\n*** Different parameters")
+            logger.info("*** Different parameters")
             display(self._hfss_variables[self.hfss_vars_diff_idx][variation])
-            print("\n")
 
-        print("*** P (participation matrix, not normlz.)")
-        print(self.PM[variation])
-
-        print("\n*** S (sign-bit matrix)")
-        print(self.SM[variation])
+        logger.info("*** P (participation matrix, not normlz.)\n%s", self.PM[variation])
+        logger.info("*** S (sign-bit matrix)\n%s", self.SM[variation])
 
     def print_result(self, result):
         """
@@ -829,28 +824,17 @@ class QuantumAnalysis(object):
         if type(result) is str or type(result) is int:
             result = self.results[str(result)]
 
-        # TODO: actually make into dataframe with mode labels and junction labels
         pritm = lambda x, frmt="{:9.2g}": print_matrix(x, frmt=frmt)
 
-        print("*** P (participation matrix, normalized.)")
-        pritm(result["Pm_normed"])
-
-        print(
-            "\n*** Chi matrix O1 PT (MHz)\n    Diag is anharmonicity, off diag is full cross-Kerr."
+        logger.info("*** P (participation matrix, normalized.)\n%s", pritm(result["Pm_normed"]))
+        logger.info(
+            "*** Chi matrix O1 PT (MHz) — diag: anharmonicity, off-diag: cross-Kerr\n%s",
+            pritm(result["chi_O1"], "{:9.3g}"),
         )
-        pritm(result["chi_O1"], "{:9.3g}")
-
-        print("\n*** Chi matrix ND (MHz) ")
-        pritm(result["chi_ND"], "{:9.3g}")
-
-        print("\n*** Frequencies O1 PT (MHz)")
-        print(result["f_1"])
-
-        print("\n*** Frequencies ND (MHz)")
-        print(result["f_ND"])
-
-        print("\n*** Q_coupling")
-        print(result["Q_coupling"])
+        logger.info("*** Chi matrix ND (MHz)\n%s", pritm(result["chi_ND"], "{:9.3g}"))
+        logger.info("*** Frequencies O1 PT (MHz)\n%s", result["f_1"])
+        logger.info("*** Frequencies ND (MHz)\n%s", result["f_ND"])
+        logger.info("*** Q_coupling\n%s", result["Q_coupling"])
 
     def plotting_dic_x(self, Var_dic, var_name):
         dic = {}
@@ -902,20 +886,23 @@ class QuantumAnalysis(object):
 
         ############################################################################
         # Axis: Frequencies
-        f0 = (
+        def _sort_numeric(df):
+            numeric = pd.to_numeric(df.index, errors="coerce")
+            if numeric.notna().all():
+                return df.iloc[np.argsort(numeric)]
+            return df.sort_index()
+
+        f0 = _sort_numeric(
             self.results.get_frequencies_HFSS(variations=variations, vs=swp_variable)
             .transpose()
-            .sort_index(key=lambda x: x.astype(int))
         )
-        f1 = (
+        f1 = _sort_numeric(
             self.results.get_frequencies_O1(variations=variations, vs=swp_variable)
             .transpose()
-            .sort_index(key=lambda x: x.astype(int))
         )
-        f_ND = (
+        f_ND = _sort_numeric(
             self.results.get_frequencies_ND(variations=variations, vs=swp_variable)
             .transpose()
-            .sort_index(key=lambda x: x.astype(int))
         )
         # changed by Asaf from f0 as not all modes are always analyzed
         mode_idx = list(f1.columns)
@@ -947,7 +934,7 @@ class QuantumAnalysis(object):
         # Axis: Quality factors
         Qs = self.get_quality_factors(swp_variable=swp_variable)
         Qs = Qs if variations is None else Qs[variations]
-        Qs = Qs.transpose().sort_index(key=lambda x: x.astype(int))
+        Qs = _sort_numeric(Qs.transpose())
 
         ax = axs[1, 0]
         ax.set_title("Quality factors")
@@ -1053,10 +1040,38 @@ class QuantumAnalysis(object):
         m=None,
         n=None,
     ):
-        """return as multiindex data table
+        """Return the chi (Kerr / cross-Kerr) matrix as a multi-index DataFrame.
 
-        If you provide m and n as integers or mode labels, then the chi between these modes will
-        be returned as a pandas Series.
+        The diagonal entries are anharmonicities (self-Kerr); the off-diagonal
+        entries are cross-Kerr couplings between mode pairs.
+
+        Parameters
+        ----------
+        swp_variable : str, optional
+            Sweep variable for the outer index (default: ``"variation"``).
+        numeric : bool, optional
+            If ``True`` (default) use numerically diagonalized chi (``chi_ND``);
+            if ``False`` use first-order perturbation theory (``chi_O1``).
+        variations : list of str, optional
+            Subset of variation keys. ``None`` returns all.
+        m : int or str, optional
+            Row mode label. If both *m* and *n* are given, return only the
+            chi element between modes *m* and *n* as a Series vs sweep variable.
+        n : int or str, optional
+            Column mode label. See *m*.
+
+        Returns
+        -------
+        pandas.DataFrame or pandas.Series
+            Multi-index DataFrame ``(swp_variable, mode_row) × mode_col`` when
+            *m* and *n* are ``None``; a 1-D Series vs sweep variable when both
+            are specified.
+
+        Examples
+        --------
+        >>> chi = epra.get_chis()                     # full matrix, all variations
+        >>> chi_01 = epra.get_chis(m=0, n=1)          # mode-0 / mode-1 cross-Kerr
+        >>> chi_Lj = epra.get_chis(swp_variable='Lj') # sweep over Lj
         """
         label = "chi_ND" if numeric else "chi_O1"
         df = pd.concat(
@@ -1073,9 +1088,25 @@ class QuantumAnalysis(object):
     def get_frequencies(
         self, swp_variable="variation", numeric=True, variations: list = None
     ):
-        """return as multiindex data table
-        index: eigenmode label
-        columns: variation label
+        """Return mode frequencies as a DataFrame indexed by mode, columns by sweep variable.
+
+        Parameters
+        ----------
+        swp_variable : str, optional
+            Name of the sweep variable to use as column labels. ``"variation"``
+            (default) uses the integer variation index; any HFSS variable name
+            (e.g. ``"Lj"``) converts the index to that variable's magnitude.
+        numeric : bool, optional
+            If ``True`` (default) return numerically diagonalized frequencies
+            (``f_ND``); if ``False`` return first-order perturbation theory
+            frequencies (``f_1``).
+        variations : list of str, optional
+            Subset of variation keys to include. ``None`` returns all variations.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Rows are eigenmode labels, columns are sweep-variable values.
         """
         label = "f_ND" if numeric else "f_1"
         return self.results.vs_variations(
@@ -1083,9 +1114,20 @@ class QuantumAnalysis(object):
         )
 
     def get_quality_factors(self, swp_variable="variation", variations: list = None):
-        """return as pd.Series
-        index: eigenmode label
-        columns: variation label
+        """Return mode quality factors as a DataFrame indexed by mode, columns by sweep variable.
+
+        Parameters
+        ----------
+        swp_variable : str, optional
+            Sweep variable for column labels (default: ``"variation"``).
+        variations : list of str, optional
+            Subset of variation keys to include. ``None`` returns all.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Rows are eigenmode labels, columns are sweep-variable values.
+            Infinite Q is stored as ``np.inf`` for lossless modes.
         """
         return self.results.vs_variations(
             "Qs", vs=swp_variable, to_dataframe=True, variations=variations
@@ -1098,25 +1140,37 @@ class QuantumAnalysis(object):
         inductive=True,
         _normed=True,
     ):
-        """
+        """Return energy participation ratios (EPR) as a multi-index DataFrame.
 
-            inductive (bool): EPR for junction inductance when True, else for capacitors
+        Parameters
+        ----------
+        swp_variable : str, optional
+            Sweep variable for the outermost index level (default: ``"variation"``).
+        variations : list of str, optional
+            Subset of variation keys. ``None`` returns all.
+        inductive : bool, optional
+            If ``True`` (default) return inductive (junction) participation ratios;
+            if ``False`` return capacitive participation ratios.
+        _normed : bool, optional
+            Return normalised participation ratios (default ``True``). Setting
+            ``False`` returns raw un-normalised values. Only valid when
+            *inductive* is ``True``; ``inductive=False, _normed=False`` raises
+            ``NotImplementedError``.
 
-        Returns:
-        ----------------
-        Returns a multiindex dataframe:
-            index 0: sweep variable
-            index 1: mode number
-            column: junction number
+        Returns
+        -------
+        pandas.DataFrame
+            Multi-index DataFrame with levels ``[swp_variable, mode]`` as the
+            index and junction index as columns.
 
-        Example use:
-        ---------------
-        Plot the participation ratio of all junctions for a given mode vs a sweep of Lj.
+        Examples
+        --------
+        Plot junction-0 participation for mode 0 vs a sweep of Lj:
 
-        .. code-block language:python
+        .. code-block:: python
 
-            df=epra.get_participations(swp_variable='Lj')
-            df.loc[pd.IndexSlice[:,0],0].unstack(1).plot(marker='o')
+            df = epra.get_participations(swp_variable='Lj')
+            df.loc[pd.IndexSlice[:, 0], 0].unstack(1).plot(marker='o')
         """
 
         if inductive:

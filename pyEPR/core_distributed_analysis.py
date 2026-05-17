@@ -170,10 +170,10 @@ class DistributedAnalysis(object):
 
         self.update_ansys_info()
 
-        print('Design "%s" info:' % self.design.name)
-        print(
-            "\t%-15s %d\n\t%-15s %d"
-            % ("# eigenmodes", self.n_modes, "# variations", self.n_variations)
+        logger.info('Design "%s" info:', self.design.name)
+        logger.info(
+            "\t%-15s %d\n\t%-15s %d",
+            "# eigenmodes", self.n_modes, "# variations", self.n_variations,
         )
 
         # Setup data saving
@@ -255,7 +255,7 @@ class DistributedAnalysis(object):
         pj = OrderedDict()
         pj_val = (U_E - U_H) / U_E
         pj["pj_" + str(mode)] = np.abs(pj_val)
-        print("    p_j_" + str(mode) + " = " + str(pj_val))
+        logger.debug("    p_j_%s = %s", mode, pj_val)
         return pj
 
     # TODO: replace this method with the one below, here because some funcs use it still
@@ -453,7 +453,7 @@ class DistributedAnalysis(object):
         try:
             return str(self._list_variations.index(self._nominal_variation))
         except Exception:
-            print("WARNING: Unsure of the index, returning 0")
+            logger.warning("Unsure of the nominal variation index, returning 0")
             return "0"
 
     def get_ansys_variations(self):
@@ -788,9 +788,9 @@ class DistributedAnalysis(object):
         if abs(float(Cj_Farads)) > 1e-29:  # zero
             # print('Non-zero Cj used in calc_current_using_line_voltage')
             # Z += 1./(omega*Cj_Farads)
-            print(
-                "\t\t"
-                f"Energy fraction (Lj over Lj&Cj)= {100./(1.+omega**2 *Cj_Farads*junc_L_Henries):.2f}%"
+            logger.debug(
+                "\t\tEnergy fraction (Lj over Lj&Cj)= %.2f%%",
+                100.0 / (1.0 + omega**2 * Cj_Farads * junc_L_Henries),
             )
             # f'Z_L= {omega*junc_L_Henries:.1f} Ohms Z_C= {1./(omega*Cj_Farads):.1f} Ohms')
 
@@ -845,7 +845,7 @@ class DistributedAnalysis(object):
 
         lv = self._get_lv(variation)
         Qseam = OrderedDict()
-        print(f"Calculating Qseam_{seam} for mode {mode} ({mode}/{self.n_modes-1})")
+        logger.info("Calculating Qseam_%s for mode %s (%s/%s)", seam, mode, mode, self.n_modes - 1)
         # overestimating the loss by taking norm2 of j, rather than jperp**2
         j_2_norm = self.fields.Vector_Jsurf.norm_2()
         int_j_2 = j_2_norm.integrate_line(seam)
@@ -854,11 +854,7 @@ class DistributedAnalysis(object):
 
         Qseam["Qseam_" + seam + "_" + str(mode)] = config.dissipation.gseam / yseam
 
-        print(
-            "Qseam_" + seam + "_" + str(mode),
-            "=",
-            str(config.dissipation.gseam / yseam),
-        )
+        logger.info("Qseam_%s_%s = %s", seam, mode, config.dissipation.gseam / yseam)
 
         return pd.Series(Qseam)
 
@@ -879,23 +875,11 @@ class DistributedAnalysis(object):
         self.fields = self.setup.get_fields()
         freqs_bare_dict, freqs_bare_vals = self.get_freqs_bare(variation)
         self.omega = 2 * np.pi * freqs_bare_vals[mode]
-        print(variation)
-        print(type(variation))
-        print(ureg(variation))
+        logger.debug("variation=%s  type=%s  ureg=%s", variation, type(variation), ureg(variation))
 
         lv = self._get_lv(variation)
         Qseamsweep = []
-        print(
-            "Calculating Qseam_"
-            + seam
-            + " for mode "
-            + str(mode)
-            + " ("
-            + str(mode)
-            + "/"
-            + str(self.n_modes - 1)
-            + ")"
-        )
+        logger.info("Calculating Qseam_%s for mode %s (%s/%s)", seam, mode, mode, self.n_modes - 1)
         for value in values:
             self.design.set_variable(variable, str(value) + unit)
 
@@ -921,16 +905,9 @@ class DistributedAnalysis(object):
         if U_E is None:
             U_E = self.calc_energy_electric(variation)
         Qdielectric = OrderedDict()
-        print(
-            "Calculating Qdielectric_"
-            + dielectric
-            + " for mode "
-            + str(mode)
-            + " ("
-            + str(mode)
-            + "/"
-            + str(self.n_modes - 1)
-            + ")"
+        logger.info(
+            "Calculating Qdielectric_%s for mode %s (%s/%s)",
+            dielectric, mode, mode, self.n_modes - 1,
         )
 
         U_dielectric = self.calc_energy_electric(variation, obj=dielectric)
@@ -939,15 +916,7 @@ class DistributedAnalysis(object):
         Qdielectric["Qdielectric_" + dielectric] = 1 / (
             p_dielectric * config.dissipation.tan_delta_sapp
         )
-        print(
-            "p_dielectric"
-            + "_"
-            + dielectric
-            + "_"
-            + str(mode)
-            + " = "
-            + str(p_dielectric)
-        )
+        logger.info("p_dielectric_%s_%s = %s", dielectric, mode, p_dielectric)
         return pd.Series(Qdielectric)
 
     def get_Qsurface(self, mode, variation, name, U_E=None, material_properties=None):
@@ -968,7 +937,7 @@ class DistributedAnalysis(object):
 
         lv = self._get_lv(variation)
         Qsurf = OrderedDict()
-        print(f"Calculating Qsurface {name} for mode ({mode}/{self.n_modes-1})")
+        logger.info("Calculating Qsurface %s for mode (%s/%s)", name, mode, self.n_modes - 1)
         calcobject = CalcObject([], self.setup)
         vecE = calcobject.getQty("E")
         A = vecE
@@ -980,7 +949,7 @@ class DistributedAnalysis(object):
         U_surf *= th * epsilon_0 * eps_r
         p_surf = U_surf / U_E
         Qsurf[f"Qsurf_{name}"] = 1 / (p_surf * tan_delta_surf)
-        print(f"p_surf_{name}_{mode} = {p_surf}")
+        logger.info("p_surf_%s_%s = %s", name, mode, p_surf)
         return pd.Series(Qsurf)
 
     def get_Qsurface_all(self, mode, variation, U_E=None):
@@ -1103,8 +1072,9 @@ class DistributedAnalysis(object):
             self.V_peak = V_peak
             self.Ljs = Ljs
             self.Cjs = Cjs
-            print(
-                f'\t{j_name:<15} {pmj_ind:>8.6g}{("(+)"if _Smj > 0 else "(-)"):>5s}        {pmj_cap:>8.6g}'
+            logger.info(
+                "\t%-15s %8.6g%5s        %8.6g",
+                j_name, pmj_ind, "(+)" if _Smj > 0 else "(-)", pmj_cap,
             )
             # print('\tV_peak=', V_peak)
 
@@ -1129,12 +1099,13 @@ class DistributedAnalysis(object):
         # i.e., (U_tot_ind + U_tot_cap)/2
         U_norm = U_tot_cap
         U_diff = (U_tot_cap - U_tot_ind) / (U_tot_cap + U_tot_ind)
-        print("\t\t" f"(U_tot_cap-U_tot_ind)/mean={U_diff*100:.2f}%")
+        logger.info("\t\t(U_tot_cap-U_tot_ind)/mean=%.2f%%", U_diff * 100)
         if abs(U_diff) > 0.15:
-            print(
-                "WARNING: This simulation must not have converged well!!!\
-                The difference in the total cap and ind energies is larger than 10%.\
-                Proceed with caution."
+            logger.warning(
+                "This simulation may not have converged: "
+                "the difference in total cap and ind energies is %.1f%% (>15%%). "
+                "Proceed with caution.",
+                abs(U_diff) * 100,
             )
 
         Pj = pd.Series(
@@ -1291,7 +1262,7 @@ class DistributedAnalysis(object):
         # Main loop - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # TODO: Move inside of loop to function calle self.analyze_variation
         for ii, variation in enumerate(variations):
-            print(f"\nVariation {variation}  [{ii+1}/{len(variations)}]")
+            logger.info("Variation %s  [%d/%d]", variation, ii + 1, len(variations))
 
             # Previously analyzed and we should re analyze
             if append_analysis and variation in self.get_previously_analyzed():
@@ -1318,10 +1289,11 @@ class DistributedAnalysis(object):
                 # This could fail if more variables are added after the simulation is completed.
                 self.set_variation(variation)
             except Exception as e:
-                print(
-                    "\tERROR: Could not set the variation string."
-                    "\nPossible causes: Did you add a variable after the simulation was already solved? "
-                    "\nAttempting to proceed nonetheless, should be just slower ..."
+                logger.error(
+                    "Could not set the variation string: %s. "
+                    "Possible cause: variable added after simulation was solved. "
+                    "Proceeding anyway (may be slower).",
+                    e,
                 )
 
             # use nonframe because old style
@@ -1359,21 +1331,18 @@ class DistributedAnalysis(object):
                 temp_freq = freqs_bare_GHz[mode]
                 _Om["freq_GHz"] = temp_freq  # freq
                 Om[mode] = _Om
-                print(
-                    "\n"
-                    f'  \033[1mMode {mode} at {"%.2f" % temp_freq} GHz   [{mode+1}/{self.n_modes}]\033[0m'
-                )
+                logger.info("Mode %d at %.2f GHz   [%d/%d]", mode, temp_freq, mode + 1, self.n_modes)
 
                 # EPR Hamiltonian calculations
                 # Calculation global energies and report
 
                 # Magnetic
-                print("    Calculating ℰ_magnetic", end=",")
+                logger.info("    Calculating E_magnetic ...")
                 try:
                     self.U_H = self.calc_energy_magnetic(variation)
                 except Exception as e:
                     tb = sys.exc_info()[2]
-                    print("\n\nError:\n", e)
+                    logger.error("Error calculating magnetic energy: %s", e)
                     raise (
                         Exception(
                             " Did you save the field solutions?\n\
@@ -1384,7 +1353,7 @@ class DistributedAnalysis(object):
                     )
 
                 # Electric
-                print("ℰ_electric")
+                logger.info("    Calculating E_electric ...")
                 self.U_E = self.calc_energy_electric(variation)
 
                 # the unnormed
@@ -1392,17 +1361,20 @@ class DistributedAnalysis(object):
 
                 # Fraction - report the peak energy, properly normalized
                 # the 2 is from the calculation methods
-                print(
-                    f"""     {'(ℰ_E-ℰ_H)/ℰ_E':>15s} {'ℰ_E':>9s} {'ℰ_H':>9s}
-    {100*(self.U_E - self.U_H)/self.U_E:>15.1f}%  {self.U_E/2:>9.4g} {self.U_H/2:>9.4g}\n"""
+                logger.info(
+                    "     (E_E-E_H)/E_E=%6.1f%%   E_E=%9.4g   E_H=%9.4g",
+                    100 * (self.U_E - self.U_H) / self.U_E,
+                    self.U_E / 2,
+                    self.U_H / 2,
                 )
 
                 # Calculate EPR for each of the junctions
-                print(
-                    f"    Calculating junction energy participation ration (EPR)\n\tmethod=`{self.pinfo.options.method_calc_P_mj}`. First estimates:"
+                logger.info(
+                    "    Calculating junction EPR, method=`%s`",
+                    self.pinfo.options.method_calc_P_mj,
                 )
-                print(
-                    f"\t{'junction':<15s} EPR p_{mode}j   sign s_{mode}j    (p_capacitive)"
+                logger.info(
+                    "\t%-15s EPR p_%dj   sign s_%dj    (p_capacitive)", "junction", mode, mode
                 )
 
                 (
@@ -1489,7 +1461,7 @@ class DistributedAnalysis(object):
 
             self._previously_analyzed.add(variation)
 
-        print("\nANALYSIS DONE. Data saved to:\n\n" + str(self.data_filename) + "\n\n")
+        logger.info("ANALYSIS DONE. Data saved to: %s", self.data_filename)
 
         return self.data_filename, variations
 

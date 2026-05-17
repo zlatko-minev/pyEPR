@@ -153,29 +153,21 @@ def series_of_1D_dict_to_multi_df(Uj_ind: pd.Series):
 
 
 def sort_df_col(df):
-    """sort by numerical int order"""
-    return df.sort_index(axis=1)
-
-    # Buggy code, doesn't handles ints as inputs or floats as inputs
+    """Sort DataFrame columns numerically (int or float) when possible, else lexicographically."""
     col_names = df.columns
-    if np.all(col_names.map(isint)):
-        return df[col_names.astype(int).sort_values().astype(str)]
-    elif np.all(col_names.map(isfloat)):
-        # raises error in some cases
-        return df[col_names.astype(float).sort_values().astype(str)]
-    else:
-        return df
+    numeric = pd.to_numeric(col_names, errors="coerce")
+    if numeric.notna().all():
+        return df[col_names[np.argsort(numeric)]]
+    return df.sort_index(axis=1)
 
 
 def sort_Series_idx(sr):
-    """sort by numerical int order"""
+    """Sort Series index numerically (int or float) when possible, else lexicographically."""
     idx_names = sr.index
-    if np.all(idx_names.map(isint)):
-        return sr[idx_names.astype(int).sort_values().astype(str)]
-    if np.all(idx_names.map(isfloat)):
-        return sr[idx_names.astype(float).sort_values().astype(str)]
-    else:
-        return sr
+    numeric = pd.to_numeric(idx_names, errors="coerce")
+    if numeric.notna().all():
+        return sr.iloc[np.argsort(numeric)]
+    return sr.sort_index()
 
 
 def get_instance_vars(obj, Forbidden=[]):
