@@ -497,7 +497,8 @@ class QuantumAnalysis(object):
             stored in ``self.results``.  Set to ``True`` to recompute everything.
         **kwargs
             Forwarded directly to :meth:`analyze_variation` — e.g.
-            ``cos_trunc``, ``fock_trunc``, ``modes``, ``junctions``.
+            ``cos_trunc``, ``fock_trunc``, ``modes``, ``junctions``,
+            ``use_full_cos``.
 
         Returns
         -------
@@ -679,6 +680,7 @@ class QuantumAnalysis(object):
         print_result: bool = True,
         junctions: List = None,
         modes: List = None,
+        use_full_cos: bool = False,
     ):
         """Compute the quantum Hamiltonian parameters for a single variation.
 
@@ -694,7 +696,8 @@ class QuantumAnalysis(object):
             Cosine Taylor expansion order for the Josephson nonlinearity.
             Typical values: 4–8.  Must be set together with ``fock_trunc`` to
             enable numerical diagonalization; if either is ``None``, only
-            perturbation-theory results are computed.
+            perturbation-theory results are computed.  Ignored when
+            ``use_full_cos=True``.
         fock_trunc : int, optional
             Fock space truncation (number of levels per mode).  Typical values:
             5–10.  Memory scales as ``fock_trunc ** n_modes``.
@@ -708,6 +711,12 @@ class QuantumAnalysis(object):
             of a 5-mode simulation).  **Must match the indices used in**
             ``do_EPR_analysis`` — the DataFrame index retains the original mode
             numbers, not a zero-based re-index.  Defaults to all modes.
+        use_full_cos : bool, optional
+            If ``True``, use the exact matrix-exponential cosine
+            ``cos(φ) = (e^{iφ} + e^{-iφ}) / 2`` instead of the truncated Taylor
+            series.  Recommended for strongly anharmonic circuits such as
+            **fluxonium**, where large zero-point phase fluctuations (φ_zpf ≳ 1)
+            make the low-order expansion inaccurate.  Default ``False``.
 
         Returns
         -------
@@ -775,9 +784,14 @@ class QuantumAnalysis(object):
         CHI_O1 = divide_diagonal_by_2(CHI_O1)  # Make the diagonals alpha
 
         # Numerical diag
-        if cos_trunc is not None:
+        if cos_trunc is not None or use_full_cos:
             f1_ND, CHI_ND = epr_numerical_diagonalization(
-                freqs_hfss, Ljs, PHI_zpf, cos_trunc=cos_trunc, fock_trunc=fock_trunc
+                freqs_hfss,
+                Ljs,
+                PHI_zpf,
+                cos_trunc=cos_trunc,
+                fock_trunc=fock_trunc,
+                use_full_cos=use_full_cos,
             )
         else:
             f1_ND, CHI_ND = None, None

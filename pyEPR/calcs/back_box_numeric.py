@@ -31,10 +31,12 @@ __all__ = [
     "make_dispersive",
     "black_box_hamiltonian",
     "black_box_hamiltonian_nq",
+    "cos_full_correction",
 ]
 
 dot = MatrixOps.dot
 cos_approx = MatrixOps.cos_approx
+cos_full_correction = MatrixOps.cos_full_correction
 
 
 # ==============================================================================
@@ -51,17 +53,54 @@ def epr_numerical_diagonalization(
     use_1st_order=False,
     return_H=False,
     non_linear_potential=None,
+    use_full_cos=False,
 ):
-    """
-    Numerical diagonalization for pyEPR. Ask Zlatko for details.
+    """Numerical diagonalization of the EPR Hamiltonian.
 
-    :param fs: (GHz, not radians) Linearized model, H_lin, normal mode frequencies in Hz, length M
-    :param ljs: (Henries) junction linearized inductances in Henries, length J
-    :param fzpfs: (reduced) Reduced Zero-point fluctuation of the junction fluxes for each mode
-                across each junction, shape MxJ
+    Parameters
+    ----------
+    freqs : array-like
+        Linearised normal-mode frequencies in **GHz** (not radians), length M.
+    Ljs : array-like
+        Junction linearised inductances in **Henries**, length J.
+    ϕzpf : array-like
+        Reduced zero-point flux fluctuations, shape M × J.
+    cos_trunc : int, optional
+        Order of the Taylor-series truncation of cos(φ).  Only used when
+        ``use_full_cos=False`` (default 8).  Ignored when ``use_full_cos=True``.
+    fock_trunc : int, optional
+        Fock-space truncation (number of levels per mode).  Default 9.
+    use_1st_order : bool, optional
+        Use first-order perturbation theory instead of full diagonalization.
+        Default ``False``.
+    return_H : bool, optional
+        If ``True``, also return the Hamiltonian Qobj.  Default ``False``.
+    non_linear_potential : callable, optional
+        Custom replacement for the cosine potential.  Must accept a qutip Qobj
+        (the phase-operator argument) and return a qutip Qobj.  Overrides both
+        ``cos_trunc`` and ``use_full_cos``.
+    use_full_cos : bool, optional
+        If ``True``, use the **exact** matrix-exponential cosine
+        ``cos(φ) = (e^{iφ} + e^{-iφ}) / 2`` instead of the truncated Taylor
+        series.  Recommended for strongly anharmonic circuits such as
+        **fluxonium**, where large zero-point phase fluctuations make the
+        truncated expansion inaccurate.  Default ``False`` (truncated series).
 
-    :return: Hamiltonian mode freq and dispersive shifts. Shifts are in MHz.
-             Shifts have flipped sign so that down shift is positive.
+    Returns
+    -------
+    f_ND : numpy.ndarray
+        Dressed mode frequencies in **GHz**.
+    χ_ND : numpy.ndarray
+        Cross-Kerr / anharmonicity matrix in **MHz** (positive = red shift).
+    Hs : qutip.Qobj
+        Full Hamiltonian Qobj — only returned when ``return_H=True``.
+
+    Note
+    ----
+    For transmon-like circuits (small φ_zpf) the truncated cosine (default) is
+    accurate and faster.  For fluxonium or other circuits where φ_zpf ≳ 1 rad,
+    set ``use_full_cos=True`` to avoid systematic errors in the anharmonicity.
+    See arXiv:2411.15039 for a detailed comparison.
     """
 
     freqs, Ljs, ϕzpf = map(np.array, (freqs, Ljs, ϕzpf))
@@ -69,6 +108,9 @@ def epr_numerical_diagonalization(
     assert all(
         Ljs < 1e-3
     ), "Please input the inductances in Henries. \N{nauseated face}"
+
+    if non_linear_potential is None and use_full_cos:
+        non_linear_potential = cos_full_correction
 
     Hs = black_box_hamiltonian(
         freqs * 1e9,
@@ -187,9 +229,10 @@ def make_dispersive(
         # assert type(
         #    H) == qutip.qobj.Qobj, "Please pass in either a list of Qobjs or Qobj for the Hamiltonian"
 
-    print("Starting the diagonalization")
+    from .. import logger as _logger
+    _logger.info("Starting diagonalization (%d×%d matrix)", H.shape[0], H.shape[0])
     evals, evecs = H.eigenstates()
-    print("Finished the diagonalization")
+    _logger.info("Diagonalization complete")
     evals -= evals[0]
 
     N = int(np.log(H.shape[0]) / np.log(fock_trunc))  # number of modes
@@ -203,7 +246,7 @@ def make_dispersive(
 
     if use_1st_order:
         num_modes = N
-        print("Using 1st O")
+        _logger.debug("Using 1st-order perturbation theory")
 
         def multi_index_2_vector(d, num_modes, fock_trunc):
             return tensor([basis(fock_trunc, d.get(i, 0)) for i in range(num_modes)])

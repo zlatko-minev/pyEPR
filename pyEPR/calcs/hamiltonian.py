@@ -17,13 +17,62 @@ from ..toolbox.pythonic import fact
 class MatrixOps(object):
     @staticmethod
     def cos(op_cos_arg: Qobj):
-        """
-        Make cosine operator matrix from argument  op_cos_arg
+        """Exact cosine operator via matrix exponential: (e^{iφ} + e^{-iφ}) / 2.
 
-            op_cos_arg (qutip.Qobj) : argument of the cosine
-        """
+        Parameters
+        ----------
+        op_cos_arg : qutip.Qobj
+            Phase operator φ (Hermitian).
 
+        Returns
+        -------
+        qutip.Qobj
+            cos(φ) as a matrix in Fock space.
+        """
         return 0.5 * ((1j * op_cos_arg).expm() + (-1j * op_cos_arg).expm())
+
+    @staticmethod
+    def cos_full_correction(op_cos_arg: Qobj):
+        """Exact EPR nonlinear correction: cos(φ) - I + φ²/2 (no truncation).
+
+        This is the infinite-order equivalent of :func:`cos_approx`.  In the
+        EPR Hamiltonian the linear eigenfrequencies already account for the
+        harmonic (φ²/2) Josephson energy, so the nonlinear potential that must
+        be subtracted is the remainder:
+
+        .. math::
+
+            H_{\\mathrm{nl}} = -E_J \\bigl[\\cos(\\varphi) - 1 + \\tfrac{\\varphi^2}{2}\\bigr]
+                             = -E_J \\sum_{n\\ge 2} \\frac{(-1)^n \\varphi^{2n}}{(2n)!}
+
+        For weakly anharmonic circuits (transmon, φ_zpf ≲ 0.3) the truncated
+        :func:`cos_approx` is equivalent and faster.  For strongly anharmonic
+        circuits (fluxonium, φ_zpf ≳ 1) use this function to avoid systematic
+        errors from the truncated series.
+
+        Parameters
+        ----------
+        op_cos_arg : qutip.Qobj
+            Phase operator φ (Hermitian), in the full Fock-space tensor product.
+
+        Returns
+        -------
+        qutip.Qobj
+            cos(φ) - I + φ²/2 as a matrix.
+
+        See Also
+        --------
+        cos_approx : Truncated Taylor-series version (faster for small φ_zpf).
+
+        References
+        ----------
+        arXiv:2411.15039 — EPR analysis for very anharmonic superconducting circuits.
+        """
+        import qutip
+        cos_phi = MatrixOps.cos(op_cos_arg)
+        # Build identity in the same tensor-product Hilbert space as op_cos_arg
+        I = qutip.qeye(op_cos_arg.dims[0])
+        return cos_phi - I + op_cos_arg**2 / 2
 
     @staticmethod
     def cos_approx(x, cos_trunc=5):
