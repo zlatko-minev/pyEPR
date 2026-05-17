@@ -75,6 +75,47 @@ class MatrixOps(object):
         return cos_phi - I + op_cos_arg**2 / 2
 
     @staticmethod
+    def apply_scalar_function(op: Qobj, func) -> Qobj:
+        """Evaluate a real scalar function on a Hermitian operator via eigendecomposition.
+
+        For a Hermitian operator H with real eigenvalues λ_i and eigenvectors |i⟩:
+
+        .. math::
+
+            f(H) = \\sum_i f(\\lambda_i) |i\\rangle\\langle i|
+
+        This lets you evaluate *any* analytic scalar function—not just polynomials or
+        exponentials—as an operator, which is needed for generic junction potentials.
+
+        Parameters
+        ----------
+        op : qutip.Qobj
+            Hermitian operator (e.g., the phase operator φ in Fock space).
+        func : callable
+            Real scalar function ``func(float) -> float``.
+
+        Returns
+        -------
+        qutip.Qobj
+            ``func(op)`` in the same Hilbert space.
+
+        Examples
+        --------
+        >>> import qutip, numpy as np
+        >>> from pyEPR.calcs.hamiltonian import MatrixOps
+        >>> a = qutip.destroy(8)
+        >>> phi = 0.3 * (a + a.dag())
+        >>> cos_phi = MatrixOps.apply_scalar_function(phi, np.cos)
+        """
+        import numpy as np
+        import qutip
+        mat = op.full()
+        evals, evecs = np.linalg.eigh(mat)          # Hermitian → real eigenvalues
+        f_evals = np.vectorize(func)(evals)
+        result = (evecs * f_evals) @ evecs.conj().T  # V @ diag(f) @ V†
+        return qutip.Qobj(result, dims=op.dims)
+
+    @staticmethod
     def cos_approx(x, cos_trunc=5):
         """
         Create a Taylor series matrix approximation of the cosine, up to some order.
