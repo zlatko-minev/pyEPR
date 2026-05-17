@@ -104,12 +104,12 @@ Contents
 
    about.rst
    installation.rst
+   key_classes_reference.rst
    hfss_setup.rst
    examples_quick.rst
    without_hfss.rst
    tutorials.rst
    troubleshooting.rst
-   key_classes_reference.rst
 
 .. toctree::
    :caption: API Reference

@@ -1,16 +1,12 @@
 About pyEPR
 ===========
 
-.. |Open Source Love| image:: https://badges.frapsoft.com/os/v1/open-source.png?v=103
-   :target: https://github.com/zlatko-minev/pyEPR
-.. |Awesome| image:: https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg
-   :target: https://github.com/zlatko-minev/pyEPR
 .. |star this repo| image:: https://img.shields.io/github/stars/zlatko-minev/pyEPR?style=social
    :target: https://github.com/zlatko-minev/pyEPR/stargazers
 .. |fork this repo| image:: https://img.shields.io/github/forks/zlatko-minev/pyEPR?style=social
    :target: https://github.com/zlatko-minev/pyEPR/fork
 
-|Open Source Love| |Awesome| |star this repo| |fork this repo|
+:bdg-success:`Open Source — BSD-3` :bdg-info:`Python 3.10+` |star this repo| |fork this repo|
 
 .. contents:: On this page
    :local:
