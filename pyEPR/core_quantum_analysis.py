@@ -231,9 +231,33 @@ class HamiltonianResultsContainer(OrderedDict):
 
 
 class QuantumAnalysis(object):
-    """
-    Defines an analysis object which loads and plots data from a h5 file
-    This data is obtained using DistributedAnalysis
+    """Quantum Hamiltonian analysis from saved EPR data.
+
+    Loads the HDF5/pickle data file written by
+    :meth:`~pyEPR.DistributedAnalysis.do_EPR_analysis`, computes dressed
+    eigenmode frequencies, anharmonicities, and cross-Kerr couplings using
+    first-order perturbation theory and/or numerical diagonalization (via QuTiP).
+
+    Typical workflow
+    ----------------
+    .. code-block:: python
+
+        epra = epr.QuantumAnalysis(eprd.data_filename)
+        epra.analyze_all_variations(cos_trunc=8, fock_trunc=7)
+        epra.plot_hamiltonian_results()
+
+    Parameters
+    ----------
+    data_filename : str or Path
+        Path to the ``.hdf5`` data file produced by :class:`DistributedAnalysis`.
+    variations : list of str, optional
+        Subset of variation labels to load (e.g. ``['0', '2']``).
+        Defaults to all variations present in the file.
+    do_print_info : bool, optional
+        Print a summary of loaded data on construction.  Defaults to ``True``.
+    Res_hamil_filename : str or Path, optional
+        Path to a previously saved :class:`HamiltonianResultsContainer` ``.npz``
+        file.  Allows resuming a partially completed analysis.
     """
 
     def __init__(
@@ -459,15 +483,32 @@ class QuantumAnalysis(object):
         return Convert.Ec_from_Cs(Cs, units_in="F", units_out="GHz")
 
     def analyze_all_variations(
-        self, variations: List[str] = None, analyze_previous=False, **kwargs
+        self, variations: List[str] = None, analyze_previous: bool = False, **kwargs
     ):
-        """
-        See analyze_variation for full documentation
+        """Run :meth:`analyze_variation` for every variation and save results.
 
-        Args:
-            variations: None returns all_variations otherwise this is a list with number as strings ['0', '1']
-            analyze_previous: set to true if you wish to overwrite previous analysis
-            **kwargs: Keyword arguments passed to :func:`~pyEPR.QuantumAnalysis.analyze_variation`.
+        Parameters
+        ----------
+        variations : list of str, optional
+            Variation labels to analyse (e.g. ``['0', '1', '3']``).
+            Defaults to all variations loaded from the data file.
+        analyze_previous : bool, optional
+            If ``False`` (default), skip variations whose results are already
+            stored in ``self.results``.  Set to ``True`` to recompute everything.
+        **kwargs
+            Forwarded directly to :meth:`analyze_variation` — e.g.
+            ``cos_trunc``, ``fock_trunc``, ``modes``, ``junctions``.
+
+        Returns
+        -------
+        OrderedDict
+            Mapping of variation label → result dict (same structure as the
+            return value of :meth:`analyze_variation`).
+
+        Note
+        ----
+        Results are automatically saved to disk after all variations are
+        processed via :meth:`HamiltonianResultsContainer.save`.
         """
 
         result = OrderedDict()
@@ -639,27 +680,48 @@ class QuantumAnalysis(object):
         junctions: List = None,
         modes: List = None,
     ):
-        # TODO avoid analyzing a previously analyzed variation
-        """
-        Core analysis function to call!
+        """Compute the quantum Hamiltonian parameters for a single variation.
 
-        Args:
-            junctions: list or slice of junctions to include in the analysis.
-                None defaults to analysing all junctions
-            modes: list or slice of modes to include in the analysis.
-                None defaults to analysing all modes
+        This is the core analysis method.  It extracts EPR participation matrices
+        from the stored data, applies perturbation theory, and optionally performs
+        numerical diagonalization via QuTiP.
 
-        Returns:
-            dict: Dictionary containing at least the following:
-                * f_0 [MHz]: Eigenmode frequencies computed by HFSS; i.e., linear freq returned in GHz
-                * f_1 [MHz]: Dressed mode frequencies (by the non-linearity; e.g., Lamb shift, etc. ).
-                  Result based on 1st order perturbation theory on the 4th order expansion of the cosine.
-                * f_ND [MHz]: Numerical diagonalization result of dressed mode frequencies.
-                  only available if `cos_trunc` and  `fock_trunc` are set (non None).
-                * chi_O1 [MHz]: Analytic expression for the chis based on a cos trunc to 4th order, and using 1st
-                  order perturbation theory. Diag is anharmonicity, off diag is full cross-Kerr.
-                * chi_ND [MHz]: Numerically diagonalized chi matrix. Diag is anharmonicity, off diag is full
-                  cross-Kerr.
+        Parameters
+        ----------
+        variation : str
+            Variation label (e.g. ``'0'``, ``'3'``).
+        cos_trunc : int, optional
+            Cosine Taylor expansion order for the Josephson nonlinearity.
+            Typical values: 4–8.  Must be set together with ``fock_trunc`` to
+            enable numerical diagonalization; if either is ``None``, only
+            perturbation-theory results are computed.
+        fock_trunc : int, optional
+            Fock space truncation (number of levels per mode).  Typical values:
+            5–10.  Memory scales as ``fock_trunc ** n_modes``.
+        print_result : bool, optional
+            Print a formatted summary table of results.  Defaults to ``True``.
+        junctions : list, optional
+            Subset of junction indices or labels to include.
+            Defaults to all junctions.
+        modes : list, optional
+            Subset of mode indices to include (e.g. ``[0, 4]`` for modes 0 and 4
+            of a 5-mode simulation).  **Must match the indices used in**
+            ``do_EPR_analysis`` — the DataFrame index retains the original mode
+            numbers, not a zero-based re-index.  Defaults to all modes.
+
+        Returns
+        -------
+        dict
+            Contains at minimum:
+
+            * ``f_0`` — HFSS bare eigenmode frequencies [GHz].
+            * ``f_1`` — First-order PT dressed frequencies [MHz].
+            * ``f_ND`` — Numerically diagonalized dressed frequencies [MHz];
+              ``None`` if ``cos_trunc``/``fock_trunc`` not provided.
+            * ``chi_O1`` — Analytic χ matrix [MHz] (diagonal = anharmonicity,
+              off-diagonal = cross-Kerr).
+            * ``chi_ND`` — Numerically diagonalized χ matrix [MHz]; ``None``
+              if numerical diagonalization was not requested.
         """
 
         # ensuring proper matrix dimensionality when slicing
@@ -865,16 +927,27 @@ class QuantumAnalysis(object):
         fig=None,
         x_label: str = None,
     ):
-        """Plot results versus variation
+        """Plot Hamiltonian parameters (frequencies, anharmonicities, χ) versus a sweep variable.
 
-        Keyword Arguments:
-            swp_variable {str} -- Variable against which we swept. If none, then just
-                                    take the variation index (default: {None})
-            variations {list} -- [description] (default: {None})
-            fig {[type]} -- [description] (default: {None})
+        Produces a 2×2 grid of subplots: bare and dressed frequencies, χ matrix,
+        and participation ratios.
 
-        Returns:
-            fig, axs
+        Parameters
+        ----------
+        swp_variable : str, optional
+            Name of the HFSS variable swept (e.g. ``'Lj_alice'``).  Use
+            ``'variation'`` (default) to plot against the variation index.
+        variations : list of str, optional
+            Subset of variations to include.  Defaults to all analyzed variations.
+        fig : matplotlib.figure.Figure, optional
+            Existing figure to draw into.  If ``None``, a new figure is created.
+        x_label : str, optional
+            X-axis label.  Defaults to ``swp_variable``.
+
+        Returns
+        -------
+        tuple
+            ``(fig, axs)`` — the matplotlib Figure and 2×2 array of Axes.
         """
         x_label = x_label or swp_variable
 
