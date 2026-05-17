@@ -1,5 +1,5 @@
-Key classes reference
-=====================
+Key Classes
+===========
 
 .. contents:: On this page
    :local:
@@ -18,7 +18,7 @@ onto the three stages of the EPR analysis pipeline:
         ▼
    QuantumAnalysis        — quantize: load HDF5, diagonalize Hamiltonian, report results
 
-These classes are all importable from the top-level ``pyEPR`` namespace:
+All three are importable from the top-level ``pyEPR`` namespace:
 
 .. code-block:: python
 
@@ -56,10 +56,7 @@ Key attributes:
    pinfo.setup              # HfssSetup wrapper (eigenmode or driven-modal)
    pinfo.design             # HfssDesign wrapper
 
-.. autoclass:: pyEPR.project_info.ProjectInfo
-   :members:
-   :show-inheritance:
-   :no-index:
+Full API: :class:`pyEPR.project_info.ProjectInfo`
 
 
 .. _distributed-analysis:
@@ -87,10 +84,7 @@ Key methods:
    eprd.hfss_report_full_convergence()# print/plot adaptive-pass convergence
    eprd.data_filename                 # path to the saved HDF5 results file
 
-.. autoclass:: pyEPR.core_distributed_analysis.DistributedAnalysis
-   :members:
-   :show-inheritance:
-   :no-index:
+Full API: :class:`pyEPR.core_distributed_analysis.DistributedAnalysis`
 
 
 .. _quantum-analysis:
@@ -126,33 +120,24 @@ Key methods:
   size grows as ``fock_trunc ** n_modes``, so keep this small for
   many-mode systems.  Typical range: 6–10.
 
-.. autoclass:: pyEPR.core_quantum_analysis.QuantumAnalysis
-   :members:
-   :show-inheritance:
-   :no-index:
+Full API: :class:`pyEPR.core_quantum_analysis.QuantumAnalysis`
 
 
 solution_types module
 ---------------------
 
-``pyEPR.solution_types`` is a utility module exposing canonical solution-type
-constants and helpers.  Import from here rather than using raw strings.
+``pyEPR.solution_types`` exposes canonical solution-type constants and
+helpers for handling the AEDT 2021.2+ renamed solution-type strings:
 
 .. code-block:: python
 
    from pyEPR.solution_types import normalize, DRIVEN_MODAL_NAMES, is_drivenmodal
 
-   normalize("HFSS Modal Network")    # → "DrivenModal"
-   normalize("HFSS Hybrid Terminal Network")  # → "DrivenTerminal"
-   is_drivenmodal("HFSS Modal Network")  # → True
+   normalize("HFSS Modal Network")           # → "DrivenModal"
+   normalize("HFSS Hybrid Terminal Network") # → "DrivenTerminal"
+   is_drivenmodal("HFSS Modal Network")      # → True
 
-This module is also useful for downstream tools (e.g. Qiskit Metal) that need
-to handle the AEDT 2021.2+ renamed solution-type strings.
-
-.. automodule:: pyEPR.solution_types
-   :members:
-   :show-inheritance:
-   :no-index:
+Full API: :mod:`pyEPR.solution_types`
 
 
 calcs subpackage
