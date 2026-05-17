@@ -200,10 +200,7 @@ from .core import (
     ProjectInfo,
     DistributedAnalysis,
     QuantumAnalysis,
-    Project_Info,
-    pyEPR_HFSSAnalysis,
-    pyEPR_Analysis,
-)  # names to be deprecated
+)
 
 __all__ = [
     "logger",
@@ -215,12 +212,32 @@ __all__ = [
     "ProjectInfo",
     "DistributedAnalysis",
     "QuantumAnalysis",
-    "Project_Info",
-    "pyEPR_HFSSAnalysis",
-    "pyEPR_Analysis",  # names to be deprecated
     "parse_units",
     "parse_units_user",
     "parse_entry",
+    # Deprecated aliases not included here; they are still accessible via __getattr__
+    # but excluded from star-imports to discourage new use.
 ]
+
+_DEPRECATED_ALIASES = {
+    "Project_Info": ("ProjectInfo", "ProjectInfo"),
+    "pyEPR_HFSSAnalysis": ("DistributedAnalysis", "DistributedAnalysis"),
+    "pyEPR_Analysis": ("QuantumAnalysis", "QuantumAnalysis"),
+}
+
+
+def __getattr__(name):
+    if name in _DEPRECATED_ALIASES:
+        import warnings
+        new_name, attr = _DEPRECATED_ALIASES[name]
+        warnings.warn(
+            f"pyEPR.{name} is deprecated and will be removed in a future release. "
+            f"Use pyEPR.{new_name} instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return globals()[attr]
+    raise AttributeError(f"module 'pyEPR' has no attribute {name!r}")
+
 
 # TODO: Add "about" method. Add to tutorial

@@ -17,7 +17,27 @@ from .project_info import ProjectInfo
 from .core_quantum_analysis import QuantumAnalysis
 from .core_distributed_analysis import DistributedAnalysis
 
-# Backwards compatibility. To be depreciated.
-Project_Info = ProjectInfo
-pyEPR_HFSSAnalysis = DistributedAnalysis
-pyEPR_Analysis = QuantumAnalysis
+_DEPRECATED_ALIASES = {
+    "Project_Info": ProjectInfo,
+    "pyEPR_HFSSAnalysis": DistributedAnalysis,
+    "pyEPR_Analysis": QuantumAnalysis,
+}
+
+_NEW_NAMES = {
+    "Project_Info": "ProjectInfo",
+    "pyEPR_HFSSAnalysis": "DistributedAnalysis",
+    "pyEPR_Analysis": "QuantumAnalysis",
+}
+
+
+def __getattr__(name):
+    if name in _DEPRECATED_ALIASES:
+        import warnings
+        warnings.warn(
+            f"pyEPR.core.{name} is deprecated and will be removed in a future release. "
+            f"Use pyEPR.core.{_NEW_NAMES[name]} instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return _DEPRECATED_ALIASES[name]
+    raise AttributeError(f"module 'pyEPR.core' has no attribute {name!r}")
