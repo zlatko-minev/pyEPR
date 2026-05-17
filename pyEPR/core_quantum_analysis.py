@@ -748,17 +748,17 @@ class QuantumAnalysis(object):
         result["Ljs"] = self.Ljs[variation]
         result["Cjs"] = self.Cjs[variation]
         try:
-            result["Q_coupling"] = self.Qm_coupling[variation][
-                self.Qm_coupling[variation].columns[junctions]
-            ][
-                modes
+            _qm = self.Qm_coupling[variation]
+            result["Q_coupling"] = _qm.loc[
+                modes, _qm.columns[junctions]
             ]  # TODO change the columns to junctions
         except:
             result["Q_coupling"] = self.Qm_coupling[variation]
 
         try:
-            result["Qs"] = self.Qs[variation][self.PM[variation].columns[junctions]][
-                modes
+            _qs_cols = self.PM[variation].columns[junctions]
+            result["Qs"] = self.Qs[variation].loc[
+                modes, _qs_cols
             ]  # TODO change the columns to junctions
         except:
             result["Qs"] = self.Qs[variation][modes]
