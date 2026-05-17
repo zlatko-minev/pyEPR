@@ -14,108 +14,88 @@ pyEPR — Energy-Participation-Ratio Framework
 ----
 
 **pyEPR** is an open-source Python library for the automated design and
-quantization of Josephson quantum circuits.  It bridges classical distributed
+quantization of Josephson quantum circuits. It bridges classical distributed
 microwave simulation (Ansys HFSS) and quantum circuit Hamiltonians using the
 `energy-participation ratio (EPR) <https://arxiv.org/abs/2010.00620>`_ method.
 
-What pyEPR does
-===============
+.. grid:: 3
+   :gutter: 3
+   :margin: 4 4 0 0
 
-pyEPR has two main layers:
+   .. grid-item-card:: :octicon:`rocket;1.5em` Simulate
+      :text-align: center
 
-1. **EPR / quantum analysis** *(platform-independent)*
-   Extracts energy-participation ratios from HFSS eigenmode field solutions,
-   then performs numerical diagonalization (via `QuTiP <https://qutip.org>`_)
-   to yield qubit frequencies, anharmonicities, dispersive shifts (χ), and
-   cross-Kerr couplings — all in one automated pipeline.
+      Run an eigenmode simulation in Ansys HFSS with junction inductances.
+      No manual circuit diagram needed — just the 3-D geometry.
 
-2. **Ansys HFSS COM interface** *(Windows-first; see* :ref:`install-platform` *)*
-   A Python wrapper around the HFSS COM/DCOM automation API.  Controls
-   simulation setup, field extraction, and optimetric sweeps directly from
-   Python.  Originally written before `PyAEDT <https://github.com/ansys/pyaedt>`_
-   existed; the two tools are complementary — pyEPR for quantum EPR analysis,
-   PyAEDT for general AEDT scripting.
+   .. grid-item-card:: :octicon:`graph;1.5em` Extract
+      :text-align: center
+
+      Compute energy participation ratios *p*\ :sub:`mj` and zero-point
+      phase fluctuations φ\ :sub:`zpf` for every mode and junction.
+
+   .. grid-item-card:: :octicon:`beaker;1.5em` Diagonalize
+      :text-align: center
+
+      Numerically diagonalize the full Josephson Hamiltonian to get
+      dressed frequencies, anharmonicities, and the χ matrix.
+
+----
 
 Quick install
 =============
 
-.. tabs::
+.. tab-set::
 
-   .. tab:: uv *(recommended)*
-
-      .. code-block:: bash
-
-         uv pip install pyEPR-quantum
-
-   .. tab:: pip
+   .. tab-item:: pip
 
       .. code-block:: bash
 
          pip install pyEPR-quantum
 
-   .. tab:: conda
+   .. tab-item:: conda
 
       .. code-block:: bash
 
          conda install -c conda-forge pyepr-quantum
 
-See :ref:`install` for full instructions including development installs,
-platform notes, and Ansys version compatibility.
+   .. tab-item:: uv
 
-Quick-start example
-===================
+      .. code-block:: bash
 
-The following script connects to HFSS, extracts EPR data, and produces the
-full Hamiltonian for a two-qubit / one-cavity chip in a few lines of code.
+         uv pip install pyEPR-quantum
+
+No Ansys licence? Start with :ref:`without-hfss` or open
+`Tutorial 6 on Binder <https://mybinder.org/v2/gh/zlatko-minev/pyEPR/master?filepath=_tutorial_notebooks%2FTutorial%206.%20EPR%20without%20HFSS%20%E2%80%94%20purely%20numerical%20workflow.ipynb>`_.
+
+----
+
+Five-line quickstart
+====================
 
 .. code-block:: python
 
    import pyEPR as epr
 
-   # 1. Connect to HFSS project
-   pinfo = epr.ProjectInfo(
-       project_path = r'C:\sim_folder',
-       project_name = r'cavity_with_two_qubits',
-       design_name  = r'Alice_Bob',
-   )
-
-   # 2. Specify Josephson junctions
-   pinfo.junctions['jAlice'] = {
-       'Lj_variable': 'Lj_alice', 'rect': 'rect_alice',
-       'line': 'line_alice', 'Cj_variable': 'Cj_alice',
-   }
-   pinfo.junctions['jBob'] = {
-       'Lj_variable': 'Lj_bob', 'rect': 'rect_bob',
-       'line': 'line_bob', 'Cj_variable': 'Cj_bob',
-   }
-   pinfo.validate_junction_info()
-
-   # 3. Run EPR field extraction
+   pinfo = epr.ProjectInfo(project_path=r'C:\sims', project_name='my_chip',
+                            design_name='qubit_cavity')
+   pinfo.junctions['jQ'] = {'Lj_variable':'Lj1', 'rect':'junc_rect',
+                             'line':'junc_line', 'Cj_variable':'Cj1'}
    eprd = epr.DistributedAnalysis(pinfo)
    eprd.do_EPR_analysis()
-
-   # 4. Quantum Hamiltonian diagonalization
    epra = epr.QuantumAnalysis(eprd.data_filename)
-   epra.analyze_all_variations(cos_trunc=8, fock_trunc=7)
-   epra.plot_hamiltonian_results(swp_variable='Lj_alice')
+   epra.analyze_all_variations(cos_trunc=8, fock_trunc=15)
 
-See the `Jupyter notebook tutorials
-<https://github.com/zlatko-minev/pyEPR/tree/master/_tutorial_notebooks>`_
-for step-by-step walkthroughs.
+See the :doc:`examples_quick` page for more complete examples including the
+no-HFSS numerical workflow.
 
-
-.. image:: _static/xmon-example.gif
-   :width: 70%
-   :alt: Xmon example
-   :align: center
-
+----
 
 Contents
 ========
 
 .. toctree::
    :maxdepth: 2
-   :numbered:
 
    about.rst
    installation.rst
@@ -127,7 +107,7 @@ Contents
    key_classes_reference.rst
 
 .. toctree::
-   :caption: API Reference:
+   :caption: API Reference
    :glob:
    :hidden:
 
@@ -139,4 +119,3 @@ Indices and tables
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`
