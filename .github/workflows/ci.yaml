@@ -61,7 +61,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: pyaedt-${{ hashFiles('pyproject.toml') }}-${{ env.PIPCACHEVERSION }}
-      - run: python -m pip install ".[pyaedt,test]"
+      # Pin the validated ansys-aedt-core for deterministic CI; the [pyaedt]
+      # extra itself allows the wider >=0.21,<1.0 range for users.
+      - run: python -m pip install ".[pyaedt,test]" "ansys-aedt-core==0.21.2"
       - name: Import smoke test (backend importable with PyAEDT installed)
         run: python -c "import pyEPR; from pyEPR.ansys_pyaedt import PyaedtDistributedAnalysis, compute_p_mj"
       - run: pytest tests/test_ansys_pyaedt.py -m "not hfss" -q

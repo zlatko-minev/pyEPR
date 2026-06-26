@@ -69,8 +69,10 @@ test = [
 ]
 # Modern HFSS interface (pyEPR.ansys_pyaedt) — talk to HFSS through Ansys's
 # official PyAEDT API instead of the COM `ansys` module. Windows-only.
+# Validated against ansys-aedt-core 0.21.2; pinned below the next major as a
+# safety bound (ansys-aedt-core is pre-1.0). Widen once newer releases are tested.
 pyaedt = [
-    "ansys-aedt-core>=0.21",
+    "ansys-aedt-core>=0.21,<1.0",
     "pywin32; platform_system == 'Windows'",
 ]
 
