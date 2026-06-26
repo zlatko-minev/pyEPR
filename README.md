@@ -102,6 +102,12 @@ epra.analyze_all_variations(cos_trunc=8, fock_trunc=15)
 epra.plot_hamiltonian_results(swp_variable='Lj_alice')
 ```
 
+> **No COM?** `pyEPR.ansys_pyaedt.PyaedtDistributedAnalysis` runs this same EPR
+> extraction through Ansys's official PyAEDT API entirely over gRPC instead of COM
+> (`pip install "pyEPR-quantum[pyaedt]"`). It feeds pyEPR's own diagonalizer and
+> matches the COM path digit-for-digit. See
+> [PyAEDT (gRPC) backend](https://pyepr-docs.readthedocs.io/en/latest/pyaedt_backend.html).
+
 ## Documentation
 
 **Full docs, API reference, and guides:** [pyepr-docs.readthedocs.io](https://pyepr-docs.readthedocs.io)

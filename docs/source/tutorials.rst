@@ -3,8 +3,8 @@
 Tutorial Notebooks
 ==================
 
-Six Jupyter notebook tutorials covering the full pyEPR workflow.
-Tutorials 1, 2, and 4 require a live Ansys HFSS session.
+Seven Jupyter notebook tutorials covering the full pyEPR workflow.
+Tutorials 1, 2, 4, and 7 require a live Ansys HFSS session.
 Tutorials 3, 5, and 6 run entirely with ``pip install pyEPR-quantum`` — no Ansys licence needed.
 
 .. grid:: 1
@@ -58,6 +58,14 @@ Tutorials 3, 5, and 6 run entirely with ``pip install pyEPR-quantum`` — no Ans
 
       Supply frequencies, junction inductances, and φ_zpf directly to get the full χ matrix — no EM solver needed. `Run on Binder ↗ <https://mybinder.org/v2/gh/zlatko-minev/pyEPR/master?filepath=_tutorial_notebooks%2FTutorial%206.%20EPR%20without%20HFSS%20%E2%80%94%20purely%20numerical%20workflow.ipynb>`__
 
+   .. grid-item-card:: Tutorial 7 — EPR through PyAEDT (gRPC), no COM
+      :link: _tutorial_notebooks/Tutorial 7. EPR through PyAEDT (gRPC) — no COM.html
+      :link-type: url
+
+      :bdg-warning:`Ansys HFSS required`
+
+      Run the same EPR extraction through Ansys's official PyAEDT API entirely over gRPC — no COM. Attaches to a running AEDT session, feeds pyEPR's own diagonalizer, and matches the COM path digit-for-digit.
+
 .. toctree::
    :hidden:
    :maxdepth: 1
@@ -68,3 +76,4 @@ Tutorials 3, 5, and 6 run entirely with ``pip install pyEPR-quantum`` — no Ans
    _tutorial_notebooks/Tutorial 4. Parametric sweep options
    _tutorial_notebooks/Tutorial 5. Generic junction potential and fluxonium EPR
    _tutorial_notebooks/Tutorial 6. EPR without HFSS — purely numerical workflow
+   _tutorial_notebooks/Tutorial 7. EPR through PyAEDT (gRPC) — no COM

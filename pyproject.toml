@@ -67,6 +67,12 @@ test = [
     "pytest>=7.0",
     "pytest-cov",
 ]
+# Modern HFSS interface (pyEPR.ansys_pyaedt) — talk to HFSS through Ansys's
+# official PyAEDT API instead of the COM `ansys` module. Windows-only.
+pyaedt = [
+    "ansys-aedt-core>=0.21",
+    "pywin32; platform_system == 'Windows'",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
