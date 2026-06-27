@@ -84,6 +84,12 @@ participations, signs, eigenfrequencies, and junction inductances are available
 as plain NumPy arrays on the object (``PJ``, ``SJ``, ``freqs_GHz``, ``Ljs``) —
 the same shapes pyEPR's diagonalizer expects.
 
+.. note::
+
+   This backend reads ``Cj_farads`` directly (a float, in farads) rather than
+   ``Cj_variable`` (an HFSS variable name used by the COM backend). Omit both to
+   treat the junction capacitance as zero.
+
 
 How it works over gRPC
 ----------------------
@@ -116,6 +122,5 @@ that works over gRPC.
 See also
 --------
 
-* :ref:`Tutorial 7 <tutorials>` — a full worked example against a solved
-  transmon.
+* `Tutorial 7 — EPR through PyAEDT (gRPC) <_tutorial_notebooks/Tutorial 7. EPR through PyAEDT (gRPC) — no COM.html>`__ — a full worked example against a solved transmon.
 * :mod:`pyEPR.ansys` — the original COM backend, unchanged.
