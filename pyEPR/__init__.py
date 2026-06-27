@@ -90,7 +90,7 @@ __credits__ = [
     "Steven Touzard",
 ]
 __license__ = "BSD-3-Clause"
-__version__ = "0.9.6"
+__version__ = "1.0.0"
 __maintainer__ = "Zlatko K. Minev and  Asaf Diringer"
 __email__ = "zlatko.minev@aya.yale.edu"
 __url__ = r"https://github.com/zlatko-minev/pyEPR"
