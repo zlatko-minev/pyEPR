@@ -64,8 +64,8 @@ __all__ = ["PyaedtDistributedAnalysis", "compute_p_mj"]
 # ---------------------------------------------------------------------------
 def _require_pyaedt():
     try:
-        from ansys.aedt.core import Hfss  # noqa: F401
-        from ansys.aedt.core.generic.general_methods import active_sessions  # noqa: F401
+        from ansys.aedt.core import Hfss  # noqa: F401  # pylint: disable=import-error
+        from ansys.aedt.core.generic.general_methods import active_sessions  # noqa: F401  # pylint: disable=import-error
         return Hfss, active_sessions
     except Exception as exc:  # pragma: no cover - environment dependent
         raise ImportError(
