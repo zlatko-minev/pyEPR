@@ -117,7 +117,7 @@ def test_owning_session_none_when_no_lock(tmp_path):
     assert _owning_session_from_lock(str(project), {4242: 50051}) is None
 
 
-# ── lazy PyAEDT import — backend must import without ansys-aedt-core ─────────
+# ── lazy PyAEDT import — backend must import without pyaedt ──────────────────
 
 def test_backend_imports_and_constructs_without_pyaedt():
     """Importing the backend and constructing the object must not need PyAEDT."""
@@ -131,7 +131,7 @@ def test_backend_imports_and_constructs_without_pyaedt():
 
 
 def test_require_pyaedt_raises_clear_error_when_missing(monkeypatch):
-    """When ansys-aedt-core is absent, the error must name PyAEDT and how to fix it."""
+    """When pyaedt is absent, the error must name PyAEDT and how to fix it."""
     import builtins
 
     real_import = builtins.__import__

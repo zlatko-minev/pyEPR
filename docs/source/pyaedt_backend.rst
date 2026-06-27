@@ -11,7 +11,7 @@ pyEPR has always driven Ansys HFSS through a hand-rolled **COM** layer
 (:mod:`pyEPR.ansys`), which is Windows-only and tied to a private scripting
 interface.  The :mod:`pyEPR.ansys_pyaedt` module performs the **same**
 Energy-Participation-Ratio field extraction through **PyAEDT**
-(``ansys-aedt-core``) — Ansys's official, maintained Python API — **entirely
+(``pyaedt``) — Ansys's official, maintained Python API — **entirely
 over gRPC, with no COM**.
 
 The physics is unchanged: the extracted participations feed pyEPR's own
@@ -34,7 +34,7 @@ Why a gRPC backend
   ``.aedt.lock`` and attaches to the AEDT instance that owns it, avoiding the
   stale-session and *project-locked* errors common with COM's
   Running-Object-Table lookup.
-* **Maintenance moves to Ansys.**  ``ansys-aedt-core`` is officially versioned
+* **Maintenance moves to Ansys.**  ``pyaedt`` is officially versioned
   and supported, rather than a private COM interface pyEPR must track by hand
   across AEDT releases.
 

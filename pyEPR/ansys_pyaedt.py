@@ -32,7 +32,8 @@ or ``solid``.
 
 Requires
 --------
-* ``ansys-aedt-core`` (PyAEDT). No ``pywin32``/COM needed.
+* ``pyaedt`` (PyAEDT; provides the ``ansys.aedt.core`` namespace). No
+  ``pywin32``/COM needed.
 
 Example
 -------
@@ -70,7 +71,7 @@ def _require_pyaedt():
     except Exception as exc:  # pragma: no cover - environment dependent
         raise ImportError(
             "PyAEDT is required for the ansys_pyaedt backend. "
-            "Install it with `pip install ansys-aedt-core`."
+            "Install it with `pip install pyaedt`."
         ) from exc
 
 

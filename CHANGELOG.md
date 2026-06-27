@@ -11,8 +11,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 - **PyAEDT (gRPC) HFSS backend** (`pyEPR.ansys_pyaedt.PyaedtDistributedAnalysis`).
   Runs the same Energy-Participation-Ratio field extraction as
-  `DistributedAnalysis`, but through Ansys's official PyAEDT API
-  (`ansys-aedt-core`) entirely over gRPC — no COM / `pywin32`. PyAEDT can attach
+  `DistributedAnalysis`, but through Ansys's official PyAEDT library
+  (`pyaedt`) entirely over gRPC — no COM / `pywin32`. PyAEDT can attach
   to an already-running AEDT session that owns the project (via its `.aedt.lock`),
   avoiding stale-session and project-locked errors common with COM. The extracted
   participations feed pyEPR's own physics (`epr_to_zpf`,

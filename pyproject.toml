@@ -68,13 +68,13 @@ test = [
     "pytest-cov",
 ]
 # Modern HFSS interface (pyEPR.ansys_pyaedt) — talk to HFSS through Ansys's
-# official PyAEDT API (ansys-aedt-core) over gRPC instead of COM.
+# official PyAEDT library over gRPC instead of COM. The PyPI package is `pyaedt`;
+# it provides the `ansys.aedt.core` import namespace (since pyaedt 0.9).
 # Unlike the COM backend, gRPC works on Linux and macOS.
 # pywin32 is only needed on Windows as an internal PyAEDT dependency.
-# Validated against ansys-aedt-core 0.21.2; pinned below the next major as a
-# safety bound (ansys-aedt-core is pre-1.0). Widen once newer releases are tested.
+# Validated against pyaedt 0.21.2.
 pyaedt = [
-    "ansys-aedt-core>=0.21,<1.0",
+    "pyaedt>=0.9,<2.0",
     "pywin32; platform_system == 'Windows'",
 ]
 
