@@ -49,6 +49,37 @@ git clone https://github.com/zlatko-minev/pyEPR.git && cd pyEPR
 pip install -e ".[test]" && pytest
 ```
 
+## New in v0.9.6 — cross-platform gRPC backend (Linux · macOS · Windows)
+
+pyEPR now ships a second HFSS transport that runs entirely over **gRPC** through
+Ansys's official [PyAEDT](https://github.com/ansys/pyaedt) library — no COM, no
+`pywin32`, and no Windows requirement.
+
+| | Classic COM backend | **PyAEDT / gRPC backend** |
+|---|---|---|
+| **Install** | `pip install pyEPR-quantum` | `pip install "pyEPR-quantum[pyaedt]"` |
+| **Class** | `DistributedAnalysis` | `PyaedtDistributedAnalysis` |
+| **Platform** | Windows only | **Linux · macOS · Windows** |
+| **Transport** | COM / pywin32 | gRPC (Ansys official API) |
+| **Session attach** | new COM session | attaches to running AEDT via `.aedt.lock` |
+
+```python
+from pyEPR.ansys_pyaedt import PyaedtDistributedAnalysis
+
+eprd = PyaedtDistributedAnalysis(pinfo, aedt_version="2026.1")
+eprd.do_EPR_analysis()   # pure gRPC — no COM, works on Linux/macOS
+f_ND, chi_ND = eprd.analyze()
+```
+
+The physics is identical — participations, eigenfrequencies, and the full
+diagonalization feed pyEPR's own `QuantumAnalysis` unchanged, validated
+digit-for-digit against the COM path.
+The gRPC backend also resolves the stale-session and project-locked errors that
+have long been the main pain point with COM.
+
+Many thanks to **[Joey Yaker](https://github.com/joeyyaker)** for designing and
+contributing this backend. See the [PyAEDT backend docs](https://pyepr-docs.readthedocs.io/en/latest/pyaedt_backend.html) for full details and Tutorial 7.
+
 ## Quickstart — no Ansys required
 
 Compute the transmon anharmonicity from first principles, no HFSS needed:
@@ -101,12 +132,6 @@ epra = epr.QuantumAnalysis(eprd.data_filename)
 epra.analyze_all_variations(cos_trunc=8, fock_trunc=15)
 epra.plot_hamiltonian_results(swp_variable='Lj_alice')
 ```
-
-> **No COM?** `pyEPR.ansys_pyaedt.PyaedtDistributedAnalysis` runs this same EPR
-> extraction through Ansys's official PyAEDT API entirely over gRPC instead of COM
-> (`pip install "pyEPR-quantum[pyaedt]"`). It feeds pyEPR's own diagonalizer and
-> matches the COM path digit-for-digit. See
-> [PyAEDT (gRPC) backend](https://pyepr-docs.readthedocs.io/en/latest/pyaedt_backend.html).
 
 ## Documentation
 
