@@ -15,9 +15,30 @@ dispersive shifts (χ matrix), and zero-point fluctuations.
 
 **pyEPR is not:**
 - A geometry or layout tool — that is quantum-metal (formerly qiskit-metal) or KLayout.
-- A general AEDT scripting library — that is PyAEDT.
+- A general AEDT scripting library — that is PyAEDT (though pyEPR optionally uses PyAEDT as a transport layer via `ansys_pyaedt`).
 - A circuit simulator — it post-processes distributed-field solutions.
 - An alternative to QuTiP — it uses QuTiP internally for diagonalization.
+
+### Two HFSS transport backends
+
+pyEPR has two ways to talk to HFSS:
+
+| Backend | Module | Transport | Platform | Install |
+|---------|--------|-----------|----------|---------|
+| Classic | `pyEPR.ansys` / `DistributedAnalysis` | COM / pywin32 | Windows only | `pip install pyEPR-quantum` |
+| PyAEDT | `pyEPR.ansys_pyaedt` / `PyaedtDistributedAnalysis` | gRPC | Linux, macOS, Windows | `pip install "pyEPR-quantum[pyaedt]"` |
+
+The PyAEDT backend was added in 0.9.6+. It is fully additive — the COM backend is
+unchanged. The physics (participation formula, diagonalization) is identical between
+the two; only the transport layer differs. Use the PyAEDT backend when:
+- You are on Linux or macOS
+- You are hitting COM stale-session or project-locked errors
+- You want to use Ansys's officially maintained API rather than the COM interface
+
+The key technical detail: reading scalar results from the HFSS field calculator over
+gRPC requires `CalculatorWrite` (write to a `.fld` file, read last line) rather than
+`ClcEval`/`GetTopEntryValue`, which is the stateful round-trip that does not survive gRPC.
+See `.claude/context/lessons-learned.md` for the full explanation.
 
 The distinction matters because feature requests often conflate these roles.
 When someone asks pyEPR to "draw a qubit" or "run a SPICE simulation", the

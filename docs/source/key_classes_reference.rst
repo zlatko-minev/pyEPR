@@ -12,20 +12,28 @@ onto the three stages of the EPR analysis pipeline:
 
    ProjectInfo            — configure: paths, junctions, dissipative elements
         │
-        ▼
-   DistributedAnalysis    — simulate: connect to HFSS, extract EPR fields, save HDF5
-        │
-        ▼
-   QuantumAnalysis        — quantize: load HDF5, diagonalize Hamiltonian, report results
+        ├──► DistributedAnalysis       — COM backend (Windows, pywin32)
+        │         │
+        └──► PyaedtDistributedAnalysis — gRPC backend (cross-platform, PyAEDT)
+                  │
+                  ▼
+             QuantumAnalysis        — quantize: load results, diagonalize Hamiltonian
 
-All three are importable from the top-level ``pyEPR`` namespace:
+All are importable from the top-level ``pyEPR`` namespace:
 
 .. code-block:: python
 
    import pyEPR as epr
 
    pinfo = epr.ProjectInfo(...)
+
+   # COM backend (classic, Windows-only)
    eprd  = epr.DistributedAnalysis(pinfo)
+
+   # gRPC backend via PyAEDT (cross-platform, no COM)
+   # pip install "pyEPR-quantum[pyaedt]"
+   eprd  = epr.PyaedtDistributedAnalysis(pinfo, aedt_version="2026.1")
+
    epra  = epr.QuantumAnalysis(eprd.data_filename)
 
 ``DistributedAnalysis`` and ``QuantumAnalysis`` can also be used with their

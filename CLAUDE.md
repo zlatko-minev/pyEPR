@@ -109,6 +109,8 @@ This is the most important constraint for any agent working in this repo.
 | `QuantumAnalysis` (post-HDF5) | Yes | Uses fixtures in `tests/` |
 | `toolbox/` | Yes | Logging, plotting, pandas helpers |
 | `project_info.py` | Yes | Config object, no COM |
+| `ansys_pyaedt.py` (physics + unit parsing + lock targeting) | Yes | `compute_p_mj`, `_parse_henries`, `_owning_session_from_lock` are pure Python — tested in `tests/test_ansys_pyaedt.py` without PyAEDT installed |
+| `ansys_pyaedt.py` (live gRPC extraction) | **No** | Requires live AEDT session; mark with `@pytest.mark.hfss` |
 | `ansys.py` | **No** | Requires live Ansys HFSS COM session |
 | `DistributedAnalysis` (field extraction) | **No** | Requires live HFSS solve |
 | `HfssDesign`, `HfssSetup`, etc. | **No** | COM-only |
