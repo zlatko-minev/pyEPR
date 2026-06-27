@@ -187,6 +187,25 @@ external runtime dependency.
 
 ---
 
+## gRPC field calculator — `CalculatorWrite` vs `ClcEval`
+
+When driving HFSS via PyAEDT over gRPC (the `ansys_pyaedt` backend),
+most field-calculator operations work fine: `ClcMaterial`, `EnterVol`,
+`EnterLine`, `Integrate`, and `Solutions.EditSources` all run over gRPC.
+
+The one operation that does **not** survive gRPC is the stateful read-back
+round-trip `ClcEval` + `GetTopEntryValue`. This is what COM uses to
+pull a scalar result off the calculator stack.
+
+**Fix:** Use `CalculatorWrite` instead — write the result to a `.fld` file
+in the working directory, then read the last line. This is what
+`_GrpcFieldCalc._evaluate()` in `pyEPR/ansys_pyaedt.py` does, and it was
+validated digit-for-digit against the COM path (`p_mj = 0.9755` on a demo
+transmon). Any future work that needs a scalar from the HFSS field calculator
+over gRPC must use `CalculatorWrite`, not `ClcEval`.
+
+---
+
 ## Ansys AEDT version compatibility
 
 ### AEDT 2024.1+ silently creates Hybrid Modal Network

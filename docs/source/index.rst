@@ -47,6 +47,29 @@ microwave simulation (Ansys HFSS) and quantum circuit Hamiltonians using the
 
 ----
 
+.. card:: :octicon:`rocket;1em` New in v0.9.6 — cross-platform gRPC backend (Linux · macOS · Windows)
+   :class-card: sd-border-2 sd-shadow-sm
+
+   pyEPR now ships a second HFSS transport through Ansys's official
+   `PyAEDT <https://github.com/ansys/pyaedt>`_ library — **no COM, no pywin32**,
+   works on Linux and macOS for the first time.
+
+   .. code-block:: bash
+
+      pip install "pyEPR-quantum[pyaedt]"
+
+   .. code-block:: python
+
+      from pyEPR.ansys_pyaedt import PyaedtDistributedAnalysis
+      eprd = PyaedtDistributedAnalysis(pinfo, aedt_version="2026.1")
+      eprd.do_EPR_analysis()   # pure gRPC — identical physics, cross-platform
+
+   Physics and results are identical to the COM path — validated digit-for-digit.
+   Contributed by `Joey Yaker <https://github.com/joeyyaker>`_.
+   See :doc:`pyaedt_backend` for full details.
+
+----
+
 Quick install
 =============
 

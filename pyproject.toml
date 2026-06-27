@@ -13,6 +13,7 @@ authors = [
 ]
 maintainers = [
     { name = "Zlatko Minev", email = "zlatko.minev@aya.yale.edu" },
+    { name = "Joey Yaker", email = "josephyaker2025@u.northwestern.edu" },
     { name = "pyEPR team" },
 ]
 requires-python = ">=3.10, <4"
