@@ -234,10 +234,11 @@ def _owning_session_from_lock(project_path: str, grpc: Dict[int, int]):
         return None
     pid = None
     try:
-        for ln in open(lock, errors="ignore"):
-            if ln.strip().startswith("DesktopProcessID="):
-                pid = int(ln.strip().split("=", 1)[1])
-                break
+        with open(lock, errors="ignore") as fh:
+            for ln in fh:
+                if ln.strip().startswith("DesktopProcessID="):
+                    pid = int(ln.strip().split("=", 1)[1])
+                    break
     except (OSError, ValueError):
         return None
     return (pid, grpc[pid]) if pid in grpc else None

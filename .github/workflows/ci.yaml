@@ -61,6 +61,8 @@ jobs:
         with:
           path: ~/.cache/pip
           key: pyaedt-${{ hashFiles('pyproject.toml') }}-${{ env.PIPCACHEVERSION }}
+          restore-keys: |
+            pyaedt-
       # Install the [pyaedt] extra; its pyaedt>=0.9,<2.0 range resolves to
       # whatever is available on PyPI.
       - run: python -m pip install ".[pyaedt,test]"
