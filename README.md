@@ -247,4 +247,13 @@ Related:
 * Original `pyHFSS.py` and `pyNumericalDiagonalization.py` by [Phil Reinhold](https://github.com/PhilReinhold) — [original repo](https://github.com/PhilReinhold/pyHFSS).
 * To contribute: open a GitHub issue or PR, or contact [Z. Minev](https://www.zlatko-minev.com/).
 
+### Community contributions
+
+**[Joey Yaker](https://github.com/joeyyaker)** — PyAEDT gRPC backend (`pyEPR.ansys_pyaedt`, v0.9.6).
+Designed and implemented `PyaedtDistributedAnalysis`: a complete alternative HFSS transport layer that
+drives the EPR field extraction entirely over gRPC via Ansys's official PyAEDT API, with no COM / `pywin32`.
+Includes the key insight that `CalculatorWrite` (write to a `.fld` file) must replace the stateful
+`ClcEval`/`GetTopEntryValue` round-trip for results to survive gRPC — validated digit-for-digit against
+the COM path. Makes pyEPR fully cross-platform for users with PyAEDT installed.
+
 [![Maintenance](https://img.shields.io/badge/Maintained-yes-green.svg)](https://github.com/zlatko-minev/pyEPR/graphs/commit-activity)
