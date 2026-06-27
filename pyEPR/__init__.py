@@ -201,6 +201,9 @@ from .core import (
     DistributedAnalysis,
     QuantumAnalysis,
 )
+# PyAEDT-based HFSS interface (modern alternative to the COM `ansys` module).
+# Imports PyAEDT/pywin32 lazily, so this never hard-requires them at import time.
+from .ansys_pyaedt import PyaedtDistributedAnalysis
 
 __all__ = [
     "logger",
@@ -212,6 +215,7 @@ __all__ = [
     "ProjectInfo",
     "DistributedAnalysis",
     "QuantumAnalysis",
+    "PyaedtDistributedAnalysis",
     "parse_units",
     "parse_units_user",
     "parse_entry",

@@ -47,6 +47,29 @@ jobs:
       - run: python -m pip install ".[test]"
       - run: pytest tests/ -m "not hfss" -q
 
+  test_pyaedt:
+    # Verify the optional [pyaedt] extra is installable and the PyAEDT backend's
+    # offline tests pass with PyAEDT present. The live (@pytest.mark.hfss) tests
+    # still require a real AEDT licence and remain excluded.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pyaedt-${{ hashFiles('pyproject.toml') }}-${{ env.PIPCACHEVERSION }}
+          restore-keys: |
+            pyaedt-
+      # Install the [pyaedt] extra; its pyaedt>=0.9,<2.0 range resolves to
+      # whatever is available on PyPI.
+      - run: python -m pip install ".[pyaedt,test]"
+      - name: Import smoke test (backend importable with PyAEDT installed)
+        run: python -c "import pyEPR; from pyEPR.ansys_pyaedt import PyaedtDistributedAnalysis, compute_p_mj"
+      - run: pytest tests/test_ansys_pyaedt.py -m "not hfss" -q
+
   test_docs:
     runs-on: ubuntu-latest
     steps:
