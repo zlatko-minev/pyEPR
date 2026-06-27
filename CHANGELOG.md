@@ -5,11 +5,12 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [Unreleased]
+## [1.0.0] — 2026-06-27
 
 ### New features
 
 - **PyAEDT (gRPC) HFSS backend** (`pyEPR.ansys_pyaedt.PyaedtDistributedAnalysis`).
+  Contributed by [Joey Yaker](https://github.com/joeyyaker).
   Runs the same Energy-Participation-Ratio field extraction as
   `DistributedAnalysis`, but through Ansys's official PyAEDT library
   (`pyaedt`) entirely over gRPC — no COM / `pywin32`. PyAEDT can attach
