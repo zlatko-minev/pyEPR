@@ -347,6 +347,56 @@ class DistributedAnalysis(object):
         # TODO: maybe sort column and index? # todo: maybe generalize
         return pd.concat(df, names=[vs])
 
+    def _variation_index(self, variation):
+        """
+        Resolve ``variation`` to a plain integer index into
+        ``self._list_variations``.
+
+        Accepts an int, a digit-string ('0', '1', ...), or -- as a
+        fallback -- the full variation descriptor string (e.g.
+        "Cj='2fF' Lj='12nH'") or an already-solved-variation label from
+        ``self.variations``.
+
+        Historically this called ``ureg(variation)`` (pint's unit
+        registry) to coerce ``variation`` into something indexable.
+        That is wrong on its face -- ``variation`` is an index label,
+        not a physical quantity -- and its behavior is not stable
+        across input types or pint versions: depending on whether
+        ``variation`` is passed as an ``int`` or a digit-``str``, and
+        depending on the installed pint version, ``ureg(variation)``
+        may return a plain ``int`` (safe) OR an actual ``pint.Quantity``
+        object (unsafe), and indexing a tuple with a ``Quantity`` raises
+        ``TypeError: tuple indices must be integers or slices, not
+        Quantity``. It also cannot handle a full descriptor string at
+        all -- ``ureg("Cj='2fF' Lj='12nH'")`` raises
+        ``pint.UndefinedUnitError``.
+
+        Args:
+            variation (int, str): index, digit-string index, or
+                variation descriptor / label.
+
+        Returns:
+            int: index into ``self._list_variations``.
+
+        Raises:
+            ValueError: ``variation`` is not a valid index and does not
+                match any entry in ``self._list_variations`` or
+                ``self.variations``.
+        """
+        try:
+            return int(variation)
+        except (TypeError, ValueError):
+            pass
+        if variation in self._list_variations:
+            return self._list_variations.index(variation)
+        if variation in self.variations:
+            return self.variations.index(variation)
+        raise ValueError(
+            f"variation={variation!r} is not a valid index into "
+            "_list_variations and does not match any known variation "
+            "label."
+        )
+
     def _get_lv(self, variation=None):
         """
         List of variation variables in a format that is used when feeding back to ansys.
@@ -367,7 +417,7 @@ class DistributedAnalysis(object):
             lv = self._nominal_variation  # "Cj='2fF' Lj='12.5nH'"
             lv = self._parse_listvariations(lv)
         else:
-            lv = self._list_variations[ureg(variation)]
+            lv = self._list_variations[self._variation_index(variation)]
             lv = self._parse_listvariations(lv)
         return lv
 
@@ -426,7 +476,7 @@ class DistributedAnalysis(object):
         if variation is None:
             return self._nominal_variation
 
-        return self._list_variations[ureg(variation)]
+        return self._list_variations[self._variation_index(variation)]
 
     def _parse_listvariations(self, lv):
         """
@@ -879,7 +929,7 @@ class DistributedAnalysis(object):
         self.fields = self.setup.get_fields()
         freqs_bare_dict, freqs_bare_vals = self.get_freqs_bare(variation)
         self.omega = 2 * np.pi * freqs_bare_vals[mode]
-        logger.debug("variation=%s  type=%s  ureg=%s", variation, type(variation), ureg(variation))
+        logger.debug("variation=%s  type=%s", variation, type(variation))
 
         lv = self._get_lv(variation)
         Qseamsweep = []
@@ -1605,7 +1655,7 @@ class DistributedAnalysis(object):
             1	substrate	1490356	    0.000270	0.893770	0.023639	    1.160090e-12	0.031253	0.000007	2.309920e-04
 
         """
-        variation = self._list_variations[ureg(variation)]
+        variation = self._list_variations[self._variation_index(variation)]
         return self.setup.get_mesh_stats(variation)
 
     def get_convergence(self, variation="0"):
@@ -1627,7 +1677,7 @@ class DistributedAnalysis(object):
                 4       	199244	        1.524000
 
         """
-        variation = self._list_variations[ureg(variation)]
+        variation = self._list_variations[self._variation_index(variation)]
         df, _ = self.setup.get_convergence(variation)
         return df
 
