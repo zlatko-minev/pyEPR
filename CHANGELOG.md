@@ -5,6 +5,26 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.0.1] — 2026-07-14
+
+### Bug fixes
+
+- **Variation indexing (`DistributedAnalysis`)** — replaced the
+  `self._list_variations[ureg(variation)]` pattern with a new
+  `_variation_index()` helper. Passing `ureg()` (pint's unit registry) an
+  index label is incorrect: depending on the input type and installed pint
+  version, `ureg(variation)` could return a `pint.Quantity` instead of an
+  `int`, and indexing the `_list_variations` tuple with a `Quantity` raised
+  `TypeError: tuple indices must be integers or slices, not Quantity`. This
+  surfaced downstream as a crash in `plot_convergence()` / `get_convergence()`
+  (reported in qiskit-metal#1127). `_variation_index()` resolves an `int`, a
+  digit-string (`"0"`), or a full variation descriptor string
+  (`"Cj='2fF' Lj='12nH'"`) to a plain integer index without touching pint, and
+  raises a clear `ValueError` for an unknown label. Applied to all four call
+  sites (previously lines 370, 429, 1607, 1629) and removed the unguarded
+  `ureg(variation)` from the debug-log line that could raise
+  `UndefinedUnitError` on non-numeric labels.
+
 ## [1.0.0] — 2026-06-27
 
 ### New features
