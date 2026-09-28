@@ -1744,7 +1744,7 @@ class AnsysQ3DSetup(HfssSetup):
 
         df_cmat = pd.read_csv(
             io.StringIO(s2[0].strip()),
-            delim_whitespace=True,
+            sep=r"\s+",
             skipinitialspace=True,
             index_col=0,
         )
@@ -1753,7 +1753,7 @@ class AnsysQ3DSetup(HfssSetup):
         if len(s2) > 1:
             df_cond = pd.read_csv(
                 io.StringIO(s2[1].strip()),
-                delim_whitespace=True,
+                sep=r"\s+",
                 skipinitialspace=True,
                 index_col=0,
             )
