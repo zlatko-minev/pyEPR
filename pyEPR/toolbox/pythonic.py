@@ -81,7 +81,7 @@ def df_find_index(s: pd.Series, find, degree=2, ax=False):
     min_ = min(s.index.values)
     if find <= max_ and find >= min_:
         # interpolate
-        z = pd.Series(list(s.index.values) + [np.NaN], index=list(s) + [find])
+        z = pd.Series(list(s.index.values) + [np.nan], index=list(s) + [find])
         z = z.sort_index()
         z = z.interpolate()
         return z[find], z
@@ -98,7 +98,7 @@ def df_interpolate_value(s: pd.Series, find, ax=False, method="index"):
     Given a Pandas Series such as of freq with index Lj,
     find the freq that would correspond to Lj given a value not in the index
     """
-    z = pd.Series(list(s) + [np.NaN], index=list(s.index.values) + [find])
+    z = pd.Series(list(s) + [np.nan], index=list(s.index.values) + [find])
     z = z.sort_index()
     z = z.interpolate(method=method)
     return z[find], z
@@ -241,7 +241,7 @@ def info_str_platform():
 
 
 def print_matrix(M, frmt="{:7.2f}", append_row=""):
-    M = np.mat(M)
+    M = np.asmatrix(M)
     for row in np.array(M.tolist()):
         print(" ", end="")
         for chi in row:
