@@ -5,7 +5,9 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [Unreleased]
+## [1.0.2] — 2026-09-27
+
+NumPy 2 and pandas 3 compatibility fixes.
 
 ### Bug fixes
 
@@ -13,10 +15,28 @@ Versions follow [Semantic Versioning](https://semver.org/).
   raised `AttributeError`.** They used `np.mat` and `np.NaN`, which NumPy 2.0
   removed. `print_matrix` runs at the end of every
   `QuantumAnalysis.analyze_variation()` with `print_result=True`, the default,
-  so a default EPR analysis stopped at its report under NumPy 2. They now use
-  `np.asmatrix` and `np.nan`, which also work with NumPy 1.x. A new test
-  (`tests/test_numpy2_compat.py`) runs the three helpers and fails if any
-  removed NumPy name appears in the package source.
+  so a default EPR analysis stopped at its report under NumPy 2.
+  `print_matrix` now uses a 2-D array (not `numpy.matrix`, which NumPy is
+  deprecating) and the other two use `np.nan`; both work with NumPy 1.x too.
+  A new test (`tests/test_numpy2_compat.py`) runs the three helpers and fails
+  if any removed NumPy name appears in the package source.
+- **pandas 3: reading a Q3D matrix export raised `TypeError`.**
+  `AnsysQ3DSetup.load_q3d_matrix` (through `_readin_Q3D_matrix`) called
+  `pd.read_csv(delim_whitespace=True)`, deprecated in pandas 2.2 and removed
+  in 3.0. It now uses `sep=r"\s+"`, the same parsing. Tested on the sample
+  export from the docstring (`tests/test_q3d_matrix_reader.py`), with pandas
+  2.3 and 3.0.
+- **`df_find_index` compared the target with the index, not the values.** It
+  finds the index (e.g. Lj) that gives a target value (e.g. a frequency), but
+  chose between interpolating and extrapolating by checking the target against
+  the index range, so a target inside the value range could be extrapolated
+  (with a degree-2 fit through the points) instead of interpolated.
+
+### Documentation
+
+- The docs build with 0 warnings: `conf.py` assigned `exclude_patterns` a
+  second time (empty), which discarded the first; README notes beside the
+  tutorial notebooks are now excluded.
 
 ## [1.0.1] — 2026-07-14
 
