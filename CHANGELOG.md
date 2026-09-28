@@ -5,6 +5,19 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Bug fixes
+
+- **NumPy 2: `print_matrix`, `df_interpolate_value` and `df_find_index`
+  raised `AttributeError`.** They used `np.mat` and `np.NaN`, which NumPy 2.0
+  removed. `print_matrix` runs at the end of every
+  `QuantumAnalysis.analyze_variation()` with `print_result=True`, the default,
+  so a default EPR analysis stopped at its report under NumPy 2. They now use
+  `np.asmatrix` and `np.nan`, which also work with NumPy 1.x. A new test
+  (`tests/test_numpy2_compat.py`) runs the three helpers and fails if any
+  removed NumPy name appears in the package source.
+
 ## [1.0.1] — 2026-07-14
 
 ### Bug fixes
