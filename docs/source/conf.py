@@ -59,7 +59,10 @@ templates_path = ["_templates"]
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["**.ipynb_checkpoints"]
+exclude_patterns = [
+    "**.ipynb_checkpoints",
+    "_tutorial_notebooks/*/README.md",  # notes beside a notebook, not pages
+]
 
 suppress_warnings = [
     "myst.header",               # non-consecutive header levels in old notebooks
@@ -167,10 +170,8 @@ numfig_format = {"table": "Table %s"}
 # Usually you set "language" from the command line for these cases.
 language = "en"
 
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
-# This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
+# exclude_patterns is set near the top of this file; assigning it again here
+# would discard those patterns.
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "colorful"
