@@ -77,8 +77,8 @@ def df_find_index(s: pd.Series, find, degree=2, ax=False):
     Given a Pandas Series such as of freq with index Lj,
     find the Lj that would give the right frequency
     """
-    max_ = max(s.index.values)
-    min_ = min(s.index.values)
+    max_ = max(s.values)
+    min_ = min(s.values)
     if find <= max_ and find >= min_:
         # interpolate
         z = pd.Series(list(s.index.values) + [np.nan], index=list(s) + [find])
