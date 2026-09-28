@@ -10,6 +10,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from pyEPR.toolbox.pythonic import df_find_index, df_interpolate_value, print_matrix
 
@@ -47,8 +48,15 @@ def test_df_interpolate_value():
 
 
 def test_df_find_index():
-    # The index that gives a value of 15, found by interpolating (the target
-    # also lies within the index range, which is what selects that branch).
-    s = pd.Series([12.0, 18.0], index=[10.0, 20.0])
-    value, _ = df_find_index(s, 15.0)
+    # Frequencies (values) 5 and 6 at Lj (index) 10 and 20: the Lj for 5.5 is
+    # interpolated. The range check used to compare 5.5 with the Lj range, so
+    # an in-range target went to the extrapolation branch instead.
+    s = pd.Series([5.0, 6.0], index=[10.0, 20.0])
+    value, _ = df_find_index(s, 5.5)
     assert value == 15.0
+
+
+def test_df_find_index_extrapolates_outside_the_values():
+    s = pd.Series([5.0, 6.0], index=[10.0, 20.0])
+    value, _ = df_find_index(s, 7.0, degree=1)
+    assert value == pytest.approx(30.0)
