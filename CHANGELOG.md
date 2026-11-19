@@ -5,6 +5,21 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### New features
+
+- **PyAEDT backend: `student_version` option.**
+  `PyaedtDistributedAnalysis(..., student_version=True)` connects to an AEDT
+  Student Edition install. The flag was previously hard-coded to `False`, so
+  the gRPC backend could not attach to Student installs, which also can't be
+  reached through COM (qiskit-community/qiskit-metal#1181). The flag is
+  forwarded both to the running-session search and to `Hfss()`, on the attach
+  and launch paths. It defaults to `False`, so existing callers are unchanged.
+  Tested offline with fake PyAEDT objects (`tests/test_ansys_pyaedt.py`).
+
+---
+
 ## [1.0.2] — 2026-09-27
 
 NumPy 2 and pandas 3 compatibility fixes.
