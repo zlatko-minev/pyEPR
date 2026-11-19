@@ -269,6 +269,10 @@ class PyaedtDistributedAnalysis:
     new_desktop : bool
         Forwarded to PyAEDT only when no running session is found; when a
         session is already running this object attaches to it instead.
+    student_version : bool
+        Connect to an AEDT Student Edition install instead of the full
+        product. Used both when searching for running sessions and when
+        attaching to or launching AEDT. Default ``False``.
     """
 
     def __init__(
@@ -277,11 +281,13 @@ class PyaedtDistributedAnalysis:
         aedt_version: str = "2026.1",
         non_graphical: bool = False,
         new_desktop: bool = False,
+        student_version: bool = False,
     ):
         self.pinfo = project_info
         self.aedt_version = aedt_version
         self.non_graphical = non_graphical
         self.new_desktop = new_desktop
+        self.student_version = student_version
 
         self._hfss = None
         self.junction_names: List[str] = list(getattr(project_info, "junctions", {}) or {})
@@ -311,7 +317,8 @@ class PyaedtDistributedAnalysis:
         sessions = {}
         try:
             sessions = active_sessions(
-                version=self.aedt_version, student_version=False,
+                version=self.aedt_version,
+                student_version=self.student_version,
                 non_graphical=False) or {}
         except Exception:
             sessions = {}
@@ -323,12 +330,14 @@ class PyaedtDistributedAnalysis:
             self._hfss = Hfss(
                 project=project_path, design=self.pinfo.design_name,
                 version=self.aedt_version, port=port, aedt_process_id=pid,
-                new_desktop=False, non_graphical=False)
+                new_desktop=False, non_graphical=False,
+                student_version=self.student_version)
         else:
             self._hfss = Hfss(
                 project=project_path, design=self.pinfo.design_name,
                 version=self.aedt_version, non_graphical=self.non_graphical,
-                new_desktop=self.new_desktop)
+                new_desktop=self.new_desktop,
+                student_version=self.student_version)
         return self
 
     def disconnect(self):

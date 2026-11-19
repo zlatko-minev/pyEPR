@@ -146,6 +146,50 @@ def test_require_pyaedt_raises_clear_error_when_missing(monkeypatch):
         _require_pyaedt()
 
 
+# ── connect() forwards student_version to PyAEDT ─────────────────────────────
+
+def _fake_pyaedt(monkeypatch, sessions):
+    """Patch ``_require_pyaedt`` with fakes that record the kwargs they get."""
+    import pyEPR.ansys_pyaedt as mod
+
+    calls = {}
+
+    def fake_active_sessions(**kwargs):
+        calls["active_sessions"] = kwargs
+        return sessions
+
+    def fake_hfss(**kwargs):
+        calls["Hfss"] = kwargs
+        return SimpleNamespace()
+
+    monkeypatch.setattr(mod, "_require_pyaedt", lambda: (fake_hfss, fake_active_sessions))
+    monkeypatch.setattr(mod, "_owning_session_from_lock", lambda path, grpc: None)
+    return calls
+
+
+def _pinfo():
+    return SimpleNamespace(
+        junctions={}, project_path="C:/proj", project_name="demo",
+        design_name="d", setup_name="s",
+    )
+
+
+@pytest.mark.parametrize("student", [False, True])
+@pytest.mark.parametrize("sessions", [{}, {1234: 50051}], ids=["launch", "attach"])
+def test_connect_forwards_student_version(monkeypatch, student, sessions):
+    """student_version must reach both the session search and the Hfss() call,
+    whether connect() attaches to a running session or launches a new one."""
+    calls = _fake_pyaedt(monkeypatch, sessions)
+    PyaedtDistributedAnalysis(_pinfo(), student_version=student).connect()
+    assert calls["active_sessions"]["student_version"] is student
+    assert calls["Hfss"]["student_version"] is student
+
+
+def test_student_version_defaults_to_false():
+    """Default stays False so existing callers keep the full-product behaviour."""
+    assert PyaedtDistributedAnalysis(_pinfo()).student_version is False
+
+
 # ── live extraction (needs AEDT + the solved demo project) ──────────────────
 
 @pytest.mark.hfss

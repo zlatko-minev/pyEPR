@@ -90,6 +90,17 @@ the same shapes pyEPR's diagonalizer expects.
    ``Cj_variable`` (an HFSS variable name used by the COM backend). Omit both to
    treat the junction capacitance as zero.
 
+.. note::
+
+   For an **AEDT Student Edition** install, pass ``student_version=True``.
+   Student installs don't register a creatable COM class, so the COM backend
+   can't reach them, but PyAEDT's gRPC interface can:
+
+   .. code-block:: python
+
+      eprd = PyaedtDistributedAnalysis(pinfo, aedt_version="2025.2",
+                                       student_version=True)
+
 
 How it works over gRPC
 ----------------------
